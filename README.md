@@ -124,12 +124,6 @@ text
 
 ---
 
-## 📜 라이선스 (License)
-
-MIT License 참고 (LICENSE 파일 참조)
-
----
-
 ## 👥 팀원 소개 (Team)
 
 | 이름       | 역할        | 담당 내용                 | 연락처                |
