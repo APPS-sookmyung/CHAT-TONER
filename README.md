@@ -6,14 +6,14 @@ Chat-toner는 상황과 대상에 맞는 말투 스타일을 개인화하여 변
 
 ---
 
-## 📝 프로젝트 개요 (Project Overview)
+## 프로젝트 개요 (Project Overview)
 
 Chat-toner는 단순한 어투 변환을 넘어, 대화 목적/상황/대상별 맞춤 스타일을 추천하고  
 사용자 고유의 말투 특성을 학습해 점진적으로 고도화되는 개인화 스타일 변환 시스템입니다.
 
 ---
 
-## 🚀 주요 기능 (Key Features)
+## 주요 기능 (Key Features)
 
 - **상황별 톤 제안**
   - 업무, 친구, 공식 등 다양한 상황에 맞는 톤 자동 제시
@@ -27,7 +27,7 @@ Chat-toner는 단순한 어투 변환을 넘어, 대화 목적/상황/대상별 
 
 ---
 
-## 🛠️ 기술 스택 (Tech Stack)
+## 기술 스택 (Tech Stack)
 
 | 분류         | 스택/라이브러리                                 | 용도                              |
 | :----------- | :---------------------------------------------- | :-------------------------------- |
@@ -38,7 +38,7 @@ Chat-toner는 단순한 어투 변환을 넘어, 대화 목적/상황/대상별 
 
 ---
 
-## 🗂️ 프로젝트 구조 (Project Structure)
+## 프로젝트 구조 (Project Structure)
 
 chattoner/
 ├── client/
@@ -56,7 +56,7 @@ text
 
 ---
 
-## ⚡ 설치 및 실행 (Installation & Setup)
+## 설치 및 실행 (Installation & Setup)
 
 1. **프로젝트 클론**
 
@@ -92,13 +92,13 @@ text
 
 ---
 
-## 💡 사용 방법 (Usage)
+## 사용 방법 (Usage)
 
 - 텍스트 입력 → 상황 선택(업무/친구/공식) → 변환 옵션 선택 → 결과 피드백 제공
 
 ---
 
-## 📈 개발 전략 (Development Strategy)
+## 개발 전략 (Development Strategy)
 
 - **MVP**: 프롬프트 기반 기본 기능 우선
 - **모델 개발**: LoRA 활용 개인화 고도화
@@ -107,14 +107,14 @@ text
 
 ---
 
-## 🧪 평가 방법
+## 평가 방법
 
 - 결과 적절성 수동 평가, 사용자 O/X 만족도 조사
 - 다양한 알고리즘(A/B) 성능 비교
 
 ---
 
-## 🤝 기여하기 (Contributing)
+## 기여하기 (Contributing)
 
 1. Fork this repo
 2. Create feature branch (`git checkout -b feature/NewFeature`)
@@ -124,21 +124,20 @@ text
 
 ---
 
-## 👥 팀원 소개 (Team)
+## 팀원 소개 (Team)
 
 | 이름       | 역할        | 담당 내용                 | 연락처                |
 | :--------- | :---------- | :------------------------ | :-------------------- |
 | **윤지원** | PM          | 프로젝트 기획, 총괄       | geenieeyoon@gmail.com |
 | **권유진** | Development | 풀스택, ML 모델 개발 지원 | apps@email.com        |
-| **연구진** | Research    | ML 모듈/개인화 연구/개발  | apps@email.com        |
+| **김지민** | Development | 파인튜닝, RAG 구현       | onlypotato637@gmail.com|
 
 > **APPS (앱/웹 개발 학회)**  
 > 이 프로젝트는 소프트웨어학부 APPS 학회가 수행하는 연구 프로젝트입니다.
 
 ---
 
-## 📫 연락처 (Contact)
+## 연락처 (Contact)
 
 - Email: [앱스 학회 이메일]
-- GitHub: [Organization GitHub]
-- Notion: [프로젝트 노션 페이지]
+- GitHub: [https://github.com/APPS-sookmyung/2025-CHATTONER-Server]
