@@ -1,6 +1,40 @@
+<<<<<<< HEAD
 
 node_modules
 
 .env
 
 .env
+=======
+# 가상환경
+python_backend/venv/
+
+# Python 캐시 및 로그
+__pycache__/
+*.py[cod]
+*.log
+
+# 환경 설정 파일
+.env
+*.env
+
+# VSCode 관련 (사용 중이라면)
+.vscode/
+
+# Jupyter Notebook 체크포인트
+.ipynb_checkpoints/
+
+# OS 및 기타
+.DS_Store
+Thumbs.db
+
+python_backend/.venv/
+**/.venv/
+.venv/
+
+__pycache__/
+
+backup_before_reset/
+python_backend/.venv/
+
+>>>>>>> bf6ef79 (feat: update .gitignore and add axios dependency in package-lock.json)
