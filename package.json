@@ -1,5 +1,6 @@
 {
-  "name": "chattoner",
+  "description": "ChatToner Server",
+  "name": "ChatToner",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
