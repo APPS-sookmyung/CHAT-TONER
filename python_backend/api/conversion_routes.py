@@ -9,8 +9,8 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Dict, List, Any, Optional
-from ..services.conversion_service import ConversionService
+from typing import Dict,  Any, Optional
+from services.conversion_service import ConversionService
 
 router = APIRouter(prefix="/api/conversion", tags=["conversion"])
 

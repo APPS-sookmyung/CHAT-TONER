@@ -6,11 +6,21 @@
 5. uvicorn 실행
 """
 
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from api.conversion_routes import router as conversation_router
+from services.conversion_service import ConversionService
+from dotenv import load_dotenv
+import os
 
-# 기존 라우터 임포트
-from api.conversation_routes import router as conversation_router
+
+dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(dotenv_path=dotenv_path)
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # FastAPI 앱 생성 함수 분리
 def create_app() -> FastAPI:
@@ -21,6 +31,9 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc"
     )
+    return app
+# FastAPI 앱 인스턴스 생성
+app = create_app()
 
 # CORS 설정
 app.add_middleware(
@@ -31,6 +44,7 @@ app.add_middleware(
 )
 
 # 기존 라우터 등록
+
 app.include_router(conversation_router, prefix="/api/conversation", tags=["대화"])
 
 # 루트 엔드포인트
