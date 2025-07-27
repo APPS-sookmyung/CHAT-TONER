@@ -1,0 +1,43 @@
+"""
+1. fastapi 인스턴스 생성 
+2. cors 설정 
+3. 라우터 등록
+4. 루트 health 체크 엔드포인트
+5. uvicorn 실행
+"""
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# 기존 라우터 임포트
+from api.conversation_routes import router as conversation_router
+
+# FastAPI 앱 생성 함수 분리
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="Chat Toner API",
+        description="AI 기반 텍스트 스타일 변환 서비스",
+        version="1.0.0",
+        docs_url="/docs",
+        redoc_url="/redoc"
+    )
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 개발용
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 기존 라우터 등록
+app.include_router(conversation_router, prefix="/api/conversation", tags=["대화"])
+
+# 루트 엔드포인트
+@app.get("/")
+async def root():
+    return {"message": "Chat Toner API", "docs": "/docs"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
