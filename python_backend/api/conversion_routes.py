@@ -14,6 +14,20 @@ from services.conversion_service import ConversionService
 
 router = APIRouter(prefix="/api/conversion", tags=["conversion"])
 
+class ChatRequest(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+    user_preferences: Optional[Dict[str, Any]] = None
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "message": "안녕하세요! 비즈니스 이메일 작성을 도와주세요.",
+                "conversation_id": "conv_123", 
+                "user_preferences": {"tone": "formal"}
+            }
+        }
+
 class ConversionRequest(BaseModel):
     text: str
     user_profile: Dict[str, Any]
@@ -26,6 +40,29 @@ class FeedbackRequest(BaseModel):
 
 # 서비스 인스턴스
 conversion_service = ConversionService()
+
+@router.post("/chat")
+async def chat(request: ChatRequest):
+    """채팅 메시지 처리"""
+    try:
+        if not request.message.strip():
+            raise HTTPException(status_code=400, detail="메시지를 입력해주세요.")
+        
+        result = await conversion_service.handle_chat_message(
+            message=request.message,
+            conversation_id=request.conversation_id,
+            user_preferences=request.user_preferences
+        )
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "채팅 처리 중 오류가 발생했습니다."))
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 @router.post("/convert")
 async def convert_text(request: ConversionRequest):

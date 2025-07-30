@@ -12,7 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.conversion_routes import router as conversation_router
 from services.conversion_service import ConversionService
 from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 import os
+from datetime import datetime
+#from schemas import __version__
 
 
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -29,7 +33,8 @@ def create_app() -> FastAPI:
         description="AI 기반 텍스트 스타일 변환 서비스",
         version="1.0.0",
         docs_url="/docs",
-        redoc_url="/redoc"
+        redoc_url="/redoc",
+        openapi_url="/openapi.json"
     )
     return app
 # FastAPI 앱 인스턴스 생성
@@ -47,11 +52,15 @@ app.add_middleware(
 
 app.include_router(conversation_router, prefix="/api/conversation", tags=["대화"])
 
+
 # 루트 엔드포인트
 @app.get("/")
 async def root():
     return {"message": "Chat Toner API", "docs": "/docs"}
 
+# 정적 파일 서빙 (선택사항)
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
