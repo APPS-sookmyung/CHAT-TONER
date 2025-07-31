@@ -11,6 +11,7 @@ Chat Toner FastAPI Main Application
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.swagger_config import configure_swagger
+from core.swagger_config import get_swagger_ui_parameters
 from core.config import get_settings
 from core.container import Container
 from core.middleware import setup_middleware
@@ -36,6 +37,7 @@ def create_app() -> FastAPI:
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,
     )
+    app = FastAPI(get_swagger_ui_parameters())
 
     if settings.DEBUG:
         configure_swagger(app)
