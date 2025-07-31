@@ -4,3 +4,4 @@ python_backend/jiwon
 python_backend/.env
 .env
 
+python_backend/core/config.py

@@ -21,6 +21,8 @@ from api.v1.router import api_router
 def create_app() -> FastAPI:
     """FastAPI 애플리케이션 팩토리"""
     settings = get_settings()
+    print(settings.OPENAI_MODEL)
+    print(settings.DEBUG)
     
     # 컨테이너 초기화
     container = Container()
