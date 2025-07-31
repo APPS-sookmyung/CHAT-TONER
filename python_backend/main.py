@@ -4,64 +4,63 @@
 3. 라우터 등록
 4. 루트 health 체크 엔드포인트
 5. uvicorn 실행
-"""
 
-import logging
+Chat Toner FastAPI Main Application
+간소화된 메인 애플리케이션 엔트리포인트
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.conversion_routes import router as conversation_router
-from api.conversion_routes import router as conversation_router
-from dotenv import load_dotenv
-from dotenv import load_dotenv
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-import os
-from datetime import datetime
-#from schemas import __version__
+from core.swagger_config import configure_swagger
+from core.config import get_settings
+from core.container import Container
+from core.middleware import setup_middleware
+from core.exception_handlers import setup_exception_handlers
+from api.v1.router import api_router
 
 
-dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-load_dotenv(dotenv_path=dotenv_path)
-
-# 로깅 설정
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# FastAPI 앱 생성 함수 분리
 def create_app() -> FastAPI:
+    """FastAPI 애플리케이션 팩토리"""
+    settings = get_settings()
+    
+    # 컨테이너 초기화
+    container = Container()
+    container.config.from_dict(settings.dict())
+    
+    # FastAPI 앱 생성
     app = FastAPI(
-        title="Chat Toner API",
-        description="AI 기반 텍스트 스타일 변환 서비스",
-        version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json"
+        title=settings.PROJECT_NAME,
+        description=settings.DESCRIPTION,
+        version=settings.VERSION,
+        docs_url="/docs" if settings.DEBUG else None,
+        redoc_url="/redoc" if settings.DEBUG else None,
     )
+
+    if settings.DEBUG:
+        configure_swagger(app)
+    
+    # 컨테이너 연결
+    app.container = container
+    
+    # 미들웨어 설정
+    setup_middleware(app, settings)
+    
+    # 예외 핸들러 설정
+    setup_exception_handlers(app)
+    
+    # 라우터 포함
+    app.include_router(api_router, prefix="/api/v1")
+    
     return app
-# FastAPI 앱 인스턴스 생성
+
 app = create_app()
 
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 개발용
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 기존 라우터 등록
-
-app.include_router(conversation_router, prefix="/api/conversation", tags=["대화"])
-
-
-# 루트 엔드포인트
-@app.get("/")
-async def root():
-    return {"message": "Chat Toner API", "docs": "/docs"}
-
-# 정적 파일 서빙 (선택사항)
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    settings = get_settings()
+    uvicorn.run(
+        "main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        access_log=settings.DEBUG
+    )

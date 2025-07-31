@@ -62,7 +62,7 @@ async def chat(request: ChatRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}") from e
 
 @router.post("/convert")
 async def convert_text(request: ConversionRequest):
@@ -114,10 +114,27 @@ async def process_feedback(request: FeedbackRequest):
         raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 @router.get("/health")
+@app.get("/health", tags=["Health Check"], summary="서버 상태 확인")
 async def health_check():
-    """서비스 상태 확인"""
+    """
+    시스템 전체 상태 및 외부 서비스 연결 확인
+    
+    - **OpenAI 연결 상태**
+    - **프롬프트 엔지니어링 서비스 상태**
+    - **사용 가능한 기능 목록**
+    """
     return {
-        "status": "healthy",
-        "service": "conversion_service",
-        "timestamp": conversion_service._get_timestamp()
+        "status": "ok",
+        "service": "chat-toner-fastapi",
+        "openai_available": openai_client is not None,
+        "openai_key_exists": bool(os.getenv("OPENAI_API_KEY")),
+        "prompt_engineering_available": PROMPT_ENGINEERING_AVAILABLE,
+        "python_version": sys.version,
+        "features": {
+            "basic_conversion": True,
+            "advanced_prompts": PROMPT_ENGINEERING_AVAILABLE,
+            "openai_integration": openai_client is not None,
+            "rag_chains": PROMPT_ENGINEERING_AVAILABLE,
+            "finetune_service": finetune_service is not None
+        }
     }
