@@ -6,7 +6,6 @@ Vector DB 테스트 파일
 """
 
 import logging
-from pathlib import Path
 from vector_db import ingest_documents_from_folder, FAISS_INDEX_PATH, DOCS_PATH, embedding
 from langchain_community.vectorstores import FAISS
 

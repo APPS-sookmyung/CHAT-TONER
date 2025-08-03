@@ -32,6 +32,12 @@ def split_documents(
     chunk_size: int = 500,
     chunk_overlap: int = 50
 ) -> List[Document]:
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be positive")
+    if chunk_overlap < 0 or chunk_overlap >= chunk_size:
+        raise ValueError("chunk_overlap must be non-negative and less than chunk_size")
+    if not docs:
+       return []
 
     splitter = get_text_splitter(chunk_size, chunk_overlap)
     return splitter.split_documents(docs)

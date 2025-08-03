@@ -27,7 +27,7 @@ from langchain_openai import ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from dotenv import load_dotenv
 
-from langchain_pipeline.retriever.vector_db import ingest_documents_from_folder, FAISS_INDEX_PATH, embedding
+from langchain_pipeline.retriever.vector_db import ingest_documents_from_folder, FAISS_INDEX_PATH, get_embedding
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class RAGChain:
         try:
             from services.prompt_engineering import PromptEngineer
             from services.openai_services import OpenAIService
-            from services.conversation_service import ConversionService
+            from services.conversion_service import ConversionService
             
             self.prompt_engineer = PromptEngineer()
             self.openai_service = OpenAIService()
@@ -58,10 +58,14 @@ class RAGChain:
             self.services_available = False
             logger.error(f"Services 인스턴스 생성 실패: {e}")
         
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is required")
+        
         self.llm = ChatOpenAI(
             model=model_name,
             temperature=temperature,
-            api_key=os.getenv("OPENAI_API_KEY")
+            api_key=api_key
         )
         
         self.vectorstore = None
@@ -86,10 +90,10 @@ class RAGChain:
     def _load_vectorstore(self):
         """기존 인덱스 로드"""
         try:
-            if FAISS_INDEX_PATH.exists() and list(FAISS_INDEX_PATH.iterdir()):
+            if FAISS_INDEX_PATH.exists() and any(FAISS_INDEX_PATH.iterdir()):
                 self.vectorstore = FAISS.load_local(
                     str(FAISS_INDEX_PATH),
-                    embeddings=embedding,
+                    embeddings=get_embedding(),
                     allow_dangerous_deserialization=True
                 )
                 self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
@@ -124,7 +128,11 @@ class RAGChain:
             )
             
             # 쿼리 실행
-            enhanced_query = f"문맥: {context}\n\n질문: {query}" if context else query
+            if context and context.strip():
+                enhanced_query = f"문맥: {context.strip()}\n\n질문: {query}"
+            else:
+                enhanced_query = query
+
             result = qa_chain.invoke({"query": enhanced_query})
             
             # 결과 정리

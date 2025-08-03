@@ -104,7 +104,7 @@ async def test_styles_rag():
             
             if "rag_context" in result:
                 context_preview = result['rag_context'][:100] + "..." if len(result['rag_context']) > 100 else result['rag_context']
-                print(f"\n RAG 컨텍스트 미리보기:")
+                print("\n RAG 컨텍스트 미리보기:")
                 print(f"   {context_preview}")
                 
         else:

@@ -14,14 +14,10 @@ import sys
 import logging
 from pathlib import Path
 
-# 프로젝트 경로 설정
-project_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(project_root))
-
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
-from langchain_pipeline.retriever.doc_splitter import split_documents
+from .doc_splitter import split_documents
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -30,7 +26,12 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 logger = logging.getLogger(__name__)
 
 # HuggingFace 임베딩 모델 설정
-embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-MiniLM-L6-v2")
+def get_embedding():
+    """Get or create embedding model instance"""
+    global _embedding
+    if '_embedding' not in globals():
+        _embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-MiniLM-L6-v2")
+    return _embedding
 
 # 경로 설정
 script_dir = Path(__file__).parent
@@ -52,7 +53,7 @@ def ingest_documents_from_folder(folder_path: Path):
         elif filepath.suffix == ".pdf":
             loader = PyPDFLoader(str(filepath))
         else:
-            continue #그 외 확정자 무시
+            continue #그 외 확장자 무시
         
         # 파일 로딩 및 청크 분할
         try:
@@ -76,7 +77,7 @@ def ingest_documents_from_folder(folder_path: Path):
     
     # 벡터 저장소 생성 및 저장
     try:
-        vectorstore = FAISS.from_documents(all_docs, embedding)
+        vectorstore = FAISS.from_documents(all_docs, get_embedding())
         vectorstore.save_local(str(FAISS_INDEX_PATH))
         logger.info(f"벡터 인덱스 저장 완료: {len(all_docs)}개 청크, 경로: {FAISS_INDEX_PATH}")
         return vectorstore, all_docs
