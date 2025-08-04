@@ -10,7 +10,7 @@ from dependency_injector import containers, providers
 from services.prompt_engineering import PromptEngineer
 from services.openai_services import OpenAIService
 from services.conversion_service import ConversionService
-from services.user_services import UserService
+from services.user_preferences import UserPreferencesService
 from database.storage import DatabaseStorage
 
 class Container(containers.DeclarativeContainer):
@@ -42,7 +42,8 @@ class Container(containers.DeclarativeContainer):
         openai_service=openai_service
     )
     
-    user_service = providers.Factory(
-        UserService,
-        database=database
+    user_preferences_service = providers.Factory(
+        UserPreferencesService,
+        storage=database,
+        openai_service=openai_service
     )
