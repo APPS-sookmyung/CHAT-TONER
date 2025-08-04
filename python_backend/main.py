@@ -30,14 +30,16 @@ def create_app() -> FastAPI:
     container.config.from_dict(settings.dict())
     
     # FastAPI 앱 생성
+    swagger_params = get_swagger_ui_parameters()
     app = FastAPI(
         title=settings.PROJECT_NAME,
         description=settings.DESCRIPTION,
         version=settings.VERSION,
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,
+        **swagger_params
     )
-    app = FastAPI(get_swagger_ui_parameters())
+
 
     if settings.DEBUG:
         configure_swagger(app)
