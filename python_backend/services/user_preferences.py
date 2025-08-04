@@ -1,7 +1,3 @@
-"""
-사용자 선호도 관리 서비스
-네거티브 프롬프트 선호도 및 스타일 학습 관리- 개선된 파일 
-"""
 
 """
 사용자 선호도 관리 서비스 - 개선 버전
@@ -10,7 +6,7 @@
 
 import logging
 from dataclasses import dataclass, asdict
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 from enum import Enum
 
 from .base_service import BaseService
@@ -60,13 +56,11 @@ class NegativePreferences:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'NegativePreferences':
         """딕셔너리에서 생성"""
-        # Enum 변환 처리
-        for key in ['avoid_flowery_language', 'avoid_repetitive_words', 
-                   'comma_usage_style', 'content_over_format', 
-                   'bullet_point_usage', 'emoticon_usage']:
-            if key in data and isinstance(data[key], str):
-                data[key] = PreferenceLevel(data[key])
-        
+        # Enum 변환 처리- use field introspection for better maintainability
+        from dataclasses import fields 
+        for field in fields(cls):
+            if field.type == PreferenceLevel and field.name in data and isinstance(data[field.name], str):
+                data[field.name] = PreferenceLevel(data[field.name])
         return cls(**data)
 
 
@@ -110,12 +104,12 @@ class PreferenceExtractor:
         
         return NegativePreferences(
             user_id=user_id,
-            avoid_flowery_language=PreferenceExtractor._map_formality_to_flowery(formality),
+            avoid_flowery_language=PreferenceExtractor._map_friendliness_to_flowery(friendliness, formality),
             avoid_repetitive_words=PreferenceExtractor._map_directness_to_repetitive(directness),
-            comma_usage_style=PreferenceExtractor._map_directness_to_comma(directness),
+            comma_usage_style=PreferenceExtractor._map_friendliness_to_comma(friendliness),
             content_over_format=PreferenceExtractor._map_directness_to_content(directness),
             bullet_point_usage=PreferenceExtractor._map_formality_to_bullet(formality),
-            emoticon_usage=PreferenceExtractor._map_emotion_to_emoticon(emotion, formality)
+            emoticon_usage=PreferenceLevel.STRICT  # GPT스러워서 기본적으로 금지
         )
     
     @staticmethod
@@ -124,13 +118,13 @@ class PreferenceExtractor:
         return NegativePreferences(user_id='unknown')
     
     @staticmethod
-    def _map_formality_to_flowery(formality: int) -> PreferenceLevel:
-        """격식도에 따른 미사여구 회피 레벨 매핑"""
-        if formality <= 2:
+    def _map_friendliness_to_flowery(friendliness: int, formality: int) -> PreferenceLevel:
+        """친근함과 격식도 조합으로 미사여구 레벨 결정"""
+        if friendliness >= 4 and formality <= 3:  # 친근하고 캐주얼할 때
+            return PreferenceLevel.LENIENT
+        elif formality <= 2:
             return PreferenceLevel.STRICT
-        elif formality <= 4:
-            return PreferenceLevel.MODERATE
-        return PreferenceLevel.LENIENT
+        return PreferenceLevel.MODERATE
     
     @staticmethod
     def _map_directness_to_repetitive(directness: int) -> PreferenceLevel:
@@ -138,9 +132,9 @@ class PreferenceExtractor:
         return PreferenceLevel.STRICT if directness >= 4 else PreferenceLevel.MODERATE
     
     @staticmethod
-    def _map_directness_to_comma(directness: int) -> PreferenceLevel:
-        """직설성에 따른 쉼표 사용 레벨 매핑"""
-        return PreferenceLevel.STRICT if directness >= 4 else PreferenceLevel.MODERATE
+    def _map_friendliness_to_comma(friendliness: int) -> PreferenceLevel:
+        """친근함에 따른 쉼표 사용 레벨 매핑 - 친근할수록 자연스러운 쉼표 허용"""
+        return PreferenceLevel.LENIENT if friendliness >= 4 else PreferenceLevel.MODERATE
     
     @staticmethod
     def _map_directness_to_content(directness: int) -> PreferenceLevel:
@@ -152,14 +146,6 @@ class PreferenceExtractor:
         """격식도에 따른 불렛 포인트 사용 레벨 매핑"""
         return PreferenceLevel.STRICT if formality <= 2 else PreferenceLevel.MODERATE
     
-    @staticmethod
-    def _map_emotion_to_emoticon(emotion: int, formality: int) -> PreferenceLevel:
-        """감정표현과 격식도에 따른 이모티콘 사용 레벨 매핑"""
-        if formality >= 4:
-            return PreferenceLevel.STRICT
-        elif emotion <= 3:
-            return PreferenceLevel.MODERATE
-        return PreferenceLevel.LENIENT
 
 
 class StyleLearningEngine:

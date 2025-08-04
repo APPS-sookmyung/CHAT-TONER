@@ -60,7 +60,7 @@ async def convert_text(
         logger.error(f"변환 실패: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="텍스트 변환 중 서버 오류가 발생했습니다.")
 
-@router.post("/feedback")
+@router.post("/feedback",response_model=FeedbackResponse)
 @inject
 async def process_feedback(
      request: FeedbackRequest,
@@ -78,4 +78,4 @@ async def process_feedback(
     
     except Exception as e:
         logger.error(f"피드백 처리 실패: {e}")
-        raise HTTPException(status_code=500, detail="피드백 처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="피드백 처리 중 오류가 발생했습니다.") from e
