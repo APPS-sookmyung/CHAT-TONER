@@ -94,6 +94,8 @@ class RAGChain:
                 self.vectorstore = FAISS.load_local(
                     str(FAISS_INDEX_PATH),
                     embeddings=get_embedding(),
+                    # WARNING: 이 옵션은 악의적으로 조작된 인덱스를 통해 임의 코드 실행이 발생할 수 있습니다.
+                    # 반드시 FAISS 인덱스 파일이 신뢰된 경로에서 생성되었는지 확인하세요.
                     allow_dangerous_deserialization=True
                 )
                 self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
