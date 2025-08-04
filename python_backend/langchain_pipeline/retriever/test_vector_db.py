@@ -6,7 +6,7 @@ Vector DB 테스트 파일
 """
 
 import logging
-from vector_db import ingest_documents_from_folder, FAISS_INDEX_PATH, DOCS_PATH, embedding
+from vector_db import ingest_documents_from_folder, FAISS_INDEX_PATH, DOCS_PATH, get_embedding
 from langchain_community.vectorstores import FAISS
 
 # 로깅 설정
@@ -48,7 +48,7 @@ def test_faiss_loading():
         # FAISS 로드
         vectorstore = FAISS.load_local(
             str(FAISS_INDEX_PATH),
-            embeddings=embedding,
+            embeddings=get_embedding(),
             allow_dangerous_deserialization=True
         )
         

@@ -10,26 +10,30 @@ Returns:
     Tuple[FAISS, List[Document]]: 생성된 벡터스토어와 청크 문서 리스트
 """
 
-import sys
 import logging
 from pathlib import Path
 
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
-from .doc_splitter import split_documents
+from langchain_pipeline.retriever.doc_splitter import split_documents
 
 import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+# 경고 무시: future warning 무시
+# 다른 중요 경고는 여전히 표시됨
+warnings.filterwarnings("ignore", 
+                    message=".*encoder_attention_mask.*deprecated.*", 
+                    category=FutureWarning)
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
+_embedding = None
 
 # HuggingFace 임베딩 모델 설정
 def get_embedding():
     """Get or create embedding model instance"""
     global _embedding
-    if '_embedding' not in globals():
+    if _embedding is None:
         _embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-MiniLM-L6-v2")
     return _embedding
 
@@ -40,7 +44,7 @@ DOCS_PATH = script_dir / "index" / "docs"
 
 
 def ingest_documents_from_folder(folder_path: Path):
-    all_docs = []
+    all_docs = []    
     
     if not folder_path.exists():
         logger.error(f"폴더가 존재하지 않습니다: {folder_path}")
@@ -53,7 +57,7 @@ def ingest_documents_from_folder(folder_path: Path):
         elif filepath.suffix == ".pdf":
             loader = PyPDFLoader(str(filepath))
         else:
-            continue #그 외 확장자 무시
+            continue # 그 외 확장자 무시
         
         # 파일 로딩 및 청크 분할
         try:
