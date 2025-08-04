@@ -8,7 +8,11 @@
 Chat Toner FastAPI Main Application
 간소화된 메인 애플리케이션 엔트리포인트
 """
+
+import logging
+logger= logging.getLogger('chattoner')
 from fastapi import FastAPI
+# configuring cors 어케 하노
 from fastapi.middleware.cors import CORSMiddleware
 from core.swagger_config import configure_swagger
 from core.swagger_config import get_swagger_ui_parameters
@@ -22,8 +26,8 @@ from api.v1.router import api_router
 def create_app() -> FastAPI:
     """FastAPI 애플리케이션 팩토리"""
     settings = get_settings()
-    print(settings.OPENAI_MODEL)
-    print(settings.DEBUG)
+    logger.info(f"OPENAI_MODEL: {settings.OPENAI_MODEL}")
+    logger.info(f"DEBUG: {settings.DEBUG}")
     
     # 컨테이너 초기화
     container = Container()
