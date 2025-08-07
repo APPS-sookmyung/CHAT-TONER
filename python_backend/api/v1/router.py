@@ -23,21 +23,19 @@ api_router=APIRouter()
 #health 파일 내 router=APIRouter() 로 선언된 라우터 객체
 
 api_router.include_router(
-    health.router,
-    prefix="/health", # 이 경로로 시작하는 모든 API 를 이 라우터에 포함 
-    tags=["Health Check"] # 스웨거 문서 내에서 health check 라는 그룹으로 분류 
+    health_router,
+    prefix="/health",
+    tags=["Health Check"]
 )
 
 api_router.include_router(
-    conversion.router,
+    conversion_router,
     prefix="/conversion",
-    tags=["Text Conversion"],
-    name="text-conversion" # 스웨거 문서 내에서 text conversion 라는 이름으로 분류
+    tags=["Text Conversion"]
 )
 
 api_router.include_router(
-    user.router,
+    user_router,
     prefix="/user",
-    tags=["User magagement"]
-
+    tags=["User Management"]
 )
