@@ -1,9 +1,9 @@
 """헬스 체크 엔드포인트"""
 
-import os
 import sys
 from fastapi import APIRouter
 from typing import Dict, Any
+from core.config import get_settings
 
 router = APIRouter()
 
@@ -16,7 +16,8 @@ async def health_check() -> Dict[str, Any]:
     - **서비스 가용성**
     - **Python 버전 정보**
     """
-    openai_key_exists = bool(os.getenv("OPENAI_API_KEY"))
+    settings = get_settings()
+    openai_key_exists = bool(settings.OPENAI_API_KEY)
     
     return {
         "status": "ok",
