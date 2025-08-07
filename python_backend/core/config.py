@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     PORT: int = 5001
     
     # OpenAI 설정
-    OPENAI_API_KEY: str 
+    OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
     
     # 데이터베이스 설정
