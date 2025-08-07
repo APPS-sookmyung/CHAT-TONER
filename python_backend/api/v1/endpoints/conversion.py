@@ -17,7 +17,6 @@ from dependency_injector.wiring import inject, Provide
 
 from core.container import Container
 from services.conversion_service import ConversionService
-from services.conversion_service import ConversionService
 from api.v1.schemas.conversion import (
     ConversionRequest,
     ConversionResponse,
@@ -56,7 +55,7 @@ async def convert_text(
     # 내가 신경쓴 오류 체킹 
     except ValueError as e:
         logger.warning(f"입력 값 오류: {e}")
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(ve))
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except Exception as e:
         logger.error(f"변환 실패: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="텍스트 변환 중 서버 오류가 발생했습니다.") from e
