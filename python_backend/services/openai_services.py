@@ -11,12 +11,12 @@ import json
 class OpenAIService:
     """OpenAI API 호출 관리 클래스"""
     
-    def __init__(self):
+    def __init__(self, api_key=None, model=None):
         self.client = OpenAI(
-            api_key=os.getenv('OPENAI_API_KEY')
+            api_key=api_key or os.getenv('OPENAI_API_KEY')
         )
         # GPT-4o 최신 모델 사용
-        self.model = "gpt-4o"
+        self.model = model or "gpt-4o"
     #3가지 스타일(direct, gentle, neutral)을 변환하는 메인 함수.
     def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
         """
