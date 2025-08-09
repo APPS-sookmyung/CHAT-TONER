@@ -11,6 +11,7 @@ from services.prompt_engineering import PromptEngineer
 from services.openai_services import OpenAIService
 from services.conversion_service import ConversionService
 from services.user_preferences import UserPreferencesService
+from services.finetune_service import FinetuneService
 from database.storage import DatabaseStorage
 
 class Container(containers.DeclarativeContainer):
@@ -47,3 +48,10 @@ class Container(containers.DeclarativeContainer):
         storage=database,
         openai_service=openai_service
     )
+
+    finetune_service = providers.Factory(
+        FinetuneService
+
+# user_preferences_service는 향후 필요시 추가 가능*
+
+)
