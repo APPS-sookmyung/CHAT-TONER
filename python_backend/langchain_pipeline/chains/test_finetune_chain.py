@@ -16,7 +16,7 @@ from datetime import datetime
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from finetune_chain import FinetuneChain
+from langchain_pipeline.chains.finetune_chain import FinetuneChain
 
 # 로깅 설정
 logging.basicConfig(
@@ -73,7 +73,7 @@ def test_should_use_lora():
 
 async def test_force_convert():
     """사용자 명시적 요청 테스트"""
-    print(f"\n사용자 명시적 요청 테스트")
+    print("\n사용자 명시적 요청 테스트")
     print("=" * 60)
     
     try:

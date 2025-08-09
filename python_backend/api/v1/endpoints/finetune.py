@@ -14,7 +14,7 @@ from dependency_injector.wiring import inject, Provide
 
 from core.container import Container
 from services.finetune_service import FinetuneService
-from api.v1.schemas.finetune import (
+from api.v1.schemas.finetune_schemas import (
     FinetuneRequest,
     FinetuneResponse,
     FinetuneStatusResponse
@@ -32,9 +32,9 @@ async def convert_to_formal(
     request: FinetuneRequest,
     finetune_service: Annotated[
         FinetuneService, 
-        Depends(Provide[Container.finetune_service])
+        Depends(Provide[Container.finetune_service]) # noqa: B008
     ],
-    current_user = Depends(get_current_user_optional)
+    current_user = Depends(get_current_user_optional) # noqa: B008
 ) -> FinetuneResponse:
     """텍스트를 공식 문서 스타일로 변환"""
     try:
@@ -77,7 +77,7 @@ async def convert_to_formal(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
             detail=str(ve)
-        )
+        ) from ve
     except Exception as e:
         logger.error(f"공식 문서 변환 실패: {e}")
         raise HTTPException(
@@ -104,6 +104,12 @@ async def convert_by_user_request(
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="변환할 텍스트를 입력해주세요."
+            )
+        
+        if len(request.text) > 5000:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="텍스트가 너무 깁니다. 5000자 이하로 입력해주세요."
             )
         
         # 파인튜닝 서비스 사용 가능 여부 확인

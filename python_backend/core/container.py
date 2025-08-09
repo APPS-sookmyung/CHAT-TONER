@@ -51,7 +51,5 @@ class Container(containers.DeclarativeContainer):
 
     finetune_service = providers.Factory(
         FinetuneService
-
-# user_preferences_service는 향후 필요시 추가 가능*
-
-)
+    # user_preferences_service
+    )

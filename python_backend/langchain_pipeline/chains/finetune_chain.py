@@ -33,18 +33,27 @@ logger = logging.getLogger(__name__)
 class FinetuneChain:
     """LoRA 파인튜닝 모델을 활용한 공식 문서 변환 체인"""
     
-    def __init__(self, model_name: str = "gpt-4", temperature: float = 0.3):
+    def __init__(
+    self,
+    model_name: str = "gpt-4o",
+    temperature: float = 0.3,
+    prompt_engineer: Optional[object] = None,
+    openai_service: Optional[object] = None,
+):
         """Finetune Chain 초기화"""
         dotenv_path = Path(__file__).resolve().parents[3] / ".env"
         load_dotenv(dotenv_path=dotenv_path)
         
-        # Services 초기화
+       # Services 초기화 (DI 우선, 없으면 내부 생성)
         try:
-            from services.prompt_engineering import PromptEngineer
-            from services.openai_services import OpenAIService
-            
-            self.prompt_engineer = PromptEngineer()
-            self.openai_service = OpenAIService()
+            if prompt_engineer is None or openai_service is None:
+                from services.prompt_engineering import PromptEngineer
+                from services.openai_services import OpenAIService
+                self.prompt_engineer = prompt_engineer or PromptEngineer()
+                self.openai_service = openai_service or OpenAIService()
+            else:
+                self.prompt_engineer = prompt_engineer
+                self.openai_service = openai_service
             self.services_available = True
             logger.info("Services 초기화 완료")
         except ImportError as e:
@@ -53,7 +62,7 @@ class FinetuneChain:
         except Exception as e:
             self.services_available = False
             logger.error(f"Services 인스턴스 생성 실패: {e}")
-        
+        """
         # OpenAI LLM 설정
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -63,10 +72,10 @@ class FinetuneChain:
             model=model_name,
             temperature=temperature,
             api_key=api_key
-        )
+        )"""
         
         # LoRA 모델 관련 설정
-        self.lora_model_path = Path(__file__).parent / "finetuned_models"
+        self.lora_model_path = Path(__file__).resolve().parents[1] / "finetuned_models"
         self.base_model = None
         self.lora_model = None
         self.tokenizer = None
@@ -112,23 +121,23 @@ class FinetuneChain:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
                 
             # LoRA 어댑터 로드
+            adapter_loaded = False
             if self.lora_model_path.exists():
                 adapter_config_path = self.lora_model_path / "adapter_config.json"
                 if adapter_config_path.exists():
                     logger.info(f"LoRA 어댑터 로드 중: {self.lora_model_path}")
                     self.lora_model = PeftModel.from_pretrained(
-                        self.base_model,
-                        str(self.lora_model_path)
+                        self.base_model, str(self.lora_model_path)
                     )
+                    adapter_loaded = True
                 else:
                     logger.warning("adapter_config.json이 없어 기본 모델만 사용")
                     self.lora_model = self.base_model
             else:
                 logger.warning("LoRA 어댑터 경로가 없어 기본 모델만 사용")
                 self.lora_model = self.base_model
-                
-            self.is_lora_loaded = True
-            logger.info("Gemma-2 모델 로드 완료")
+
+            self.is_lora_loaded = adapter_loaded
             
         except Exception as e:
             logger.error(f"모델 로드 실패: {e}")
@@ -152,7 +161,6 @@ class FinetuneChain:
         if formality_level >= 4 and context in ["business", "report"]:
             return True
         
-        return False
     
     def _generate_with_lora(self, input_text: str, max_length: int = 512) -> str:
         """LoRA 모델로 1차 변환 - Gemma-2 템플릿"""
@@ -179,7 +187,14 @@ class FinetuneChain:
             
             # GPU로 이동
             if torch.cuda.is_available():
-                inputs = {k: v.to(self.lora_model.device) for k, v in inputs.items()}
+                try:
+                    target_device = getattr(self.lora_model, "device", None)  # 안전하게 가져오기
+                    if target_device is not None:
+                            inputs = {k: v.to(target_device) for k, v in inputs.items()}
+                except Exception:
+                    # device_map="auto"가 알아서 장치 배치를 처리하게 두기
+                        pass
+
             
             # 생성 (Gemma-2 최적화 파라미터)
             with torch.no_grad():

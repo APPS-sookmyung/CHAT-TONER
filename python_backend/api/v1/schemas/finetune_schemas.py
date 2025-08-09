@@ -5,7 +5,6 @@
 
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
-from datetime import datetime
 
 class FinetuneRequest(BaseModel):
     """파인튜닝 변환 요청 모델"""

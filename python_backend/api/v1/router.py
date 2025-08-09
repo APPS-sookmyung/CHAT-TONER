@@ -46,5 +46,4 @@ api_router.include_router(
     finetune_router,
     prefix="/finetune",
     tags=["Fine-tuning"],
-    name="formal-document-conversion"
 )
