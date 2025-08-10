@@ -14,6 +14,8 @@ from fastapi import APIRouter
 from api.v1.endpoints.health import router as health_router
 from api.v1.endpoints.conversion import router as conversion_router
 from api.v1.endpoints.user import router as user_router
+from api.v1.endpoints.feedback import router as feedback_router
+from api.v1.endpoints.quality import router as quality_router
 
 api_router=APIRouter()
 # v1전체의 라우팅 집합 
@@ -38,4 +40,16 @@ api_router.include_router(
     user_router,
     prefix="/user",
     tags=["User Management"]
+)
+
+api_router.include_router(
+    feedback_router,
+    prefix="/feedback",
+    tags=["Feedback"]
+)
+
+api_router.include_router(
+    quality_router,
+    prefix="/quality",
+    tags=["Quality Analysis"]
 )

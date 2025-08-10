@@ -23,7 +23,7 @@ from api.v1.schemas.conversion import (
     FeedbackRequest,
     FeedbackResponse
 )
-from python_backend.api.v1.dependencies import get_current_user_optional
+from api.dependencies import get_current_user_optional
 from fastapi import status
 import logging 
 
