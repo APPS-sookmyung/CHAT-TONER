@@ -1,6 +1,6 @@
 # python_backend/core/config.py
 # BaseSettings + .env + @lru_cache 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 import os
 from functools import lru_cache
 

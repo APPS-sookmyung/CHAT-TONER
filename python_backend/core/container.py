@@ -7,7 +7,7 @@ from dependency_injector import containers, providers
 from .config import Settings, get_settings
 from services.conversion_service import ConversionService
 from services.prompt_engineering import PromptEngineer
-from services.openai_service import OpenAIService
+from services.openai_services import OpenAIService
 from services.user_preferences import UserPreferencesService
 
 class Container(containers.DeclarativeContainer):

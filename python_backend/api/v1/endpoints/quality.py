@@ -23,7 +23,7 @@ logger = logging.getLogger('chattoner')
 
 router = APIRouter()
 
-@router.post("/analyze-quality", response_model=QualityAnalysisResponse)
+@router.post("/analyze", response_model=QualityAnalysisResponse)
 @inject
 async def analyze_text_quality(
     request: QualityAnalysisRequest,
@@ -77,7 +77,7 @@ async def analyze_text_quality(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"품질 분석 실패: {str(e)}")
 
-@router.post("/context-suggestions", response_model=ContextSuggestionsResponse)
+@router.post("/suggestions", response_model=ContextSuggestionsResponse)
 @inject
 async def get_context_suggestions(
     request: ContextSuggestionsRequest,

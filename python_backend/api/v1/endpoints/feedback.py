@@ -19,7 +19,7 @@ logger = logging.getLogger('chattoner')
 
 router = APIRouter()
 
-@router.post("/feedback", response_model=FeedbackResponse)
+@router.post("/", response_model=FeedbackResponse)
 @inject
 async def process_feedback(
     request: FeedbackRequest,
