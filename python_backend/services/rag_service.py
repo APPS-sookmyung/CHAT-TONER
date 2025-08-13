@@ -7,6 +7,7 @@ ConversionService와 동일한 패턴으로 구현
 import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
+from datetime import datetime
 
 logger = logging.getLogger('chattoner')
 
@@ -27,27 +28,118 @@ class RAGService:
         # 선택적 주입 (향후 확장용)
         self.user_preferences_service = user_preferences_service
         
-        # RAG Chain 초기화
+        # Simple Embedder 초기화
+        self.simple_embedder = None
+        self._initialize_simple_embedder()
+        
+        # RAG Chain 초기화 (LangChain 사용 시)
         self.rag_chain = None
         self._initialize_chain()
     
+    def _initialize_simple_embedder(self):
+        """GPT 및 Simple Text Embedder 초기화 (개선된 버전)"""
+        embedder_initialized = False
+        
+        # GPT Embedder 우선 시도
+        if self._try_gpt_embedder():
+            embedder_initialized = True
+        
+        # 실패 시 Simple Embedder 백업
+        if not embedder_initialized:
+            self._try_simple_embedder()
+    
+    def _try_gpt_embedder(self) -> bool:
+        """GPT Embedder 초기화 시도"""
+        try:
+            from langchain_pipeline.embedder.gpt_embedder import GPTTextEmbedder
+            gpt_embedder = GPTTextEmbedder()
+            
+            if not gpt_embedder.is_available():
+                logger.warning("OpenAI API 사용 불가 - Simple Embedder로 전환")
+                return False
+            
+            # 기존 임베딩 로드 시도
+            if gpt_embedder.load():
+                logger.info("GPT Text Embedder 로드 완료")
+                self.simple_embedder = gpt_embedder
+                return True
+            
+            # 새로 생성
+            documents = self._load_documents()
+            if documents and gpt_embedder.fit(documents) and gpt_embedder.save():
+                logger.info("GPT 임베딩 생성 및 저장 완료")
+                self.simple_embedder = gpt_embedder
+                return True
+                
+            logger.warning("GPT 임베딩 생성 실패")
+            return False
+            
+        except Exception as e:
+            logger.warning(f"GPT Embedder 초기화 실패: {e}")
+            return False
+    
+    def _try_simple_embedder(self):
+        """Simple Embedder 백업 초기화"""
+        try:
+            from langchain_pipeline.embedder.simple_embedder import SimpleTextEmbedder, create_embeddings_from_documents
+            from pathlib import Path
+            
+            self.simple_embedder = SimpleTextEmbedder()
+            
+            if self.simple_embedder.load():
+                logger.info("Simple Text Embedder 로드 완료 (백업)")
+                return
+            
+            # 새로 생성
+            docs_path = Path("langchain_pipeline/data/documents")
+            if create_embeddings_from_documents(docs_path) and self.simple_embedder.load():
+                logger.info("Simple Text Embedder 생성 및 로드 완료")
+            else:
+                logger.error("Simple Text Embedder 초기화 완전 실패")
+                self.simple_embedder = None
+                
+        except Exception as e:
+            logger.error(f"Simple Text Embedder 초기화 실패: {e}")
+            self.simple_embedder = None
+    
+    def _load_documents(self) -> list:
+        """문서 로드 공통 함수"""
+        from pathlib import Path
+        docs_path = Path("langchain_pipeline/data/documents")
+        documents = []
+        
+        if not docs_path.exists():
+            logger.warning(f"문서 폴더가 존재하지 않음: {docs_path}")
+            return documents
+        
+        for txt_file in docs_path.glob("*.txt"):
+            try:
+                content = txt_file.read_text(encoding='utf-8')
+                if content.strip():  # 빈 파일 제외
+                    documents.append(content)
+            except Exception as e:
+                logger.warning(f"문서 로드 실패 {txt_file}: {e}")
+                
+        logger.info(f"총 {len(documents)}개 문서 로드됨")
+        return documents
+
     def _initialize_chain(self):
-        """RAG Chain 초기화"""
+        """RAG Chain 초기화 (LangChain 사용 시)"""
         try:
             from langchain_pipeline.chains.rag_chain import RAGChain
             # RAG Chain에 서비스들 전달
-            self.rag_chain = RAGChain(
-                prompt_engineer=self.prompt_engineer,
-                openai_service=self.openai_service,
-                conversion_service=self.conversion_service
-            )
+            self.rag_chain = RAGChain()
             logger.info("RAG Chain 초기화 완료")
         except ImportError as e:
-            logger.error(f"RAG Chain import 실패: {e}")
+            logger.warning(f"RAG Chain import 실패 (LangChain 없음): {e}")
             self.rag_chain = None
         except Exception as e:
             logger.error(f"RAG Chain 초기화 실패: {e}")
             self.rag_chain = None
+    
+    def _get_timestamp(self):
+        """현재 타임스탬프 반환"""
+        return datetime.now().isoformat()
     
     def ingest_documents(self, folder_path: str) -> Dict[str, Any]:
         """
@@ -90,7 +182,7 @@ class RAGService:
                           query: str, 
                           context: Optional[str] = None) -> Dict[str, Any]:
         """
-        단일 질의응답 (스타일 변환 없음)
+        단일 질의응답 (Simple Embedder 또는 RAG Chain 사용)
         
         Args:
             query: 질문
@@ -99,54 +191,135 @@ class RAGService:
         Returns:
             질의응답 결과
         """
-        if not self.rag_chain:
-            return {
-                "success": False,
-                "answer": "RAG 서비스가 초기화되지 않았습니다.",
-                "sources": [],
-                "metadata": {
-                    "query_timestamp": self._get_timestamp(),
-                    "model_used": "none"
-                }
-            }
+        base_metadata = {
+            "query_timestamp": self._get_timestamp(),
+            "query_type": "document_search",
+            "query_length": len(query),
+            "context_provided": bool(context)
+        }
         
         try:
-            logger.info(f"단일 질의응답 요청: {len(query)}자")
+            logger.info(f"단일 질의응답 요청: {len(query)}자, context={bool(context)}")
             
+            # 입력 검증
+            if not query.strip():
+                return self._create_error_response(
+                    "빈 질문은 처리할 수 없습니다.", 
+                    query, context, base_metadata
+                )
+            
+            # GPT/Simple Embedder 우선 사용
+            result = await self._try_embedder_search(query, context, base_metadata)
+            if result:
+                return result
+            
+            # RAG Chain 백업 사용
+            result = await self._try_rag_chain(query, context, base_metadata)
+            if result:
+                return result
+            
+            # 모든 방법 실패
+            return self._create_error_response(
+                "RAG 서비스가 초기화되지 않았습니다.", 
+                query, context, base_metadata
+            )
+            
+        except Exception as e:
+            logger.error(f"단일 질의응답 중 오류: {e}")
+            return self._create_error_response(
+                f"질의응답 중 서버 오류가 발생했습니다: {str(e)}", 
+                query, context, base_metadata
+            )
+    
+    async def _try_embedder_search(self, query: str, context: Optional[str], base_metadata: dict) -> Optional[Dict[str, Any]]:
+        """임베더 검색 시도"""
+        if not self.simple_embedder:
+            return None
+            
+        try:
+            search_results = self.simple_embedder.search(query, top_k=3)
+            
+            if not search_results:
+                logger.warning("임베더 검색 결과 없음")
+                return None
+            
+            # 검색 결과를 답변으로 구성
+            best_match = search_results[0]
+            answer = f"관련 정보를 찾았습니다:\n\n{best_match[0][:300]}..."
+            
+            # 임베딩 모델 타입 확인
+            model_type = "gpt_embedder" if hasattr(self.simple_embedder, 'client') else "simple_embedder"
+            
+            sources = [
+                {
+                    "content": doc[:100] + "..." if len(doc) > 100 else doc,
+                    "similarity": f"{score:.3f}",
+                    "source": f"{'GPT' if model_type == 'gpt_embedder' else 'TF-IDF'} 기반 검색",
+                    "rank": i + 1
+                }
+                for i, (doc, score) in enumerate(search_results)
+            ]
+            
+            return {
+                "success": True,
+                "answer": answer,
+                "original_query": query,
+                "context": context,
+                "sources": sources,
+                "metadata": {
+                    **base_metadata,
+                    "model_used": model_type,
+                    "search_results_count": len(search_results),
+                    "best_similarity": f"{search_results[0][1]:.3f}"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"임베더 검색 오류: {e}")
+            return None
+    
+    async def _try_rag_chain(self, query: str, context: Optional[str], base_metadata: dict) -> Optional[Dict[str, Any]]:
+        """RAG Chain 검색 시도"""
+        if not self.rag_chain:
+            return None
+            
+        try:
             result = self.rag_chain.ask(query, context)
             
-            # ConversionService와 호환되는 형태로 결과 구성
-            formatted_result = {
+            return {
                 "success": result.get("success", False),
                 "answer": result.get("answer", ""),
                 "original_query": query,
                 "context": context,
                 "sources": result.get("sources", []),
+                "error": result.get("answer", "알 수 없는 오류") if not result.get("success") else None,
                 "metadata": {
-                    "query_timestamp": result.get("timestamp", self._get_timestamp()),
-                    "model_used": "gpt-4o + faiss",
-                    "query_type": "single_answer"
+                    **base_metadata,
+                    "model_used": "rag_chain",
+                    "query_type": "single_answer",
+                    "rag_timestamp": result.get("timestamp")
                 }
             }
-            
-            if not result.get("success"):
-                formatted_result["error"] = result.get("answer", "알 수 없는 오류")
-            
-            return formatted_result
             
         except Exception as e:
-            logger.error(f"단일 질의응답 중 오류: {e}")
-            return {
-                "success": False,
-                "error": f"질의응답 중 서버 오류가 발생했습니다: {str(e)}",
-                "answer": "",
-                "original_query": query,
-                "sources": [],
-                "metadata": {
-                    "query_timestamp": self._get_timestamp(),
-                    "model_used": "none"
-                }
+            logger.error(f"RAG Chain 오류: {e}")
+            return None
+    
+    def _create_error_response(self, error_msg: str, query: str, context: Optional[str], metadata: dict) -> Dict[str, Any]:
+        """통일된 에러 응답 생성"""
+        return {
+            "success": False,
+            "error": error_msg,
+            "answer": "",
+            "original_query": query,
+            "context": context,
+            "sources": [],
+            "metadata": {
+                **metadata,
+                "model_used": "none",
+                "error_type": "service_unavailable"
             }
+        }
     
     async def ask_with_styles(self, 
                              query: str, 
@@ -277,7 +450,7 @@ class RAGService:
                     }
             
             # 기본 피드백 처리 (OpenAIService 사용) - ConversionService 로직
-            style_deltas = await self.openai_service.analyze_style_feedback(feedback_text)
+            style_deltas = self.openai_service.analyze_style_feedback(feedback_text)
             
             updated_profile = user_profile.copy()
             
@@ -315,38 +488,12 @@ class RAGService:
             }
     
     def get_status(self) -> Dict[str, Any]:
-        """RAG 서비스 상태 확인"""
+        """RAG 서비스 상태 조회"""
         if not self.rag_chain:
             return {
-                "rag_status": "not_ready",
+                "rag_status": "not_initialized",
                 "doc_count": 0,
-                "services_available": False,
-                "service_initialized": False
+                "services_available": False
             }
         
-        try:
-            status = self.rag_chain.get_status()
-            status["service_initialized"] = True
-            status["openai_service_ready"] = self.openai_service is not None
-            status["prompt_engineer_ready"] = self.prompt_engineer is not None
-            status["conversion_service_ready"] = self.conversion_service is not None
-            status["user_preferences_available"] = self.user_preferences_service is not None
-            return status
-        except Exception as e:
-            logger.error(f"상태 확인 중 오류: {e}")
-            return {
-                "rag_status": "error",
-                "doc_count": 0,
-                "services_available": False,
-                "service_initialized": False,
-                "error": str(e)
-            }
-    
-    def is_available(self) -> bool:
-        """RAG 서비스 사용 가능 여부"""
-        return self.rag_chain is not None
-    
-    def _get_timestamp(self) -> str:
-        """현재 타임스탬프 반환"""
-        from datetime import datetime
-        return datetime.now().isoformat()
+        return self.rag_chain.get_status()
