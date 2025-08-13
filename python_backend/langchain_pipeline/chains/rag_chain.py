@@ -40,25 +40,10 @@ class RAGChain:
         dotenv_path = Path(__file__).resolve().parents[3] / ".env"
         load_dotenv(dotenv_path=dotenv_path)
         
-        # Services 초기화
-        try:
-            from services.prompt_engineering import PromptEngineer
-            from services.openai_services import OpenAIService
-            from services.conversion_service import ConversionService
-            from services.user_preferences import UserPreferencesService
-
-            self.prompt_engineer = PromptEngineer()
-            self.openai_service = OpenAIService()
-            self.conversion_service = ConversionService()
-            self.user_preferences_service = UserPreferencesService()
-            self.services_available = True
-            logger.info("Services 초기화 완료")
-        except ImportError as e:
-            self.services_available = False
-            logger.warning(f"Services import 실패: {e}")
-        except Exception as e:
-            self.services_available = False
-            logger.error(f"Services 인스턴스 생성 실패: {e}")
+        # Services 지연 로딩 (필요시에만 초기화)
+        self.services_available = False
+        self._services_cache = {}
+        self._check_services_availability()
 
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -88,6 +73,45 @@ class RAGChain:
         
         # 자동 초기화 시도
         self._load_vectorstore()
+    
+    def _check_services_availability(self):
+        """Services 가용성 확인 (실제 로드하지 않음)"""
+        try:
+            import services.prompt_engineering
+            import services.openai_services
+            import services.conversion_service
+            import services.user_preferences
+            self.services_available = True
+            logger.info("Services 모듈 가용성 확인 완료")
+        except ImportError as e:
+            self.services_available = False
+            logger.warning(f"Services 모듈 없음: {e}")
+    
+    def _get_service(self, service_name: str):
+        """서비스 지연 로딩"""
+        if service_name in self._services_cache:
+            return self._services_cache[service_name]
+        
+        if not self.services_available:
+            return None
+        
+        try:
+            if service_name == "conversion_service":
+                from services.conversion_service import ConversionService
+                service = ConversionService()
+            elif service_name == "user_preferences_service":
+                from services.user_preferences import UserPreferencesService
+                service = UserPreferencesService()
+            else:
+                return None
+            
+            self._services_cache[service_name] = service
+            logger.info(f"{service_name} 로드 완료")
+            return service
+            
+        except Exception as e:
+            logger.error(f"{service_name} 로드 실패: {e}")
+            return None
     
     def _load_vectorstore(self):
         """기존 인덱스 로드"""
@@ -164,110 +188,119 @@ class RAGChain:
             }
     
     async def ask_with_styles(self, query: str, user_profile: Dict, context: str = "personal") -> Dict:
-        """3가지 스타일 RAG 답변"""
-        if not self.services_available:
-            return {
-                "success": False,
-                "error": "Services가 로드되지 않았습니다.",
-                "converted_texts": {"direct": "", "gentle": "", "neutral": ""}
+        """3가지 스타일 RAG 답변 (개선된 버전)"""
+        error_response = {
+            "success": False,
+            "converted_texts": {"direct": "", "gentle": "", "neutral": ""},
+            "sources": [],
+            "metadata": {
+                "query_timestamp": datetime.now().isoformat(),
+                "model_used": "none"
             }
+        }
+        
+        # ConversionService 지연 로딩
+        conversion_service = self._get_service("conversion_service")
+        if not conversion_service:
+            error_response["error"] = "ConversionService를 로드할 수 없습니다."
+            return error_response
         
         if not self.is_initialized:
-            return {
-                "success": False,
-                "error": "관련 문서를 찾을 수 없습니다.",
-                "converted_texts": {"direct": "", "gentle": "", "neutral": ""}
-            }
+            error_response["error"] = "RAG 시스템이 초기화되지 않았습니다."
+            return error_response
         
         try:
-            # 문서 검색 (인라인화)
+            # 문서 검색
             docs = self.retriever.get_relevant_documents(query)
             if not docs:
-                return {
-                    "success": False,
-                    "error": "관련 문서를 찾을 수 없습니다.",
-                    "converted_texts": {"direct": "", "gentle": "", "neutral": ""}
-                }
+                error_response["error"] = "관련 문서를 찾을 수 없습니다."
+                return error_response
             
-            # 검색된 문서를 텍스트로 결합
+            # 검색된 문서를 컨텍스트로 구성
             context_parts = []
+            sources = []
+            
             for i, doc in enumerate(docs, 1):
-                source = doc.metadata.get("source", "Unknown")
+                source = doc.metadata.get("source", f"문서_{i}")
                 content = doc.page_content
-                context_parts.append(f"[문서 {i}] ({source}):\n{content}")
+                context_parts.append(f"[참고문서 {i}] ({source}):\n{content}")
+                
+                sources.append({
+                    "content": content[:100] + "..." if len(content) > 100 else content,
+                    "source": source,
+                    "rank": i
+                })
             
             retrieved_docs = "\n\n".join(context_parts)
             enhanced_input = f"질문: {query}\n\n참고문서:\n{retrieved_docs}"
             
-            # 기존 ConversionService 활용
-            result = await self.conversion_service.convert_text(
+            # ConversionService로 스타일 변환
+            result = await conversion_service.convert_text(
                 input_text=enhanced_input,
                 user_profile=user_profile,
                 context=context
             )
             
-            # RAG 소스 문서 정보 추가
+            # RAG 관련 정보 추가
             if result.get("success"):
-                sources = [
-                    {
-                        "content": doc.page_content[:100] + "...",
-                        "source": doc.metadata.get("source", "Unknown")
-                    }
-                    for doc in docs
-                ]
                 result["sources"] = sources
-                result["rag_context"] = retrieved_docs[:200] + "..." if len(retrieved_docs) > 200 else retrieved_docs
+                result["rag_context"] = retrieved_docs[:300] + "..." if len(retrieved_docs) > 300 else retrieved_docs
+                result["metadata"]["documents_retrieved"] = len(docs)
+                result["metadata"]["model_used"] = "gpt-4o + faiss"
             
             return result
             
         except Exception as e:
-            return {
-                "success": False,
-                "error": f"스타일 변환 중 오류 발생: {str(e)}",
-                "converted_texts": {"direct": "", "gentle": "", "neutral": ""}
-            }
+            logger.error(f"스타일 변환 중 오류: {e}")
+            error_response["error"] = f"스타일 변환 중 오류 발생: {str(e)}"
+            return error_response
         
     async def process_user_feedback(self,
                                    feedback_text: str,
                                    user_profile: Dict[str, Any],
                                    rating: Optional[int] = None,
                                    selected_version: str = "neutral") -> Dict[str, Any]:
-        """사용자 피드백 처리 - 고급/기본 처리 선택"""
+        """사용자 피드백 처리 - 고급/기본 처리 선택 (개선된 버전)"""
         try:
-            # 고급 처리 (UserPreferencesService 사용)
-            if self.user_preferences_service and rating:
-                user_id = user_profile.get('userId', 'unknown')
-                success = await self.user_preferences_service.adapt_user_style(
-                    user_id=user_id,
-                    feedback_text=feedback_text,
-                    rating=rating,
-                    selected_version=selected_version
-                )
-                
-                if success:
-                    updated_profile = user_profile.copy()
-                    logger.info(f"고급 피드백 처리 완료: user_id={user_id}, rating={rating}")
-                    return {
-                        "success": True,
-                        "updated_profile": updated_profile,
-                        "style_adjustments": {"advanced_learning": True},
-                        "feedback_processed": feedback_text,
-                        "processing_method": "user_preferences_service"
-                    }
+            # 고급 처리 시도 (UserPreferencesService)
+            if rating is not None:
+                user_preferences_service = self._get_service("user_preferences_service")
+                if user_preferences_service:
+                    user_id = user_profile.get('userId', 'unknown')
+                    success = await user_preferences_service.adapt_user_style(
+                        user_id=user_id,
+                        feedback_text=feedback_text,
+                        rating=rating,
+                        selected_version=selected_version
+                    )
+                    
+                    if success:
+                        logger.info(f"고급 피드백 처리 완료: user_id={user_id}, rating={rating}")
+                        return {
+                            "success": True,
+                            "updated_profile": user_profile.copy(),
+                            "style_adjustments": {"advanced_learning": True},
+                            "feedback_processed": feedback_text,
+                            "processing_method": "user_preferences_service"
+                        }
             
-            # 기본 처리 (ConversionService 사용)
-            if not self.services_available or not self.conversion_service:
+            # 기본 처리 (ConversionService)
+            conversion_service = self._get_service("conversion_service")
+            if not conversion_service:
                 return {
                     "success": False,
                     "error": "피드백 처리 서비스가 초기화되지 않았습니다.",
-                    "updated_profile": user_profile
+                    "updated_profile": user_profile,
+                    "processing_method": "none"
                 }
             
             # ConversionService의 기본 피드백 처리 활용
-            return await self.conversion_service.process_user_feedback(
+            result = await conversion_service.process_user_feedback(
                 feedback_text=feedback_text,
                 user_profile=user_profile
             )
+            result["processing_method"] = "conversion_service"
+            return result
             
         except Exception as e:
             logger.error(f"피드백 처리 오류: {e}")
