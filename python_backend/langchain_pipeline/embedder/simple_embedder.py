@@ -25,7 +25,7 @@ class SimpleTextEmbedder:
         Args:
             save_path: 임베딩 인덱스 저장 경로
         """
-        self.save_path = save_path or Path("python_backend/langchain_pipeline/data/simple_embeddings")
+        self.save_path = save_path or Path("langchain_pipeline/data/simple_embeddings")
         self.save_path.mkdir(parents=True, exist_ok=True)
         
         # 문서 저장소
@@ -272,7 +272,7 @@ def create_embeddings_from_documents(documents_path: Path) -> bool:
 
 if __name__ == "__main__":
     # 테스트 코드
-    docs_path = Path("python_backend/langchain_pipeline/data/documents")
+    docs_path = Path("langchain_pipeline/data/documents")
     
     if create_embeddings_from_documents(docs_path):
         print("임베딩 생성 성공")
