@@ -76,16 +76,28 @@ class RAGChain:
     
     def _check_services_availability(self):
         """Services 가용성 확인 (실제 로드하지 않음)"""
+        import importlib.util
+        
+        required_modules = [
+            "services.prompt_engineering",
+            "services.openai_services", 
+            "services.conversion_service",
+            "services.user_preferences"
+        ]
+        
         try:
-            import services.prompt_engineering
-            import services.openai_services
-            import services.conversion_service
-            import services.user_preferences
+            for module_name in required_modules:
+                spec = importlib.util.find_spec(module_name)
+                if spec is None:
+                    self.services_available = False
+                    logger.warning(f"Services 모듈 없음: {module_name}")
+                    return
+            
             self.services_available = True
             logger.info("Services 모듈 가용성 확인 완료")
-        except ImportError as e:
+        except Exception as e:
             self.services_available = False
-            logger.warning(f"Services 모듈 없음: {e}")
+            logger.warning(f"Services 모듈 가용성 확인 실패: {e}")
     
     def _get_service(self, service_name: str):
         """서비스 지연 로딩"""

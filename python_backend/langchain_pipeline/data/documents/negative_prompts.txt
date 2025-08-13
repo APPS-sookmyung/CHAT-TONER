@@ -109,3 +109,16 @@
 4. 반복적 표현
 5. 불필요한 수식어
 6. 감정 과장
+
+## 시스템 키-엔지니어링 선호도 매핑
+
+### 부정 프롬프트 시스템 키 매핑
+- avoidFloweryLanguage: "불필요한 수식어 제거" 규칙 적용
+- avoidRepetitiveWords: "반복적 표현 방지" 규칙 적용
+- avoidChatGPTStyle: "ChatGPT 스타일 방지" 규칙 적용
+- avoidExcessivePoliteness: "과도한 정중함 방지" 규칙 적용
+- avoidVagueExpressions: "모호한 표현 방지" 규칙 적용
+- avoidEmotionalExaggeration: "감정 과장 방지" 규칙 적용
+- prioritizeClarity: "명확한 표현" 규칙 강화 적용
+- maintainProfessionalism: "비즈니스 환경" 부정 프롬프트 적용
+- adaptToContext: 문맥별 부정 프롬프트 동적 선택

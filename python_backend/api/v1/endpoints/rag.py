@@ -4,7 +4,7 @@ RAG (Retrieval-Augmented Generation) Endpoints
 """
 
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Annotated
 from pydantic import BaseModel
 from pathlib import Path
 
@@ -49,14 +49,14 @@ def get_rag_service():
         from services.rag_service import RAGService
         return RAGService()
     except ImportError as e:
-        raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"RAG 서비스 초기화 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"RAG 서비스 초기화 실패: {str(e)}") from e
 
 @router.post("/rag/ingest", response_model=DocumentIngestResponse)
 async def ingest_documents(
     request: DocumentIngestRequest,
-    rag_service = Depends(get_rag_service)
+    rag_service: Annotated[object, Depends(get_rag_service)]
 ) -> DocumentIngestResponse:
     """문서 폴더에서 RAG 벡터 DB 생성"""
     try:
@@ -81,7 +81,7 @@ async def ingest_documents(
 @router.post("/rag/ask", response_model=RAGQueryResponse)
 async def ask_rag_question(
     request: RAGQueryRequest,
-    rag_service = Depends(get_rag_service)
+    rag_service: Annotated[object, Depends(get_rag_service)]
 ) -> RAGQueryResponse:
     """RAG 기반 질의응답"""
     try:
@@ -125,7 +125,7 @@ async def ask_rag_question(
         raise HTTPException(status_code=500, detail=f"질의응답 중 오류가 발생했습니다: {str(e)}")
 
 @router.get("/rag/status", response_model=RAGStatusResponse)
-async def get_rag_status(rag_service = Depends(get_rag_service)) -> RAGStatusResponse:
+async def get_rag_status(rag_service: Annotated[object, Depends(get_rag_service)]) -> RAGStatusResponse:
     """RAG 시스템 상태 확인"""
     try:
         status = rag_service.get_status()
@@ -144,7 +144,7 @@ async def get_rag_status(rag_service = Depends(get_rag_service)) -> RAGStatusRes
 @router.post("/rag/analyze-grammar")
 async def analyze_text_grammar(
     request: RAGQueryRequest,
-    rag_service = Depends(get_rag_service)
+    rag_service: Annotated[object, Depends(get_rag_service)]
 ) -> RAGQueryResponse:
     """RAG 기반 문법 분석 (GPT 대신 문서 기반)"""
     try:
@@ -179,7 +179,7 @@ async def analyze_text_grammar(
 @router.post("/rag/suggest-expressions")
 async def suggest_better_expressions(
     request: RAGQueryRequest,
-    rag_service = Depends(get_rag_service)
+    rag_service: Annotated[object, Depends(get_rag_service)]
 ) -> RAGQueryResponse:
     """RAG 기반 표현 개선 제안"""
     try:

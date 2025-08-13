@@ -248,7 +248,8 @@ class RAGService:
             answer = f"관련 정보를 찾았습니다:\n\n{best_match[0][:300]}..."
             
             # 임베딩 모델 타입 확인
-            model_type = "gpt_embedder" if hasattr(self.simple_embedder, 'client') else "simple_embedder"
+            from langchain_pipeline.embedder.gpt_embedder import GPTTextEmbedder
+            model_type = "gpt_embedder" if isinstance(self.simple_embedder, GPTTextEmbedder) else "simple_embedder"
             
             sources = [
                 {
@@ -292,7 +293,7 @@ class RAGService:
                 "original_query": query,
                 "context": context,
                 "sources": result.get("sources", []),
-                "error": result.get("answer", "알 수 없는 오류") if not result.get("success") else None,
+                "error": result.get("error", "알 수 없는 오류") if not result.get("success") else None,
                 "metadata": {
                     **base_metadata,
                     "model_used": "rag_chain",
