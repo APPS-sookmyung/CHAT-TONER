@@ -16,9 +16,9 @@ from .openai_services import OpenAIService
 class ConversionService:
     """텍스트 변환 메인 서비스 클래스"""
     
-    def __init__(self):
-        self.prompt_engineer = PromptEngineer()
-        self.openai_service = OpenAIService()
+    def __init__(self, prompt_engineer=None, openai_service=None):
+        self.prompt_engineer = prompt_engineer or PromptEngineer()
+        self.openai_service = openai_service or OpenAIService()
     
     async def convert_text(self, 
                           input_text: str,
@@ -84,6 +84,7 @@ class ConversionService:
                 }
             }
     
+    #비동기 피드백 처리 함수
     async def process_user_feedback(self, 
                                    feedback_text: str,
                                    user_profile: Dict[str, Any]) -> Dict[str, Any]:
