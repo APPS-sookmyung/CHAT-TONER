@@ -82,7 +82,7 @@ def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_stor
     openai_service = OpenAIService()
     return UserPreferencesService(db, openai_service)
 
-@router.get("/profile/{user_id}", response_model=ProfileResponse, summary="사용자 프로필 조회", description="사용자의 개인화 설정을 조회합니다.")
+@router.get("/{user_id}", response_model=ProfileResponse, summary="사용자 프로필 조회", description="사용자의 개인화 설정을 조회합니다.")
 async def get_user_profile(
     user_id: str,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)
@@ -130,7 +130,7 @@ async def get_user_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"프로필 조회 실패: {str(e)}")
 
-@router.post("/profile", response_model=ProfileResponse, summary="사용자 프로필 저장", description="사용자의 개인화 설정을 저장합니다.")
+@router.post("", response_model=ProfileResponse, summary="사용자 프로필 저장", description="사용자의 개인화 설정을 저장합니다.")
 async def save_user_profile(
     profile: ProfileRequest,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)

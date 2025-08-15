@@ -34,7 +34,7 @@ def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_stor
     openai_service = OpenAIService()
     return UserPreferencesService(db, openai_service)
 
-@router.post("/feedback")
+@router.post("")
 async def submit_feedback(
     feedback: FeedbackRequest,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)
@@ -74,7 +74,7 @@ async def submit_feedback(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"피드백 처리 실패: {str(e)}")
 
-@router.get("/feedback/stats/{user_id}")
+@router.get("/stats/{user_id}")
 async def get_feedback_stats(user_id: str) -> Dict[str, Any]:
     """사용자의 피드백 통계 조회"""
     try:
