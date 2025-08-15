@@ -31,7 +31,6 @@ def test_should_use_lora():
     print("=" * 40)
     
     try:
-        from finetune_chain import FinetuneChain
         chain = FinetuneChain.__new__(FinetuneChain)
         
         test_cases = [
@@ -383,8 +382,8 @@ async def test_finetune_chain():
     
     for test in condition_tests:
         should_use = finetune_chain._should_use_lora(test['profile'], test['context'])
-        status = "통과" if should_use == test['should_use_lora'] else "실패"
-        print(f"[{status}] {test['name']}: LoRA 사용 {should_use} (예상: {test['should_use_lora']})")
+        label = "통과" if should_use == test['should_use_lora'] else "실패"
+        print(f"[{label}] {test['name']}: LoRA 사용 {should_use} (예상: {test['should_use_lora']})")
     
     # 7. 성능 및 메모리 정보
     print(f"\n성능 정보")

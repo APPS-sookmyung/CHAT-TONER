@@ -4,13 +4,14 @@
 """
 
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Literal
+from datetime import datetime
 
 class FinetuneRequest(BaseModel):
     """파인튜닝 변환 요청 모델"""
     text: str = Field(..., description="변환할 원본 텍스트", min_length=1, max_length=5000)
     user_profile: Dict[str, Any] = Field(..., description="사용자 프로필 정보")
-    context: str = Field(default="business", description="변환 컨텍스트 (business, report, personal)")
+    context: Literal["business", "report", "personal"] = Field(default="business", description="변환 컨텍스트 (business, report, personal)")
     force_convert: bool = Field(default=False, description="강제 변환 여부 (사용자 명시적 요청)")
     
     class Config:
@@ -37,7 +38,8 @@ class FinetuneResponse(BaseModel):
     reason: str = Field(..., description="변환 수행/미수행 이유")
     forced: bool = Field(default=False, description="강제 변환 여부")
     error: Optional[str] = Field(default=None, description="오류 메시지 (실패 시)")
-    timestamp: Optional[str] = Field(default=None, description="변환 완료 시간")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="추가 메타데이터 (프롬프트, 모델 정보 등)")
+    timestamp: Optional[datetime] = Field(default=None, description="변환 완료 시간")
     
     class Config:
         schema_extra = {
@@ -49,6 +51,11 @@ class FinetuneResponse(BaseModel):
                 "reason": "auto_condition",
                 "forced": False,
                 "error": None,
+                "metadata": {
+                    "prompts_used": ["formal_document_conversion"],
+                    "conversion_timestamp": "2025-01-15T10:30:00",
+                    "model_used": "gemma-2-2b-it + gpt-4o"
+                },
                 "timestamp": "2025-01-15T10:30:00"
             }
         }

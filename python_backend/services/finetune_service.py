@@ -13,17 +13,13 @@ logger = logging.getLogger('chattoner')
 class FinetuneService:
     """파인튜닝 모델을 활용한 공식 문서 변환 서비스"""
     
-    def __init__(self, user_preferences_service=None):
+    def __init__(self, prompt_engineer=None, openai_service=None, user_preferences_service=None):
         self.inference_url = "http://localhost:8010"
-        """파인튜닝 서비스 초기화 - ConversionService와 동일한 패턴"""
-        # 직접 생성 (ConversionService 패턴)
+        # prefer injected services; fall back to defaults
         from services.prompt_engineering import PromptEngineer
         from services.openai_services import OpenAIService
-        
-        self.prompt_engineer = PromptEngineer()
-        self.openai_service = OpenAIService()
-        
-        # 선택적 주입 (향후 확장용)
+        self.prompt_engineer = prompt_engineer or PromptEngineer()
+        self.openai_service = openai_service or OpenAIService()
         self.user_preferences_service = user_preferences_service
         
         # FinetuneChain 초기화
@@ -197,7 +193,7 @@ class FinetuneService:
                     }
             
             # 기본 피드백 처리 (OpenAIService 사용)
-            style_deltas = await self.openai_service.analyze_style_feedback(feedback_text)
+            style_deltas = self.openai_service.analyze_style_feedback(feedback_text)
             
             # 사용자 프로필 업데이트 (기존 ConversionService 로직)
             updated_profile = user_profile.copy()

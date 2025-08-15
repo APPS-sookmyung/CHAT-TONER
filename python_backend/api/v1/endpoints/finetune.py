@@ -49,24 +49,31 @@ async def generate_with_model_only(
         result = await finetune_service.generate_with_finetuned_model_only(
             input_text=request.text
         )
-        
-        return FinetuneResponse(**result)
+
+        response_payload = {
+            "reason": "finetuned_model_only",
+            "forced": False,
+            "timestamp": (result.get("metadata", {}) or {}).get("conversion_timestamp"),
+            **result,
+        }
+        return FinetuneResponse(**response_payload)
         
     except ValueError as ve:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(ve)
-        )
+        ) from ve
+    
     except Exception as e:
         logger.error(f"순수 모델 생성 실패: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="모델 생성 중 오류가 발생했습니다."
-        )
+        ) from e
     
 @router.post("/convert", response_model=FinetuneResponse)
 @inject
-async def convert_text(
+async def convert_to_formal(
     request: FinetuneRequest,
     finetune_service: Annotated[
         FinetuneService, 
