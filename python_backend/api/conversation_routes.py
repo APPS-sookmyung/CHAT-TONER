@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Any, Optional
 from ..services.conversion_service import ConversionService
 
-router = APIRouter(prefix="/api/conversion", tags=["conversion"])
+router = APIRouter(prefix="/conversion", tags=["conversion"])
 
 class ConversionRequest(BaseModel):
     text: str

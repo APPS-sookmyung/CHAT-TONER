@@ -13,19 +13,26 @@ class ConversionRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "text": "안녕하세요! 비즈니스 이메일 작성을 도와주세요.",
-                "user_profile": {"formality_level": 4},
+                "text": "회의 자료 검토 부탁드립니다",
+                "user_profile": {
+                    "baseFormalityLevel": 3,
+                    "baseFriendlinessLevel": 4,
+                    "baseEmotionLevel": 2,
+                    "baseDirectnessLevel": 3
+                },
                 "context": "business",
-                "negative_preferences": {"avoid_flowery_language": "strict"}
+                "negative_preferences": {"avoidFloweryLanguage": "strict"}
             }
         }
 
 class ConversionResponse(BaseModel):
     """텍스트 변환 응답 모델"""
     success: bool
-    converted_text: Optional[str] = None
-    variations: Optional[Dict[str, str]] = None
+    original_text: Optional[str] = None
+    converted_texts: Optional[Dict[str, str]] = None  # {"direct": "...", "gentle": "...", "neutral": "..."}
+    context: Optional[str] = None
     sentiment_analysis: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
 
 class FeedbackRequest(BaseModel):
