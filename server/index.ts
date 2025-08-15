@@ -10,7 +10,8 @@ const PORT = 5000;
 app.use(express.json());
 
 // Python 백엔드 URL
-const PYTHON_BACKEND_URL = "http://127.0.0.1:5001";
+const PYTHON_BACKEND_URL =
+  process.env.FASTAPI_URL ?? "http://127.0.0.1:5001";
 
 // 안전한 헤더 필터링
 function filterHeaders(headers: any) {
