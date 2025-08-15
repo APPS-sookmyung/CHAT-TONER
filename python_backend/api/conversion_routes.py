@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Dict,  Any, Optional
 from services.conversion_service import ConversionService
+from core.config import get_settings
 
 router = APIRouter(prefix="/api/conversion", tags=["conversion"])
 
@@ -127,7 +128,7 @@ async def health_check():
         "status": "ok",
         "service": "chat-toner-fastapi",
         "openai_available": openai_client is not None,
-        "openai_key_exists": bool(os.getenv("OPENAI_API_KEY")),
+        "openai_key_exists": bool(get_settings().OPENAI_API_KEY),
         "prompt_engineering_available": PROMPT_ENGINEERING_AVAILABLE,
         "python_version": sys.version,
         "features": {

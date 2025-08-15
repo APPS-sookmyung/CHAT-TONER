@@ -7,6 +7,7 @@ import os
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Dict, Any
+from core.config import get_settings
 
 router = APIRouter()
 
@@ -50,15 +51,16 @@ async def health_check() -> HealthResponse:
     - **프롬프트 엔지니어링 서비스 상태**  
     - **사용 가능한 기능 목록**
     """
+    settings = get_settings()
     return HealthResponse(
         status="ok",
         service="chat-toner-fastapi",
-        openai_available=bool(os.getenv("OPENAI_API_KEY")),
+        openai_available=bool(settings.OPENAI_API_KEY),
         prompt_engineering_available=True,
         features={
             "basic_conversion": True,
             "advanced_prompts": True,
-            "openai_integration": bool(os.getenv("OPENAI_API_KEY")),
+            "openai_integration": bool(settings.OPENAI_API_KEY),
             "rag_chains": True,
             "finetune_service": True
         }

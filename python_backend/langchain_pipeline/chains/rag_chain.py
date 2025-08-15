@@ -26,9 +26,9 @@ from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from dotenv import load_dotenv
-
+from core.config import get_settings 
 from langchain_pipeline.retriever.vector_db import ingest_documents_from_folder, FAISS_INDEX_PATH, get_embedding
-
+settings = get_settings()
 # 로거 설정
 logger = logging.getLogger(__name__)
 
@@ -44,10 +44,9 @@ class RAGChain:
         self.services_available = False
         self._services_cache = {}
         self._check_services_availability()
-
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
+    api_key = settings.OPENAI_API_KEY
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY가 설정되지 않았습니다")
         
         self.llm = ChatOpenAI(
             model=model_name,

@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Optional, Any
 import numpy as np
 from openai import OpenAI
+from core.config import get_settings
+settings = get_settings()
 
 logger = logging.getLogger(__name__)
 
@@ -33,18 +35,19 @@ class GPTTextEmbedder:
     def _initialize_client(self):
         """OpenAI 클라이언트 초기화"""
         try:
-            api_key = os.getenv('OPENAI_API_KEY')
-            if not api_key:
-                logger.error("OPENAI_API_KEY 환경 변수가 설정되지 않았습니다")
-                return
+            # .env 파일에서 API 키 로드
+            dotenv_path = Path(__file__).resolve().parents[3] / ".env"
+            if dotenv_path.exists():
+                from dotenv import load_dotenv
+                load_dotenv(dotenv_path=dotenv_path)
             
-            self.client = OpenAI(api_key=api_key)
-            logger.info("OpenAI 클라이언트 초기화 완료")
-            
+            from core.config import get_settings
+            settings = get_settings()
         except Exception as e:
             logger.error(f"OpenAI 클라이언트 초기화 실패: {e}")
-            self.client = None
-    
+            return
+    api_key = settings.OPENAI_API_KEY
+
     def _get_embedding(self, text: str) -> Optional[List[float]]:
         """텍스트의 GPT 임베딩 생성"""
         if not self.client:
