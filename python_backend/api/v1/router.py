@@ -1,55 +1,24 @@
 """
-api/v1 라우터 설정
-- FastAPI 애플리케이션의 API 버전 1 라우터 설정
-- 이 파일은 API 엔드포인트를 모듈화하여 관리하기 위한 라우터 설정 
-- 각 API 엔드포인트는 별도의 모듈로 분리되어 있으며, 이 파일에서 라우터를 포함
-
-라우터 관련 로직을 한 곳에 모으고 복수의 endpoint 파일을 router.py 에서 한번에 import 및 
-등록하게 만듦
-
-주의: 각각 파일 내부에 router= APIRouter() 를 선언해야 함
+Main API Router
+모든 엔드포인트를 통합하는 메인 라우터
 """
 
 from fastapi import APIRouter
-from api.v1.endpoints.health import router as health_router
-from api.v1.endpoints.conversion import router as conversion_router
-from api.v1.endpoints.user import router as user_router
-from api.v1.endpoints.feedback import router as feedback_router
-from api.v1.endpoints.quality import router as quality_router
 
-api_router=APIRouter()
-# v1전체의 라우팅 집합 
-# v1 대표 라우터
+# 개별 엔드포인트 라우터들 import
+from .endpoints import conversion, health, profile, quality, feedback, rag
+
+# 메인 API 라우터 생성
+api_router = APIRouter()
+
+# Health check (루트 레벨)
+api_router.include_router(health.router, tags=["health"])
 
 
-#health 파일 내 router=APIRouter() 로 선언된 라우터 객체
+# API v1 엔드포인트들 (중복된 "/api" 프리픽스 제거)
+api_router.include_router(conversion.router, prefix="/conversion", tags=["conversion"])
+api_router.include_router(profile.router, prefix="/profile", tags=["profile"])
+api_router.include_router(quality.router, prefix="/quality", tags=["quality"])
+api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
+api_router.include_router(rag.router, prefix="/rag", tags=["rag"])
 
-api_router.include_router(
-    health_router,
-    prefix="/health",
-    tags=["Health Check"]
-)
-
-api_router.include_router(
-    conversion_router,
-    prefix="/conversion",
-    tags=["Text Conversion"]
-)
-
-api_router.include_router(
-    user_router,
-    prefix="/user",
-    tags=["User Management"]
-)
-
-api_router.include_router(
-    feedback_router,
-    prefix="/feedback",
-    tags=["Feedback"]
-)
-
-api_router.include_router(
-    quality_router,
-    prefix="/quality",
-    tags=["Quality Analysis"]
-)

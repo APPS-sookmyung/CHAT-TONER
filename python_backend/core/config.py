@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     
     # 데이터베이스 설정
     DATABASE_URL: str = "sqlite:///./chat_toner.db"
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_NAME: str = "chattoner_db"
+    DB_USER: str = "username"
+    DB_PASSWORD: str = "password"
     
     # CORS 설정
     CORS_ORIGINS: list = ["*"]
