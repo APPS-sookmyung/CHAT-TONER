@@ -45,9 +45,12 @@ async def convert_text(
     try:
         result = await conversion_service.convert_text(
             input_text=request.text,
-            user_profile=request.user_profile,
+            user_profile=request.user_profile.model_dump(),
             context=request.context,
-            negative_preferences=request.negative_preferences
+            negative_preferences=(
+                request.negative_preferences.model_dump()
+                if request.negative_preferences is not None else None
+            )
         )
         
         return ConversionResponse(**result)
