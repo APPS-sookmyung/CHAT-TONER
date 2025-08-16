@@ -14,10 +14,11 @@ api_router = APIRouter()
 # Health check (루트 레벨)
 api_router.include_router(health.router, tags=["health"])
 
-# API v1 엔드포인트들
-api_router.include_router(conversion.router, prefix="/api", tags=["conversion"])
-api_router.include_router(profile.router, prefix="/api", tags=["profile"])
-api_router.include_router(quality.router, prefix="/api", tags=["quality"])
-api_router.include_router(feedback.router, prefix="/api", tags=["feedback"])
-api_router.include_router(rag.router, prefix="/api", tags=["rag"])
-api_router.include_router(finetune.router, prefix="/api", tags=["finetune"])
+# API v1 엔드포인트들 (중복된 "/api" 프리픽스 제거)
+api_router.include_router(conversion.router, prefix="/conversion", tags=["conversion"])
+api_router.include_router(profile.router, prefix="/profile", tags=["profile"])
+api_router.include_router(quality.router, prefix="/quality", tags=["quality"])
+api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
+api_router.include_router(rag.router, prefix="/rag", tags=["rag"])
+api_router.include_router(finetune.router, prefix="/finetune", tags=["finetune"])
+
