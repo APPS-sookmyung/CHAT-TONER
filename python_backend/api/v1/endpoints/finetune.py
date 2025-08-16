@@ -46,16 +46,23 @@ async def generate_with_model_only(
                 detail="입력 텍스트를 입력해주세요."
             )
         
+        if len(request.text) > 5000:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="텍스트가 너무 깁니다. 5000자 이하로 입력해주세요."
+            )
+        
         result = await finetune_service.generate_with_finetuned_model_only(
             input_text=request.text
         )
 
         response_payload = {
+            **result,
             "reason": "finetuned_model_only",
             "forced": False,
-            "timestamp": (result.get("metadata", {}) or {}).get("conversion_timestamp"),
-            **result,
+            "timestamp": (result.get("metadata", {}) or {}).get("conversion_timestamp", result.get("timestamp")),
         }
+
         return FinetuneResponse(**response_payload)
         
     except ValueError as ve:

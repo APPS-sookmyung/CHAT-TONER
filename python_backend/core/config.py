@@ -3,6 +3,7 @@
 from pydantic_settings import BaseSettings
 import os
 from functools import lru_cache
+from pydantic import Field
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
@@ -16,7 +17,7 @@ class Settings(BaseSettings):
     PORT: int = 5001
     
     #파인 튜닝 추론 서버 설정
-    FINETUNE_INFERENCE_HOST: str = os.getenv("RUNPOD_IP", "localhost")
+    FINETUNE_INFERENCE_HOST: str = Field(default="localhost", validation_alias="RUNPOD_IP")
     FINETUNE_INFERENCE_PORT: int = 8010
     
     @property

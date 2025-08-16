@@ -5,7 +5,6 @@
 
 import logging
 from typing import Dict, Any, Optional
-from pathlib import Path
 import httpx
 
 logger = logging.getLogger('chattoner')
@@ -319,12 +318,12 @@ class FinetuneService:
                 "original_text": input_text,
                 "converted_text": result["result"],
                 "method": "finetuned_model_only",
-                "reason": "direct_generation",
+                "reason": "finetuned_model_only",
                 "forced": False,
                 "timestamp": self._get_timestamp(),
                 "metadata": {
-                    "prompt_length": result["prompt_length"],
-                    "generated_length": result["generated_length"],
+                    "prompt_length": result.get("prompt_length"),
+                    "generated_length": result.get("generated_length"),
                     "conversion_timestamp": self._get_timestamp(),
                     "model_used": "gemma-2-2b-it-lora"
                 }

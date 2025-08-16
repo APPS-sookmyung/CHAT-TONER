@@ -117,7 +117,7 @@ async def test_force_convert():
             )
             
             if result_normal['success']:
-                print(f"일반 변환: [성공] (예상치 못함)")
+                print("일반 변환: [성공] (예상치 못함)")
                 print(f"   결과: {result_normal['converted_text']}")
             else:
                 print(f"일반 변환: [실패] {result_normal['error']}")
@@ -168,7 +168,7 @@ async def test_convenience_method():
         )
         
         if result['success']:
-            print(f"[성공] 편의 메서드")
+            print("[성공] 편의 메서드")
             print(f"원본: {test_input}")
             print(f"변환: {result['converted_text']}")
             print(f"강제 변환: {result['forced']}")
@@ -389,7 +389,9 @@ async def test_finetune_chain():
     print("\n성능 정보")
     print("=" * 40)
     
-    if status['device'] == 'cuda':
+    device = status.get('device', 'unknown')
+    if device == 'cuda':
+        # 로컬 GPU 정보만 조회
         try:
             import torch
             print(f"GPU 메모리 사용량: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")

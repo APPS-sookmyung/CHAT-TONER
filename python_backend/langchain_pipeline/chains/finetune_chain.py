@@ -13,16 +13,14 @@ LoRA 파인튜닝 모델을 활용한 공식 문서 변환 체인 - HTTP 클라�
 import sys
 import logging
 from pathlib import Path
-import os
 from typing import Dict, Optional
 from datetime import datetime
-import requests
+import httpx
 
 # 프로젝트 경로 설정
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
 # 로거 설정
@@ -65,32 +63,21 @@ class FinetuneChain:
         except Exception as e:
             self.services_available = False
             logger.error(f"Services 인스턴스 생성 실패: {e}")
-        """
-        # OpenAI LLM 설정
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
-        
-        self.llm = ChatOpenAI(
-            model=model_name,
-            temperature=temperature,
-            api_key=api_key
-        )"""
-        
+     
         # 런팟 서버 연결 상태 확인
         self.is_inference_server_available = self._check_inference_server()
     
     def _check_inference_server(self) -> bool:
         """런팟 추론 서버 연결 상태 확인"""
         try:
-            response = requests.get(f"{self.inference_url}/health", timeout=5)
+            response = httpx.get(f"{self.inference_url}/health", timeout=5.0)
             if response.status_code == 200:
                 logger.info("런팟 추론 서버 연결 성공")
                 return True
             else:
                 logger.warning(f"런팟 추론 서버 응답 오류: {response.status_code}")
                 return False
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             logger.warning(f"런팟 추론 서버 연결 실패: {e}")
             return False
     
@@ -114,29 +101,29 @@ class FinetuneChain:
         
         return False
     
-    def _generate_with_lora(self, input_text: str, max_tokens: int = 256) -> str:
+    async def _generate_with_lora(self, input_text: str, max_tokens: int = 256) -> str:
         """런팟 추론 서버로 1차 변환"""
         if not self.is_inference_server_available:
             raise Exception("런팟 추론 서버에 연결할 수 없습니다.")
         
         try:
             # 런팟 추론 서버로 HTTP 요청
-            response = requests.post(
-                f"{self.inference_url}/generate",
-                json={
-                    "prompt": input_text,
-                    "max_new_tokens": max_tokens,
-                    "temperature": 0.7,
-                    "do_sample": True
-                },
-                timeout=30
-            )
-            response.raise_for_status()
-            result = response.json()
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{self.inference_url}/generate",
+                    json={
+                        "prompt": input_text,
+                        "max_new_tokens": max_tokens,
+                        "temperature": 0.7,
+                        "do_sample": True,
+                    },
+                )
+                response.raise_for_status()
+                result = response.json()
             
             return result["result"]
             
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             logger.error(f"런팟 서버 요청 실패: {e}")
             return input_text  # 실패 시 원본 텍스트 반환
         except Exception as e:
@@ -217,7 +204,7 @@ LoRA 변환 결과:
             # 1차: 런팟 추론 서버 변환
             if self.is_inference_server_available:
                 logger.info("런팟 추론 서버를 통한 1차 변환 시작")
-                lora_output = self._generate_with_lora(input_text)
+                lora_output = await self._generate_with_lora(input_text)
                 method = "lora_gpt"
             else:
                 logger.warning("런팟 추론 서버 미사용, ChatGPT만 사용")
