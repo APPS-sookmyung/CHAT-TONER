@@ -147,7 +147,7 @@ async def test_force_convert():
 
 async def test_convenience_method():
     """편의 메서드 테스트"""
-    print(f"\n편의 메서드 테스트")
+    print("\n편의 메서드 테스트")
     print("=" * 40)
     
     try:
@@ -338,7 +338,7 @@ async def test_finetune_chain():
         print("-" * 60)
     
     # 6. 조건별 변환 테스트
-    print(f"\n조건별 변환 테스트")
+    print("\n조건별 변환 테스트")
     print("=" * 40)
     
     condition_tests = [
@@ -386,7 +386,7 @@ async def test_finetune_chain():
         print(f"[{label}] {test['name']}: LoRA 사용 {should_use} (예상: {test['should_use_lora']})")
     
     # 7. 성능 및 메모리 정보
-    print(f"\n성능 정보")
+    print("\n성능 정보")
     print("=" * 40)
     
     if status['device'] == 'cuda':
@@ -400,7 +400,7 @@ async def test_finetune_chain():
     else:
         print("CPU 모드로 실행 중")
     
-    print(f"\nFinetuneChain 기본 테스트 완료!")
+    print("\nFinetuneChain 기본 테스트 완료!")
 
 async def main():
     """메인 테스트 실행"""

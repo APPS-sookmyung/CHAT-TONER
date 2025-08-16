@@ -34,7 +34,7 @@ async def generate_with_model_only(
         FinetuneService, 
         Depends(Provide[Container.finetune_service])
     ],
-    current_user = Depends(get_current_user_optional)
+    current_user = Depends(get_current_user_optional) # noqa: B008
 ) -> FinetuneResponse:
     """순수 파인튜닝된 모델만 사용하여 텍스트 생성 (ChatGPT 없이)"""
     try:
@@ -138,7 +138,7 @@ async def convert_by_user_request(
         FinetuneService, 
         Depends(Provide[Container.finetune_service])
     ],
-    current_user = Depends(get_current_user_optional)
+    current_user = Depends(get_current_user_optional) # noqa: B008
 ) -> FinetuneResponse:
     """사용자 명시적 요청으로 강제 변환 (버튼 클릭 등)"""
     try:

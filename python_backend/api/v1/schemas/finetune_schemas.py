@@ -62,7 +62,7 @@ class FinetuneResponse(BaseModel):
 
 class FinetuneStatusResponse(BaseModel):
     """파인튜닝 서비스 상태 응답 모델"""
-    lora_status: str = Field(..., description="LoRA 모델 상태")
+    lora_status: Literal["ready", "not_ready"] = Field(..., description="LoRA 모델 상태")
     lora_model_path: str = Field(..., description="LoRA 모델 경로")
     services_available: bool = Field(..., description="Services 사용 가능 여부")
     base_model_loaded: bool = Field(..., description="베이스 모델 로드 상태")

@@ -15,12 +15,25 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 5001
     
+    #파인 튜닝 추론 서버 설정
+    FINETUNE_INFERENCE_HOST: str = os.getenv("RUNPOD_IP", "localhost")
+    FINETUNE_INFERENCE_PORT: int = 8010
+    
+    @property
+    def FINETUNE_URL(self) -> str:
+        return f"http://{self.FINETUNE_INFERENCE_HOST}:{self.FINETUNE_INFERENCE_PORT}"
+    
     # OpenAI 설정
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
     
     # 데이터베이스 설정
     DATABASE_URL: str = "sqlite:///./chat_toner.db"
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_NAME: str = "chattoner_db"
+    DB_USER: str = "username"
+    DB_PASSWORD: str = "password"
     
     # CORS 설정
     CORS_ORIGINS: list = ["*"]

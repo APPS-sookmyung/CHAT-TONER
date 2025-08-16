@@ -6,7 +6,7 @@
 import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
-import requests
+import httpx
 
 logger = logging.getLogger('chattoner')
 
@@ -14,7 +14,10 @@ class FinetuneService:
     """파인튜닝 모델을 활용한 공식 문서 변환 서비스"""
     
     def __init__(self, prompt_engineer=None, openai_service=None, user_preferences_service=None):
-        self.inference_url = "http://localhost:8010"
+        #self.inference_url = "http://localhost:8010"
+        from core.config import get_settings
+        settings = get_settings()
+        self.inference_url = settings.FINETUNE_URL
         # prefer injected services; fall back to defaults
         from services.prompt_engineering import PromptEngineer
         from services.openai_services import OpenAIService
@@ -137,14 +140,30 @@ class FinetuneService:
                     "model_used": "none"
                 }
             }
-    
+    async def convert_to_business(self, 
+                                input_text: str, 
+                                user_profile: Dict[str, Any]) -> Dict[str, Any]:
+        """비즈니스 스타일로 변환 (버튼 클릭용)"""
+        return await self.convert_by_user_request(input_text, user_profile, "business")
+
+    async def convert_to_report(self, 
+                            input_text: str, 
+                            user_profile: Dict[str, Any]) -> Dict[str, Any]:
+        """보고서 스타일로 변환 (버튼 클릭용)"""
+        return await self.convert_by_user_request(input_text, user_profile, "report")
+        
     async def convert_by_user_request(self, 
                                      input_text: str, 
                                      user_profile: Dict[str, Any], 
-                                     context: str = "business") -> Dict[str, Any]:
+                                     context: str) -> Dict[str, Any]:
         """
         사용자 명시적 요청으로 공식 문서 변환
-        (버튼 클릭 등으로 강제 변환하는 경우)
+        (보고서/비즈니스 버튼 클릭 등으로 강제 변환하는 경우)
+
+        Args:
+        input_text: 변환할 텍스트
+        user_profile: 사용자 프로필
+        context: 변환 컨텍스트 ("business", "report" 등)
         """
         return await self.convert_to_formal(
             input_text=input_text,
@@ -281,24 +300,28 @@ class FinetuneService:
     ) -> Dict[str, Any]:
         """순수 파인튜닝된 모델만 사용하여 텍스트 생성"""
         try:
-            response = requests.post(
-                f"{self.inference_url}/generate",
-                json={
-                    "prompt": input_text,
-                    "max_new_tokens": max_tokens,
-                    "temperature": 0.7,
-                    "do_sample": True
-                },
-                timeout=30
-            )
-            response.raise_for_status()
-            result = response.json()
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{self.inference_url}/generate",
+                    json={
+                        "prompt": input_text,
+                        "max_new_tokens": max_tokens,
+                        "temperature": 0.7,
+                        "do_sample": True,
+                    },
+                )
+                response.raise_for_status()
+                result = response.json()
+
             
             return {
                 "success": True,
                 "original_text": input_text,
                 "converted_text": result["result"],
                 "method": "finetuned_model_only",
+                "reason": "direct_generation",
+                "forced": False,
+                "timestamp": self._get_timestamp(),
                 "metadata": {
                     "prompt_length": result["prompt_length"],
                     "generated_length": result["generated_length"],
@@ -307,9 +330,9 @@ class FinetuneService:
                 }
             }
             
-        except requests.exceptions.RequestException as e:
-            logger.error(f"추론 서버 연결 실패: {e}")
-            raise ValueError(f"추론 서버에 연결할 수 없습니다: {e}")
+        except httpx.HTTPError as e:
+            logger.error(f"추론 서버 연결/응답 실패: {e}")
+            raise ValueError(f"추론 서버에 연결할 수 없습니다: {e}") from e
         except Exception as e:
             logger.error(f"모델 추론 실패: {e}")
-            raise ValueError(f"모델 추론 중 오류가 발생했습니다: {e}")
+            raise ValueError(f"모델 추론 중 오류가 발생했습니다: {e}") from e

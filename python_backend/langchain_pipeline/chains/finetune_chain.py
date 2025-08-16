@@ -1,11 +1,11 @@
 """
-LoRA 파인튜닝 모델을 활용한 공식 문서 변환 체인 - Gemma-2 적용 버전
-공적인 말투 변환 시 LoRA 모델 1차 변환 후 ChatGPT 2차 다듬기 적용
+LoRA 파인튜닝 모델을 활용한 공식 문서 변환 체인 - HTTP 클라이언트 버전
+공적인 말투 변환 시 런팟 추론 서버 1차 변환 후 ChatGPT 2차 다듬기 적용
 
 주요 기능:
-- Gemma-2-2b-it 모델 + 4bit 양자화
+- 런팟 추론 서버 HTTP 요청
 - 사용자 프로필과 컨텍스트 기반 공식 문서 변환 조건 판단
-- LoRA 모델을 통한 1차 공식 말투 변환
+- 런팟 서버를 통한 1차 공식 말투 변환
 - ChatGPT를 통한 2차 다듬기 및 보완
 - Services와 동일한 구조로 프롬프트 엔지니어링 통합
 """
@@ -16,9 +16,7 @@ from pathlib import Path
 import os
 from typing import Dict, Optional
 from datetime import datetime
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from peft import PeftModel
+import requests
 
 # 프로젝트 경로 설정
 project_root = Path(__file__).resolve().parents[2]
@@ -34,17 +32,22 @@ class FinetuneChain:
     """LoRA 파인튜닝 모델을 활용한 공식 문서 변환 체인"""
     
     def __init__(
-    self,
-    model_name: str = "gpt-4o",
-    temperature: float = 0.3,
-    prompt_engineer: Optional[object] = None,
-    openai_service: Optional[object] = None,
-):
+        self,
+        model_name: str = "gpt-4o",
+        temperature: float = 0.3,
+        prompt_engineer: Optional[object] = None,
+        openai_service: Optional[object] = None,
+    ):
         """Finetune Chain 초기화"""
         dotenv_path = Path(__file__).resolve().parents[3] / ".env"
         load_dotenv(dotenv_path=dotenv_path)
         
-       # Services 초기화 (DI 우선, 없으면 내부 생성)
+        # 런팟 추론 서버 URL 설정
+        from core.config import get_settings
+        settings = get_settings()
+        self.inference_url = settings.FINETUNE_URL
+        
+        # Services 초기화 (DI 우선, 없으면 내부 생성)
         try:
             if prompt_engineer is None or openai_service is None:
                 from services.prompt_engineering import PromptEngineer
@@ -74,74 +77,22 @@ class FinetuneChain:
             api_key=api_key
         )"""
         
-        # LoRA 모델 관련 설정
-        self.lora_model_path = Path(__file__).resolve().parents[1] / "finetuned_models"
-        self.base_model = None
-        self.lora_model = None
-        self.tokenizer = None
-        self.is_lora_loaded = False
-        
-        self._load_lora_model()
+        # 런팟 서버 연결 상태 확인
+        self.is_inference_server_available = self._check_inference_server()
     
-    def _load_lora_model(self):
-        """LoRA 모델 로드 - Gemma-2 적용"""
+    def _check_inference_server(self) -> bool:
+        """런팟 추론 서버 연결 상태 확인"""
         try:
-            # Hugging Face 토큰 확인
-            hf_token = os.getenv("HUGGINGFACE_TOKEN")
-            if not hf_token:
-                logger.warning("HUGGINGFACE_TOKEN이 설정되지 않음")
-            
-            # Gemma-2 모델 사용
-            base_model_name = "google/gemma-2-2b-it"
-            
-            # 4bit 양자화 설정
-            quantization_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4"
-            )
-            
-            logger.info(f"Gemma-2 모델 로드 중: {base_model_name}")
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                base_model_name,
-                token=hf_token
-            )
-            
-            self.base_model = AutoModelForCausalLM.from_pretrained(
-                base_model_name,
-                quantization_config=quantization_config,
-                device_map="auto",
-                token=hf_token,
-                torch_dtype=torch.float16
-            )
-            
-            # 패딩 토큰 설정
-            if self.tokenizer.pad_token is None:
-                self.tokenizer.pad_token = self.tokenizer.eos_token
-                
-            # LoRA 어댑터 로드
-            adapter_loaded = False
-            if self.lora_model_path.exists():
-                adapter_config_path = self.lora_model_path / "adapter_config.json"
-                if adapter_config_path.exists():
-                    logger.info(f"LoRA 어댑터 로드 중: {self.lora_model_path}")
-                    self.lora_model = PeftModel.from_pretrained(
-                        self.base_model, str(self.lora_model_path)
-                    )
-                    adapter_loaded = True
-                else:
-                    logger.warning("adapter_config.json이 없어 기본 모델만 사용")
-                    self.lora_model = self.base_model
+            response = requests.get(f"{self.inference_url}/health", timeout=5)
+            if response.status_code == 200:
+                logger.info("런팟 추론 서버 연결 성공")
+                return True
             else:
-                logger.warning("LoRA 어댑터 경로가 없어 기본 모델만 사용")
-                self.lora_model = self.base_model
-
-            self.is_lora_loaded = adapter_loaded
-            
-        except Exception as e:
-            logger.error(f"모델 로드 실패: {e}")
-            self.is_lora_loaded = False
+                logger.warning(f"런팟 추론 서버 응답 오류: {response.status_code}")
+                return False
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"런팟 추론 서버 연결 실패: {e}")
+            return False
     
     def _should_use_lora(self, user_profile: Dict, context: str) -> bool:
         """공식 문서 변환 필요 여부 판단 - 수정된 버전"""
@@ -161,68 +112,36 @@ class FinetuneChain:
         if formality_level >= 4 and context in ["business", "report"]:
             return True
         
+        return False
     
-    def _generate_with_lora(self, input_text: str, max_length: int = 512) -> str:
-        """LoRA 모델로 1차 변환 - Gemma-2 템플릿"""
-        if not self.is_lora_loaded:
-            raise Exception("LoRA 모델이 로드되지 않았습니다.")
+    def _generate_with_lora(self, input_text: str, max_tokens: int = 256) -> str:
+        """런팟 추론 서버로 1차 변환"""
+        if not self.is_inference_server_available:
+            raise Exception("런팟 추론 서버에 연결할 수 없습니다.")
         
         try:
-            # Gemma-2 프롬프트 템플릿
-            prompt_template = f"""<start_of_turn>user
-다음 텍스트를 공식적이고 정중한 말투로 변환해주세요:
-
-{input_text}<end_of_turn>
-<start_of_turn>model
-"""
-            
-            # 토크나이징
-            inputs = self.tokenizer(
-                prompt_template,
-                return_tensors="pt",
-                max_length=max_length,
-                truncation=True,
-                padding=True
+            # 런팟 추론 서버로 HTTP 요청
+            response = requests.post(
+                f"{self.inference_url}/generate",
+                json={
+                    "prompt": input_text,
+                    "max_new_tokens": max_tokens,
+                    "temperature": 0.7,
+                    "do_sample": True
+                },
+                timeout=30
             )
+            response.raise_for_status()
+            result = response.json()
             
-            # GPU로 이동
-            if torch.cuda.is_available():
-                try:
-                    target_device = getattr(self.lora_model, "device", None)  # 안전하게 가져오기
-                    if target_device is not None:
-                            inputs = {k: v.to(target_device) for k, v in inputs.items()}
-                except Exception:
-                    # device_map="auto"가 알아서 장치 배치를 처리하게 두기
-                        pass
-
+            return result["result"]
             
-            # 생성 (Gemma-2 최적화 파라미터)
-            with torch.no_grad():
-                outputs = self.lora_model.generate(
-                    **inputs,
-                    max_new_tokens=256,
-                    do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
-                    repetition_penalty=1.1,
-                    pad_token_id=self.tokenizer.eos_token_id,
-                    eos_token_id=self.tokenizer.eos_token_id
-                )
-            
-            # 디코딩
-            generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-            
-            # Gemma-2 응답 추출
-            if "<start_of_turn>model" in generated_text:
-                result = generated_text.split("<start_of_turn>model")[-1].strip()
-            else:
-                result = generated_text[len(prompt_template):].strip()
-            
-            return result
-            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"런팟 서버 요청 실패: {e}")
+            return input_text  # 실패 시 원본 텍스트 반환
         except Exception as e:
-            logger.error(f"LoRA 생성 실패: {e}")
-            return input_text # 실패 시 원본 텍스트 반환
+            logger.error(f"런팟 서버 응답 처리 실패: {e}")
+            return input_text  # 실패 시 원본 텍스트 반환
     
     async def _refine_with_gpt(self, lora_output: str, user_profile: Dict, context: str) -> str:
         """ChatGPT로 2차 다듬기 (기존 OpenAIService 패턴 사용)"""
@@ -265,7 +184,7 @@ LoRA 변환 결과:
                                context: str = "business",
                                force_convert: bool = False) -> Dict:
         """
-        공식 문서 변환 (LoRA + ChatGPT 파이프라인)
+        공식 문서 변환 (런팟 추론 서버 + ChatGPT 파이프라인)
         
         Args:
             input_text: 변환할 텍스트
@@ -295,13 +214,13 @@ LoRA 변환 결과:
             }
         
         try:
-            # 1차: LoRA 모델 변환
-            if self.is_lora_loaded:
-                logger.info("LoRA 모델을 통한 1차 변환 시작")
+            # 1차: 런팟 추론 서버 변환
+            if self.is_inference_server_available:
+                logger.info("런팟 추론 서버를 통한 1차 변환 시작")
                 lora_output = self._generate_with_lora(input_text)
                 method = "lora_gpt"
             else:
-                logger.warning("LoRA 모델 미사용, ChatGPT만 사용")
+                logger.warning("런팟 추론 서버 미사용, ChatGPT만 사용")
                 lora_output = input_text
                 method = "gpt_only"
             
@@ -312,7 +231,7 @@ LoRA 변환 결과:
             return {
                 "success": True,
                 "converted_text": final_output,
-                "lora_output": lora_output if self.is_lora_loaded else None,
+                "lora_output": lora_output if self.is_inference_server_available else None,
                 "method": method,
                 "reason": conversion_reason,
                 "forced": force_convert,
@@ -341,13 +260,30 @@ LoRA 변환 결과:
             force_convert=True  # 항상 강제 변환
         )
     
+    async def convert_to_business(
+        self,
+        input_text: str,
+        user_profile: Dict
+    ) -> Dict:
+        """비즈니스 스타일로 변환 (버튼 클릭용)"""
+        return await self.convert_by_user_request(input_text, user_profile, "business")
+
+    async def convert_to_report(
+        self,
+        input_text: str,
+        user_profile: Dict
+    ) -> Dict:
+        """보고서 스타일로 변환 (버튼 클릭용)"""
+        return await self.convert_by_user_request(input_text, user_profile, "report")
+    
     def get_status(self) -> Dict:
         """상태 정보"""
         return {
-            "lora_status": "ready" if self.is_lora_loaded else "not_ready",
-            "lora_model_path": str(self.lora_model_path),
+            "lora_status": "ready" if self.is_inference_server_available else "not_ready",
+            "lora_model_path": "runpod_server",
             "services_available": self.services_available,
-            "base_model_loaded": self.base_model is not None,
-            "device": "cuda" if torch.cuda.is_available() else "cpu",
-            "model_name": "gemma-2-2b-it"
+            "base_model_loaded": self.is_inference_server_available,
+            "device": "runpod_gpu",
+            "model_name": "gemma-2-2b-it",
+            "inference_url": self.inference_url
         }
