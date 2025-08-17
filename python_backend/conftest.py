@@ -4,6 +4,7 @@ RAG 테스트를 위한 FastAPI, PostgreSQL, pgvector 설정
 """
 
 import pytest
+import pytest_asyncio
 import asyncio
 import os
 from typing import AsyncGenerator, Generator
@@ -39,10 +40,12 @@ def client(app):
     return TestClient(app)
 
 
-@pytest.fixture
-async def async_client(app) -> AsyncGenerator[AsyncClient, None]:
+@pytest_asyncio.fixture
+async def async_client(app):
     """비동기 테스트 클라이언트"""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    from httpx import ASGITransport
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
