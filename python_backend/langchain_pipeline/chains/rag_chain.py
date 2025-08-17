@@ -44,9 +44,10 @@ class RAGChain:
         self.services_available = False
         self._services_cache = {}
         self._check_services_availability()
-    api_key = settings.OPENAI_API_KEY
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY가 설정되지 않았습니다")
+        
+        api_key = settings.OPENAI_API_KEY
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY가 설정되지 않았습니다")
         
         self.llm = ChatOpenAI(
             model=model_name,
