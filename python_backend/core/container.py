@@ -43,5 +43,6 @@ class Container(containers.DeclarativeContainer):
     finetune_service = providers.Singleton(
       FinetuneService,
       prompt_engineer=prompt_engineer,
-      openai_service=openai_service
+      openai_service=openai_service,
+      user_preferences_service=user_preferences_service
     )
