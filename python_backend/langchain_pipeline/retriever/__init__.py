@@ -12,7 +12,7 @@ from .vector_db import (
     ingest_documents_from_folder,
     get_embedding,
     FAISS_INDEX_PATH,
-    DOCS_PATH
+    DOCUMENTS_PATH
 )
 
 from .doc_splitter import split_documents, get_text_splitter
@@ -23,5 +23,5 @@ __all__ = [
     "split_documents",
     "get_text_splitter",
     "FAISS_INDEX_PATH",
-    "DOCS_PATH"
+    "DOCUMENTS_PATH"
 ]

@@ -6,6 +6,7 @@ RAG (Retrieval-Augmented Generation) Endpoints
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, Optional, List, Annotated
 from pydantic import BaseModel
+from api.v1.schemas.conversion import UserProfile
 from pathlib import Path
 
 router = APIRouter()
@@ -24,7 +25,7 @@ class RAGQueryRequest(BaseModel):
     query: str
     context: Optional[str] = None
     use_styles: bool = False
-    user_profile: Optional[Dict[str, Any]] = None
+    user_profile: Optional[UserProfile] = None
 
 class RAGQueryResponse(BaseModel):
     success: bool
@@ -42,18 +43,23 @@ class RAGStatusResponse(BaseModel):
     documents_path: str
     index_path: str
 
-# RAG Service 의존성 주입
-def get_rag_service():
-    """RAG 서비스 인스턴스 생성"""
-    try:
-        from services.rag_service import RAGService
-        return RAGService()
-    except ImportError as e:
-        raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}") from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"RAG 서비스 초기화 실패: {str(e)}") from e
+# RAG Service 싱글톤
+_rag_service_instance = None
 
-@router.post("/rag/ingest", response_model=DocumentIngestResponse)
+def get_rag_service():
+    """RAG 서비스 싱글톤 인스턴스"""
+    global _rag_service_instance
+    if _rag_service_instance is None:
+        try:
+            from services.rag_service import RAGService
+            _rag_service_instance = RAGService()
+        except ImportError as e:
+            raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}") from e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"RAG 서비스 초기화 실패: {str(e)}") from e
+    return _rag_service_instance
+
+@router.post("/ingest", response_model=DocumentIngestResponse)
 async def ingest_documents(
     request: DocumentIngestRequest,
     rag_service: Annotated[object, Depends(get_rag_service)]
@@ -61,8 +67,15 @@ async def ingest_documents(
     """문서 폴더에서 RAG 벡터 DB 생성"""
     try:
         folder_path = Path(request.folder_path)
+        
+        # 상대 경로인 경우, 프로젝트 루트 기준으로 절대 경로로 변환
+        if not folder_path.is_absolute():
+            project_root = Path(__file__).resolve().parents[4]  # 2025-CHATTONER-Server
+            folder_path = project_root / folder_path
+            
+            
         if not folder_path.exists():
-            raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {request.folder_path}")
+            raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {request.folder_path} (resolved: {folder_path})")
         
         result = rag_service.ingest_documents(str(folder_path))
         
@@ -78,7 +91,7 @@ async def ingest_documents(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"문서 인덱싱 중 오류가 발생했습니다: {str(e)}")
 
-@router.post("/rag/ask", response_model=RAGQueryResponse)
+@router.post("/ask", response_model=RAGQueryResponse)
 async def ask_rag_question(
     request: RAGQueryRequest,
     rag_service: Annotated[object, Depends(get_rag_service)]
@@ -92,7 +105,7 @@ async def ask_rag_question(
             # 3가지 스타일 변환
             result = await rag_service.ask_with_styles(
                 query=request.query,
-                user_profile=request.user_profile,
+                user_profile=(request.user_profile.model_dump() if request.user_profile else None),
                 context=request.context or "personal"
             )
             
@@ -124,7 +137,7 @@ async def ask_rag_question(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"질의응답 중 오류가 발생했습니다: {str(e)}")
 
-@router.get("/rag/status", response_model=RAGStatusResponse)
+@router.get("/status", response_model=RAGStatusResponse)
 async def get_rag_status(rag_service: Annotated[object, Depends(get_rag_service)]) -> RAGStatusResponse:
     """RAG 시스템 상태 확인"""
     try:
@@ -141,7 +154,7 @@ async def get_rag_status(rag_service: Annotated[object, Depends(get_rag_service)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"상태 조회 중 오류가 발생했습니다: {str(e)}")
 
-@router.post("/rag/analyze-grammar")
+@router.post("/analyze-grammar")
 async def analyze_text_grammar(
     request: RAGQueryRequest,
     rag_service: Annotated[object, Depends(get_rag_service)]
@@ -176,7 +189,7 @@ async def analyze_text_grammar(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"문법 분석 중 오류가 발생했습니다: {str(e)}")
 
-@router.post("/rag/suggest-expressions")
+@router.post("/suggest-expressions")
 async def suggest_better_expressions(
     request: RAGQueryRequest,
     rag_service: Annotated[object, Depends(get_rag_service)]

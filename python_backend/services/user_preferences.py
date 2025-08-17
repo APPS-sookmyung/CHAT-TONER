@@ -239,6 +239,24 @@ class UserPreferencesService(BaseService):
         self.openai_service = openai_service
         self.preference_extractor = PreferenceExtractor()
         self.learning_engine = StyleLearningEngine(openai_service)
+
+    def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """사용자 프로필 조회"""
+        try:
+            # storage의 함수를 대신 호출
+            return self.storage.get_user_profile(user_id)
+        except Exception as e:
+            self.logger.error(f"사용자 {user_id} 프로필 조회 실패: {e}")
+            return None
+
+    def save_user_profile(self, user_id: str, profile_data: Dict[str, Any]) -> bool:
+        """사용자 프로필 저장"""
+        try:
+            # storage의 함수를 대신 호출
+            return self.storage.save_user_profile(user_id, profile_data)
+        except Exception as e:
+            self.logger.error(f"사용자 {user_id} 프로필 저장 실패: {e}")
+            return False
     
     async def get_user_negative_preferences(self, user_id: str) -> NegativePreferences:
         """사용자 네거티브 프롬프트 선호도 조회"""

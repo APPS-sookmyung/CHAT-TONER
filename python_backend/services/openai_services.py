@@ -12,8 +12,11 @@ class OpenAIService:
     """OpenAI API 호출 관리 클래스"""
     
     def __init__(self, api_key=None, model=None):
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
-        self.model = model or "gpt-4o"
+        # 설정에서 API 키를 가져오거나 직접 환경변수에서 가져옴
+        from core.config import get_settings
+        settings = get_settings()
+        self.api_key = api_key or settings.OPENAI_API_KEY
+        self.model = model or settings.OPENAI_MODEL
         
         # API 키가 없거나 placeholder인 경우 Mock 모드로 동작
         if not self.api_key or self.api_key == "your-openai-api-key-here":

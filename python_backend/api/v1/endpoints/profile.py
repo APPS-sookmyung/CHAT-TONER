@@ -82,7 +82,7 @@ def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_stor
     openai_service = OpenAIService()
     return UserPreferencesService(db, openai_service)
 
-@router.get("/profile/{user_id}", response_model=ProfileResponse, summary="사용자 프로필 조회", description="사용자의 개인화 설정을 조회합니다.")
+@router.get("/{user_id}", response_model=ProfileResponse, summary="사용자 프로필 조회", description="사용자의 개인화 설정을 조회합니다.")
 async def get_user_profile(
     user_id: str,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)
@@ -91,46 +91,36 @@ async def get_user_profile(
     ## 사용자 프로필 조회
 
     사용자의 텍스트 스타일 개인화 설정을 반환합니다.
-
-    ### 경로 매개변수
-    - `user_id`: 조회할 사용자의 고유 ID
-
-    ### 응답 항목
-    - `userId`: 사용자 ID
-    - `baseFormalityLevel`: 기본 격식도 수준 (1: 매우 캐주얼, 5: 매우 격식)
-    - `baseFriendlinessLevel`: 기본 친근함 수준 (1: 거리감, 5: 매우 친근)
-    - `baseEmotionLevel`: 기본 감정 표현 수준 (1: 담담함, 5: 감정적)
-    - `baseDirectnessLevel`: 기본 직설성 수준 (1: 돌려 말함, 5: 직설적)
-    - `sessionFormalityLevel`: 현재 세션의 격식도 수준 (설정되지 않은 경우 기본값 사용)
-    - `sessionFriendlinessLevel`: 현재 세션의 친근함 수준 (설정되지 않은 경우 기본값 사용)
-    - `sessionEmotionLevel`: 현재 세션의 감정 표현 수준 (설정되지 않은 경우 기본값 사용)
-    - `sessionDirectnessLevel`: 현재 세션의 직설성 수준 (설정되지 않은 경우 기본값 사용)
-    - `responses`: 저장된 추가 응답 데이터
-    - `completedAt`: 프로필 정보가 마지막으로 업데이트된 시간
     """
     try:
-        # 실제 서비스에서 프로필 조회 (향후 구현)
-        # profile = await user_service.get_user_profile(user_id)
+        profile_data = user_service.get_user_profile(user_id)
 
-        # 현재는 기본 프로필 반환
+        if not profile_data:
+            raise HTTPException(status_code=404, detail=f"Profile for user '{user_id}' not found.")
+
+        # 데이터베이스 응답을 API 응답 모델(ProfileResponse)에 맞게 매핑합니다.
         return ProfileResponse(
-            id=1,
-            userId=user_id,
-            baseFormalityLevel=5,
-            baseFriendlinessLevel=5,
-            baseEmotionLevel=5,
-            baseDirectnessLevel=5,
-            sessionFormalityLevel=5,
-            sessionFriendlinessLevel=5,
-            sessionEmotionLevel=5,
-            sessionDirectnessLevel=5,
-            responses={},
-            completedAt="2025-08-10T00:00:00Z"
+            id=profile_data.get("id", 1),  # 'id'가 없으므로 임시 ID 사용
+            userId=profile_data.get("userId"),
+            baseFormalityLevel=profile_data.get("baseFormalityLevel"),
+            baseFriendlinessLevel=profile_data.get("baseFriendlinessLevel"),
+            baseEmotionLevel=profile_data.get("baseEmotionLevel"),
+            baseDirectnessLevel=profile_data.get("baseDirectnessLevel"),
+            # 세션 값이 없으면 기본값을 사용합니다.
+            sessionFormalityLevel=profile_data.get("sessionFormalityLevel") or profile_data.get("baseFormalityLevel"),
+            sessionFriendlinessLevel=profile_data.get("sessionFriendlinessLevel") or profile_data.get("baseFriendlinessLevel"),
+            sessionEmotionLevel=profile_data.get("sessionEmotionLevel") or profile_data.get("baseEmotionLevel"),
+            sessionDirectnessLevel=profile_data.get("sessionDirectnessLevel") or profile_data.get("baseDirectnessLevel"),
+            responses=profile_data.get("questionnaireResponses", {}),
+            completedAt=profile_data.get("updatedAt") or profile_data.get("createdAt")
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        # Pydantic validation error 등 다른 예외 처리
         raise HTTPException(status_code=500, detail=f"프로필 조회 실패: {str(e)}")
 
-@router.post("/profile", response_model=ProfileResponse, summary="사용자 프로필 저장", description="사용자의 개인화 설정을 저장합니다.")
+@router.post("", response_model=ProfileResponse, summary="사용자 프로필 저장", description="사용자의 개인화 설정을 저장합니다.")
 async def save_user_profile(
     profile: ProfileRequest,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)
@@ -144,12 +134,17 @@ async def save_user_profile(
     - `profile`: 저장할 사용자 프로필 데이터
     """
     try:
-        # 실제 서비스에서 프로필 저장 (향후 구현)
-        # saved_profile = await user_service.save_user_profile(profile)
+        # 실제 서비스에서 프로필 저장 (활성화됨)
+        # 참고: user_service.save_user_profile의 인자나 반환 값에 따라 수정이 필요할 수 있습니다.
+        was_saved = user_service.save_user_profile(profile.userId, profile.model_dump())
 
-        # 현재는 요청 데이터로 응답 생성
+        if not was_saved:
+            raise HTTPException(status_code=400, detail="Failed to save profile.")
+
+        # 저장 성공 후, 저장된 프로필 정보를 다시 조회하여 반환하는 것이 가장 이상적입니다.
+        # 여기서는 요청된 데이터를 기반으로 응답을 생성합니다.
         return ProfileResponse(
-            id=1,
+            id=1, # 임시 ID
             userId=profile.userId,
             baseFormalityLevel=profile.baseFormalityLevel,
             baseFriendlinessLevel=profile.baseFriendlinessLevel,
@@ -160,7 +155,9 @@ async def save_user_profile(
             sessionEmotionLevel=profile.sessionEmotionLevel or profile.baseEmotionLevel,
             sessionDirectnessLevel=profile.sessionDirectnessLevel or profile.baseDirectnessLevel,
             responses=profile.responses or {},
-            completedAt="2025-08-10T00:00:00Z"
+            completedAt="2025-08-10T00:00:00Z" # 저장 시간으로 변경 필요
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"프로필 저장 실패: {str(e)}")

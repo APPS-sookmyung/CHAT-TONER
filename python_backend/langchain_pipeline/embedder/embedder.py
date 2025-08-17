@@ -31,7 +31,9 @@ class OpenAIEmbedder(BaseEmbedder):
                  model: str = "text-embedding-ada-002",
                  api_key: Optional[str] = None):
         self.model = model
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        from core.config import get_settings
+        settings = get_settings()
+        self.api_key = api_key or settings.OPENAI_API_KEY
         self.client = None  # TODO: OpenAI 클라이언트 초기화
     
     def embed_text(self, text: str) -> List[float]:
