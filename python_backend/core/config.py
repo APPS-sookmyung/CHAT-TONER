@@ -53,8 +53,7 @@ class Settings(BaseSettings):
     CORS_HEADERS: list = ["*"]
     
     class Config:
-        env_file = Path(__file__).parent.parent.parent / ".env"
-        env_file = ".env"
+        env_file = ".env"  # 현재 디렉토리의 .env 파일 참조
         case_sensitive = True
         extra = "ignore"
 
