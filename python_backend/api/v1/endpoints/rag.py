@@ -43,16 +43,21 @@ class RAGStatusResponse(BaseModel):
     documents_path: str
     index_path: str
 
-# RAG Service 의존성 주입
+# RAG Service 싱글톤
+_rag_service_instance = None
+
 def get_rag_service():
-    """RAG 서비스 인스턴스 생성"""
-    try:
-        from services.rag_service import RAGService
-        return RAGService()
-    except ImportError as e:
-        raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}") from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"RAG 서비스 초기화 실패: {str(e)}") from e
+    """RAG 서비스 싱글톤 인스턴스"""
+    global _rag_service_instance
+    if _rag_service_instance is None:
+        try:
+            from services.rag_service import RAGService
+            _rag_service_instance = RAGService()
+        except ImportError as e:
+            raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}") from e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"RAG 서비스 초기화 실패: {str(e)}") from e
+    return _rag_service_instance
 
 @router.post("/ingest", response_model=DocumentIngestResponse)
 async def ingest_documents(
@@ -62,8 +67,15 @@ async def ingest_documents(
     """문서 폴더에서 RAG 벡터 DB 생성"""
     try:
         folder_path = Path(request.folder_path)
+        
+        # 상대 경로인 경우, 프로젝트 루트 기준으로 절대 경로로 변환
+        if not folder_path.is_absolute():
+            project_root = Path(__file__).resolve().parents[4]  # 2025-CHATTONER-Server
+            folder_path = project_root / folder_path
+            
+            
         if not folder_path.exists():
-            raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {request.folder_path}")
+            raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {request.folder_path} (resolved: {folder_path})")
         
         result = rag_service.ingest_documents(str(folder_path))
         

@@ -59,11 +59,14 @@ async def submit_feedback(
             elif feedback.selectedVersion == "gentle":
                 adjustments["politeness_preference"] = "decreased"
         
-        # 실제 학습 로직 (향후 구현)
-        # await user_service.process_feedback(feedback.userId, adjustments)
+        # 실제 학습 로직 (활성화됨)
+        user_service.process_feedback(feedback.userId, adjustments)
         
-        # 피드백 데이터베이스 저장 (향후 구현)
-        # await user_service.save_feedback(feedback)
+        # 피드백 데이터베이스 저장 (활성화됨)
+        was_saved = user_service.save_feedback(feedback)
+
+        if not was_saved:
+            raise HTTPException(status_code=400, detail="Failed to save feedback.")
         
         return FeedbackResponse(
             status="success",
@@ -71,6 +74,8 @@ async def submit_feedback(
             adjustments_made=adjustments
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"피드백 처리 실패: {str(e)}")
 
@@ -78,17 +83,15 @@ async def submit_feedback(
 async def get_feedback_stats(user_id: str) -> Dict[str, Any]:
     """사용자의 피드백 통계 조회"""
     try:
-        # 실제 통계 조회 (향후 구현)
-        # stats = await user_service.get_feedback_stats(user_id)
+        # 실제 통계 조회 (활성화됨)
+        stats = user_service.get_feedback_stats(user_id)
         
-        # 임시 통계 데이터
-        return {
-            "total_conversions": 0,
-            "average_rating": 0.0,
-            "preferred_style": "neutral",
-            "improvement_trend": "stable",
-            "last_updated": "2025-08-10T00:00:00Z"
-        }
+        if stats is not None:
+            return stats
+
+        raise HTTPException(status_code=404, detail=f"Statistics for user '{user_id}' not found.")
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"통계 조회 실패: {str(e)}")
