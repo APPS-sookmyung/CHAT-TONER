@@ -65,112 +65,326 @@ class TestRAGEndpoints:
     
     @pytest.mark.asyncio
     @pytest.mark.api 
-    async def test_ask_question_single_answer(self, async_client: AsyncClient, mock_rag_service):
-        """POST /api/v1/rag/ask - 단일 질의응답 (use_styles=False)"""
-        # Given: RAG 서비스 단일 응답 설정
+    async def test_ask_question_single_answer_long_text(self, async_client: AsyncClient, mock_rag_service):
+        """POST /api/v1/rag/ask - 긴 텍스트 단일 질의응답 (use_styles=False)"""
+        # Given: 긴 텍스트 응답 설정
+        long_answer = """
+        LangChain은 대규모 언어 모델(LLM)을 활용한 애플리케이션 개발을 위한 종합적인 프레임워크입니다. 
+        이 프레임워크는 개발자들이 복잡한 AI 시스템을 보다 쉽게 구축할 수 있도록 설계되었으며, 
+        특히 문서 검색, 질의응답, 텍스트 생성, 대화형 AI 등의 기능을 제공합니다.
+        
+        LangChain의 핵심 구성 요소는 다음과 같습니다:
+        1. Chains: 여러 컴포넌트를 연결하여 복잡한 워크플로우를 구성
+        2. Agents: 자율적으로 도구를 사용하고 결정을 내리는 AI 에이전트
+        3. Memory: 대화 히스토리나 컨텍스트를 관리하는 메모리 시스템
+        4. Document Loaders: 다양한 형태의 문서를 로드하고 처리
+        5. Vector Stores: 임베딩 벡터를 저장하고 검색하는 시스템
+        6. Retrievers: 관련 문서나 정보를 검색하는 컴포넌트
+        
+        특히 RAG(Retrieval-Augmented Generation) 시스템 구축에 있어서 LangChain은 매우 강력한 도구입니다. 
+        문서를 청크 단위로 분할하고, 각 청크를 벡터로 임베딩한 후, 유사도 검색을 통해 관련 정보를 찾아 
+        최종적으로 LLM에게 컨텍스트로 제공하는 전체 파이프라인을 효율적으로 구현할 수 있습니다.
+        
+        또한 LangChain은 다양한 LLM 제공업체(OpenAI, Anthropic, Cohere 등)와의 통합을 지원하며,
+        로컬 모델과 클라우드 모델 모두를 활용할 수 있는 유연성을 제공합니다. 이를 통해 개발자는
+        비용 효율성과 성능을 고려하여 최적의 모델 조합을 선택할 수 있습니다.
+        """
+        
         mock_rag_service.ask_question = AsyncMock(return_value={
             "success": True,
-            "answer": "LangChain은 대화형 AI 애플리케이션을 구축하기 위한 프레임워크입니다.",
+            "answer": long_answer.strip(),
             "sources": [
-                {"source": "langchain_guide.txt", "content": "LangChain 가이드..."}
+                {
+                    "source": "langchain_comprehensive_guide.txt",
+                    "content": "LangChain 프레임워크의 전체적인 아키텍처와 구성 요소들에 대한 상세한 설명을 포함한 가이드 문서입니다. 이 문서는 초보자부터 고급 사용자까지 모든 레벨의 개발자들이 LangChain을 효과적으로 활용할 수 있도록 단계별로 설명되어 있습니다.",
+                    "chunk_id": "section_1_intro",
+                    "similarity_score": 0.95
+                },
+                {
+                    "source": "rag_implementation_patterns.txt", 
+                    "content": "RAG 시스템 구현을 위한 다양한 패턴과 베스트 프랙티스를 다루는 문서입니다. 문서 처리, 벡터 스토어 선택, 검색 최적화, 프롬프트 엔지니어링 등의 실무적인 내용들을 포함하고 있으며, 실제 프로덕션 환경에서의 적용 사례들도 함께 제공됩니다.",
+                    "chunk_id": "pattern_rag_basic",
+                    "similarity_score": 0.89
+                }
             ],
-            "metadata": {"model_used": "gpt_embedder", "query_type": "single_answer"}
+            "metadata": {
+                "model_used": "gpt_embedder", 
+                "query_type": "single_answer",
+                "processing_time": "2.3s",
+                "token_count": 456,
+                "context_length": 1280
+            }
         })
         
-        # When: 단일 질문 요청
+        # When: 복잡한 긴 질문 요청
+        long_query = """
+        LangChain 프레임워크에 대해 자세히 설명해주세요. 
+        특히 RAG 시스템 구축 시 LangChain의 주요 구성 요소들이 어떻게 활용되는지,
+        그리고 다른 LLM 프레임워크들과 비교했을 때의 장점은 무엇인지 포함해서
+        실무에서 사용할 때 고려해야 할 점들까지 종합적으로 알려주세요.
+        """
+        
         request_data = {
-            "query": "LangChain이 무엇인가요?",
+            "query": long_query.strip(),
             "use_styles": False,
-            "context": "learning"
+            "context": "technical_documentation"
         }
         response = await async_client.post("/api/v1/rag/ask", json=request_data)
         
-        # Then: 단일 답변 응답
+        # Then: 상세한 긴 답변 응답 확인
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["success"] is True
-        assert data["answer"] == "LangChain은 대화형 AI 애플리케이션을 구축하기 위한 프레임워크입니다."
-        assert len(data["sources"]) == 1
+        assert len(data["answer"]) > 500  # 긴 답변 확인
+        assert "LangChain" in data["answer"]
+        assert "RAG" in data["answer"]
+        assert "구성 요소" in data["answer"]
+        assert len(data["sources"]) == 2  # 복수 소스 확인
+        assert data["sources"][0]["similarity_score"] == 0.95
         assert data["error"] is None
         assert "converted_texts" not in data  # 단일 답변이므로 스타일 변환 없음
         
+        # 메타데이터 확인
+        assert data["metadata"]["token_count"] == 456
+        assert data["metadata"]["context_length"] == 1280
+        
         # 서비스 호출 확인
         mock_rag_service.ask_question.assert_called_once_with(
-            query="LangChain이 무엇인가요?",
-            context="learning"
+            query=long_query.strip(),
+            context="technical_documentation"
         )
     
     @pytest.mark.asyncio
     @pytest.mark.api
-    async def test_ask_question_with_styles(self, async_client: AsyncClient, mock_rag_service, test_user_profile):
-        """POST /api/v1/rag/ask - 3가지 스타일 질의응답 (use_styles=True)"""
-        # Given: 스타일별 응답 설정
+    async def test_ask_question_with_styles_long_text(self, async_client: AsyncClient, mock_rag_service, test_user_profile):
+        """POST /api/v1/rag/ask - 긴 텍스트 3가지 스타일 질의응답 (use_styles=True)"""
+        # Given: 긴 텍스트 스타일별 응답 설정
         mock_rag_service.ask_with_styles = AsyncMock(return_value={
             "success": True,
             "converted_texts": {
-                "direct": "프로젝트는 현재 70% 완료되었습니다.",
-                "gentle": "프로젝트가 순조롭게 진행되고 있어요. 약 70% 정도 완료된 상황입니다.",
-                "neutral": "프로젝트 진행률은 현재 70% 수준입니다."
+                "direct": """
+                프로젝트는 현재 70% 완료 상태입니다. 주요 진행 사항은 다음과 같습니다:
+                
+                ✅ 완료된 작업:
+                - 요구사항 분석 및 설계 단계 (100%)
+                - 백엔드 API 개발 (90%)
+                - 데이터베이스 스키마 구축 (100%)
+                - 사용자 인증 시스템 (95%)
+                
+                🔄 진행 중인 작업:
+                - 프론트엔드 UI/UX 개발 (60%)
+                - 테스트 케이스 작성 (40%)
+                - 성능 최적화 (30%)
+                
+                ⏳ 예정된 작업:
+                - 통합 테스트 및 QA
+                - 배포 환경 설정
+                - 사용자 가이드 작성
+                
+                현재 일정대로 진행되고 있으며, 다음 주까지 80% 완료 예정입니다.
+                """,
+                "gentle": """
+                안녕하세요! 프로젝트 진행 상황에 대해 말씀드리겠습니다.
+                
+                현재 전체적으로 약 70% 정도 완료된 상황이에요. 순조롭게 진행되고 있어서 다행입니다.
+                
+                😊 잘 마무리된 부분들:
+                - 요구사항 분석과 설계는 이미 완전히 끝났어요
+                - 백엔드 API 작업도 거의 다 완료되어 가고 있습니다 (90%)
+                - 데이터베이스 설정은 모두 마쳤습니다
+                - 로그인/회원가입 기능도 거의 다 완성되었어요
+                
+                📝 현재 열심히 작업 중인 부분들:
+                - 사용자가 보는 화면 작업을 계속 진행하고 있어요 (60%)
+                - 테스트 코드도 차근차근 작성하고 있습니다 (40%)
+                - 시스템이 더 빠르게 동작하도록 개선 작업도 병행하고 있어요
+                
+                앞으로 남은 작업들도 계획대로 차근차근 진행할 예정이니 걱정하지 마세요.
+                다음 주쯤이면 80% 정도까지는 완료될 것 같습니다!
+                """,
+                "neutral": """
+                프로젝트 전체 진행률은 현재 70% 수준으로 파악됩니다.
+                
+                【완료된 항목】
+                • 요구사항 분석 및 시스템 설계: 100% 완료
+                • 백엔드 API 서버 개발: 90% 완료
+                • 데이터베이스 스키마 및 초기 설정: 100% 완료  
+                • 사용자 인증 및 권한 관리 모듈: 95% 완료
+                
+                【진행 중인 항목】
+                • 프론트엔드 사용자 인터페이스 개발: 60% 진행
+                • 단위 테스트 및 통합 테스트 케이스 작성: 40% 진행
+                • 시스템 성능 최적화 작업: 30% 진행
+                
+                【향후 계획】
+                • 전체 시스템 통합 테스트 수행
+                • 프로덕션 환경 배포 설정
+                • 최종 사용자 문서화 작업
+                
+                일정 준수율은 양호한 편이며, 예상 완료 시점은 다음 주 말경으로 전망됩니다.
+                (전체 진행률 80% 달성 목표)
+                """
             },
-            "sources": [{"source": "project_status.txt"}],
-            "rag_context": "프로젝트 관리 문서에서 추출한 정보",
-            "metadata": {"model_used": "gpt-4o + faiss", "query_type": "style_conversion"}
+            "sources": [
+                {
+                    "source": "project_status_weekly_report.txt",
+                    "content": "프로젝트 주간 보고서입니다. 각 팀별 진행 상황, 완료된 마일스톤, 현재 진행 중인 작업, 이슈 사항 및 리스크 요소들을 종합적으로 정리한 문서입니다. 매주 목요일마다 업데이트되며, 프로젝트 매니저와 이해관계자들이 현재 상황을 파악할 수 있도록 상세한 메트릭과 함께 제공됩니다.",
+                    "chunk_id": "week_12_summary",
+                    "similarity_score": 0.94
+                },
+                {
+                    "source": "development_milestone_tracker.txt",
+                    "content": "개발 마일스톤 추적 문서로, 각 개발 단계별 목표와 실제 달성 현황을 비교 분석한 자료입니다. 기능별 개발 진도, 코드 리뷰 상태, 테스트 커버리지, 성능 지표 등을 포함하며, 개발팀의 생산성과 품질 관리 현황을 종합적으로 모니터링하는 데 사용됩니다.",
+                    "chunk_id": "milestone_phase_3",
+                    "similarity_score": 0.88
+                }
+            ],
+            "rag_context": "프로젝트 관리 문서 및 개발 진행 상황 보고서에서 추출된 최신 정보로, 각 개발 단계별 완료율과 향후 계획을 포함한 종합적인 프로젝트 현황 데이터",
+            "metadata": {
+                "model_used": "gpt-4o + faiss", 
+                "query_type": "style_conversion",
+                "processing_time": "4.7s",
+                "total_tokens": 1250,
+                "style_variants": 3,
+                "context_chunks": 5
+            }
         })
         
-        # When: 스타일별 질문 요청
+        # When: 복잡한 긴 프로젝트 상황 질문 (스타일별)
+        long_business_query = """
+        현재 진행 중인 프로젝트의 전체적인 상황을 상세히 파악하고 싶습니다.
+        각 개발 단계별 진행률과 완료된 작업들, 그리고 아직 남은 작업들의 목록,
+        예상 완료 시점과 함께 현재까지의 성과와 향후 계획을 포함해서
+        종합적인 프로젝트 현황 보고를 부탁드립니다.
+        """
+        
         request_data = {
-            "query": "프로젝트 진행 상황을 알려주세요",
+            "query": long_business_query.strip(),
             "use_styles": True,
             "user_profile": test_user_profile,
-            "context": "business"
+            "context": "business_report"
         }
         response = await async_client.post("/api/v1/rag/ask", json=request_data)
         
-        # Then: 스타일별 응답 확인
+        # Then: 긴 텍스트 스타일별 응답 확인
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["success"] is True
         assert "converted_texts" in data
-        assert "direct" in data["converted_texts"]
-        assert "gentle" in data["converted_texts"] 
-        assert "neutral" in data["converted_texts"]
-        assert data["rag_context"] == "프로젝트 관리 문서에서 추출한 정보"
-        assert len(data["sources"]) > 0
+        
+        # 각 스타일별 응답 길이 및 내용 확인
+        assert len(data["converted_texts"]["direct"]) > 300
+        assert len(data["converted_texts"]["gentle"]) > 400
+        assert len(data["converted_texts"]["neutral"]) > 350
+        
+        # 직접적 스타일 특성 확인
+        direct_text = data["converted_texts"]["direct"]
+        assert "70% 완료" in direct_text
+        assert "✅" in direct_text or "완료된 작업" in direct_text
+        
+        # 부드러운 스타일 특성 확인  
+        gentle_text = data["converted_texts"]["gentle"]
+        assert "안녕하세요" in gentle_text or "말씀드리겠습니다" in gentle_text
+        assert "😊" in gentle_text or "다행입니다" in gentle_text
+        
+        # 중립적 스타일 특성 확인
+        neutral_text = data["converted_texts"]["neutral"]
+        assert "파악됩니다" in neutral_text or "전망됩니다" in neutral_text
+        assert "【" in neutral_text or "•" in neutral_text
+        
+        # RAG 컨텍스트 및 소스 확인
+        assert len(data["rag_context"]) > 100
+        assert "프로젝트 관리 문서" in data["rag_context"]
+        assert len(data["sources"]) == 2
+        assert data["sources"][0]["similarity_score"] > 0.85
+        
+        # 메타데이터 확인
+        assert data["metadata"]["style_variants"] == 3
+        assert data["metadata"]["total_tokens"] == 1250
         assert "answer" not in data  # 스타일 변환이므로 단일 답변 없음
         
         # 서비스 호출 확인
         mock_rag_service.ask_with_styles.assert_called_once()
         call_args = mock_rag_service.ask_with_styles.call_args
-        assert call_args.kwargs["query"] == "프로젝트 진행 상황을 알려주세요"
-        assert call_args.kwargs["context"] == "business"
+        assert call_args.kwargs["query"] == long_business_query.strip()
+        assert call_args.kwargs["context"] == "business_report"
     
     @pytest.mark.asyncio
     @pytest.mark.api
-    async def test_analyze_grammar(self, async_client: AsyncClient, mock_rag_service):
-        """POST /api/v1/rag/analyze-grammar - 문법 분석"""
-        # Given: 문법 분석 응답 설정
+    async def test_analyze_grammar_long_text(self, async_client: AsyncClient, mock_rag_service):
+        """POST /api/v1/rag/analyze-grammar - 긴 텍스트 문법 분석"""
+        # Given: 긴 텍스트 문법 분석 응답 설정
+        long_grammar_analysis = """
+        전체적으로 문법적인 구조는 올바르게 작성되었습니다. 다만 몇 가지 개선할 수 있는 부분들이 있습니다:
+
+        📝 **문법 및 맞춤법 분석 결과:**
+
+        ✅ **올바른 부분들:**
+        - 문장의 기본 구조(주어-목적어-서술어)가 적절히 배치되어 있습니다
+        - 조사 사용이 대부분 정확합니다
+        - 문장 간 연결이 자연스럽게 이어지고 있습니다
+        - 전문 용어 사용이 맥락에 적합합니다
+
+        ⚠️ **개선 제안 사항들:**
+        1. "~에 대해서"를 "~에 대해"로 간소화하면 더 자연스럽습니다
+        2. 일부 긴 문장들을 두 개로 나누면 가독성이 향상됩니다
+        3. 반복되는 어미 "~습니다"를 다양하게 변화시키면 좋겠습니다
+        4. 몇 개의 외래어 표기에서 띄어쓰기 확인이 필요합니다
+
+        📊 **문체 일관성 평가:**
+        - 전체적으로 격식체로 통일되어 있어 좋습니다
+        - 비즈니스 문서에 적합한 톤을 유지하고 있습니다
+        - 전문성과 정중함의 균형이 잘 맞춰져 있습니다
+        """
+        
         mock_rag_service.ask_question = AsyncMock(return_value={
             "success": True,
-            "answer": "문법적으로 올바른 문장입니다. 표현이 자연스럽고 명확합니다.",
-            "sources": [{"source": "grammar_rules.txt"}],
-            "metadata": {"analysis_type": "grammar_check"}
+            "answer": long_grammar_analysis.strip(),
+            "sources": [
+                {
+                    "source": "korean_grammar_comprehensive_guide.txt",
+                    "content": "한국어 문법의 종합적인 가이드로, 올바른 문장 구조, 조사 사용법, 어미 변화, 띄어쓰기 규칙 등을 상세히 다루고 있습니다. 특히 비즈니스 문서와 공식 문서 작성 시 주의해야 할 문법적 요소들과 표준 맞춤법 규정에 대한 실무적인 내용들을 포함하고 있어, 전문적인 글쓰기에 도움이 됩니다.",
+                    "chunk_id": "formal_writing_grammar",
+                    "similarity_score": 0.92
+                }
+            ],
+            "metadata": {
+                "analysis_type": "grammar_check",
+                "text_length": 425,
+                "grammar_score": 8.5,
+                "improvement_points": 4
+            }
         })
         
-        # When: 문법 분석 요청
+        # When: 긴 텍스트 문법 분석 요청
+        long_text_to_analyze = """
+        현재 저희 회사에서는 새로운 디지털 전환 프로젝트에 대해서 검토를 진행하고 있습니다.
+        이 프로젝트는 기존의 레거시 시스템들을 모던한 클라우드 기반 아키텍처로 이전하는 것을 목표로 하고 있으며,
+        동시에 사용자 경험의 개선과 업무 효율성의 증대를 추구하고 있습니다.
+        전체적인 프로젝트 범위는 다음과 같습니다. 첫번째로 기존 데이터베이스의 마이그레이션 작업이 있습니다.
+        두번째로는 새로운 API 시스템의 구축 작업이 필요합니다.
+        """
+        
         request_data = {
-            "query": "이 문장의 문법을 확인해주세요."
+            "query": long_text_to_analyze.strip()
         }
         response = await async_client.post("/api/v1/rag/analyze-grammar", json=request_data)
         
-        # Then: 분석 결과 확인
+        # Then: 상세한 문법 분석 결과 확인
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["success"] is True
-        assert data["answer"] == "문법적으로 올바른 문장입니다. 표현이 자연스럽고 명확합니다."
+        assert len(data["answer"]) > 400  # 긴 분석 결과 확인
+        assert "문법" in data["answer"]
+        assert "개선" in data["answer"]
+        assert "✅" in data["answer"]
+        assert "제안" in data["answer"]
         assert data["metadata"]["analysis_type"] == "grammar_check"
-        assert data["metadata"]["original_text"] == "이 문장의 문법을 확인해주세요."
+        assert data["metadata"]["original_text"] == long_text_to_analyze.strip()
+        assert data["metadata"]["text_length"] == 425
+        assert data["metadata"]["grammar_score"] == 8.5
         
-        # 서비스 호출 시 문법 분석용 쿼리로 변환되었는지 확인
+        # 서비스 호출 확인
         mock_rag_service.ask_question.assert_called_once()
         call_args = mock_rag_service.ask_question.call_args
         assert "문법, 맞춤법, 표현을 분석하고" in call_args.kwargs["query"]
