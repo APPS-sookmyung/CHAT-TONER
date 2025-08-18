@@ -22,7 +22,7 @@ export default function ConverterPage() {
   const [, setLoc] = useLocation();
   const userId = getUserId();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [tab, setTab] = useState<"converter" | "settings">("converter"); // ✅ 단일 Tabs 상태
+  const [tab, setTab] = useState<"converter" | "settings">("converter");
 
   useEffect(() => {
     const raw = localStorage.getItem("chatToner_profile");
