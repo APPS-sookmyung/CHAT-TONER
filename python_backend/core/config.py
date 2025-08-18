@@ -29,11 +29,6 @@ class Settings(BaseSettings):
         if self.FINETUNE_URL_OVERRIDE:
             return self.FINETUNE_URL_OVERRIDE
         return f"http://{self.FINETUNE_INFERENCE_HOST}:{self.FINETUNE_INFERENCE_PORT}"
-        """
-    @property
-    def FINETUNE_URL(self) -> str:
-        return f"http://{self.FINETUNE_INFERENCE_HOST}:{self.FINETUNE_INFERENCE_PORT}"
-    """
     
     # OpenAI 설정
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")

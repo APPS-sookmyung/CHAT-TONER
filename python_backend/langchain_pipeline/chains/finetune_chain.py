@@ -82,7 +82,7 @@ class FinetuneChain:
             return False
     
     def _should_use_lora(self, user_profile: Dict, context: str) -> bool:
-        """공식 문서 변환 필요 여부 판단 - 수정된 버전"""
+        """공식 문서 변환 필요 여부 판단"""
         # 1. 직접적인 공식 문서 모드
         if user_profile.get('formal_document_mode', False):
             return True
