@@ -231,6 +231,37 @@ class RAGService:
                 query, context, base_metadata
             )
     
+    async def ask_generative_question(self, 
+                                     query: str, 
+                                     context: Optional[str] = None) -> Dict[str, Any]:
+        """
+        RAG Chain을 직접 사용하여 생성적인 답변을 얻는 메소드.
+        (간단한 임베더 검색을 건너뜀)
+        """
+        base_metadata = {
+            "query_timestamp": self._get_timestamp(),
+            "query_type": "generative_rag",
+            "context_provided": bool(context)
+        }
+        
+        try:
+            logger.info(f"생성형 RAG 요청: {len(query)}자, context={bool(context)}")
+            
+            if not query.strip():
+                return self._create_error_response("빈 질문은 처리할 수 없습니다.", query, context, base_metadata)
+            
+            # RAG Chain을 직접 호출
+            result = await self._try_rag_chain(query, context, base_metadata)
+            if result:
+                return result
+            
+            # RAG Chain 실패
+            return self._create_error_response("RAG 서비스가 초기화되지 않았거나 답변 생성에 실패했습니다.", query, context, base_metadata)
+            
+        except Exception as e:
+            logger.error(f"생성형 RAG 중 오류: {e}")
+            return self._create_error_response(f"생성형 RAG 중 서버 오류가 발생했습니다: {str(e)}", query, context, base_metadata)
+    
     async def _try_embedder_search(self, query: str, context: Optional[str], base_metadata: dict) -> Optional[Dict[str, Any]]:
         """임베더 검색 시도"""
         if not self.simple_embedder:

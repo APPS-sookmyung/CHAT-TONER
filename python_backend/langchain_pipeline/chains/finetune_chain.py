@@ -130,7 +130,7 @@ class FinetuneChain:
             logger.error(f"런팟 서버 응답 처리 실패: {e}")
             return input_text  # 실패 시 원본 텍스트 반환
     
-    async def _refine_with_gpt(self, lora_output: str, user_profile: Dict, context: str) -> str:
+    async def _refine_with_gpt(self, lora_output: str, original_text:str, user_profile: Dict, context: str) -> str:
         """ChatGPT로 2차 다듬기 (기존 OpenAIService 패턴 사용)"""
         if not self.services_available:
             return lora_output
@@ -144,15 +144,37 @@ class FinetuneChain:
                 negative_preferences=negative_preferences
             )
             
+            # 사용자 프로필에 따른 스타일 결정
+            directness_level = user_profile.get('sessionDirectnessLevel', 
+                                              user_profile.get('baseDirectnessLevel', 3))
+            
+            # 직설성 레벨에 따른 스타일 선택 
+            if directness_level >= 4:
+                style_key = 'direct'   
+            elif directness_level <= 2:
+                style_key = 'gentle'  
+            else:
+                style_key = 'neutral'
+
             refinement_prompt = f"""
-다음은 LoRA 모델이 생성한 공식 문서 변환 결과입니다.
-이를 더욱 자연스럽고 완성도 높은 공식 문서로 다듬어주세요.
+다음은 공식 문서 변환 작업입니다.
 
-{prompts.get('neutral', '')}
+【원본 텍스트】
+{original_text}
 
-LoRA 변환 결과:
+【1차 LoRA 변환 결과】  
 {lora_output}
+
+【작업 지시사항】
+{prompts.get(style_key, prompts.get('neutral', ''))}
+
+위의 원본 텍스트와 1차 변환 결과를 참고하여, 원본의 의도를 유지하면서 1차 변환 결과를 더욱 자연스럽고 완성도 높은 공식 문서로 다듬어주세요.
+
+- 원본 텍스트의 핵심 의미와 맥락을 보존
+- 1차 변환의 공식적 톤을 유지하되 부자연스러운 부분 개선
+- 누락된 정보가 있다면 원본을 참고하여 보완
 """
+
             
             refined_result = self.openai_service._convert_single_style(
                 input_text=lora_output,
@@ -213,7 +235,11 @@ LoRA 변환 결과:
             
             # 2차: ChatGPT 다듬기
             logger.info("ChatGPT를 통한 2차 다듬기 시작")
-            final_output = await self._refine_with_gpt(lora_output, user_profile, context)
+            final_output = await self._refine_with_gpt(
+                lora_output = lora_output,
+                original_text=input_text,
+                user_profile=user_profile,
+                context=context)
             
             return {
                 "success": True,
