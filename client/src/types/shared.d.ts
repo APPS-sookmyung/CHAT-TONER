@@ -23,6 +23,10 @@ declare module "@shared/schema" {
     baseDirectnessLevel: number;
     responses: UserResponses;
     completedAt: Date;
+    sessionFormalityLevel?: number;
+    sessionFriendlinessLevel?: number;
+    sessionEmotionLevel?: number;
+    sessionDirectnessLevel?: number;
   };
 
   export type ConversionRequest = {
@@ -33,5 +37,12 @@ declare module "@shared/schema" {
       preserveEmojis?: boolean;
       preserveAbbreviations?: boolean;
     };
+  };
+
+  export type ConversionResponse = {
+    direct: string;
+    gentle: string;
+    neutral: string;
+    conversionId?: number;
   };
 }
