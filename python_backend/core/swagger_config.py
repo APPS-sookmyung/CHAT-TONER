@@ -16,18 +16,33 @@ def configure_swagger(app: FastAPI) -> None:
             return app.openapi_schema
         
         schema = get_openapi(
-            title="Chat Toner API",
+            title="ChatToner API",
             version="1.0.0",
-            description="Chat Toner는 AI 기반 한국어 텍스트 스타일 변환 서비스입니다.",
+            description="""
+            🎯 **ChatToner** - AI 기반 한국어 텍스트 개인화 서비스
+            
+            ## 🚀 주요 기능
+            - **텍스트 스타일 변환**: 사용자 맞춤 톤 변환 (격식/친근/중립)
+            - **품질 분석**: 문법, 가독성, 격식성 자동 점검
+            - **RAG 시스템**: 문서 기반 스타일 가이드 검색
+            - **개인화**: 사용자 피드백 학습 및 프로필 적응
+            
+            ## 🛠 사용 흐름
+            1. `/api/v1/conversion/convert` - 텍스트 변환 요청
+            2. `/api/v1/quality/analyze` - 품질 점수 확인  
+            3. `/api/v1/feedback` - 피드백 제출
+            4. `/api/v1/rag/ask` - 스타일 가이드 질의응답
+            """,
             routes=app.routes,
         )
 
         schema["tags"] = [
-            {"name": "Health Check", "description": "서버 상태 및 연결 확인"},
-            {"name": "Text Conversion", "description": "AI 기반 텍스트 스타일 변환"},
-            {"name": "User Profile", "description": "사용자 개인화 프로필 관리"},
-            {"name": "Preferences", "description": "네거티브 프롬프트 및 스타일 선호도"},
-            {"name": "Advanced AI", "description": "파인튜닝 및 고급 프롬프트 기능"},
+            {"name": "health", "description": "🔍 서버 상태 및 연결 확인"},
+            {"name": "conversion", "description": "🎯 AI 기반 텍스트 스타일 변환 (핵심 기능)"},
+            {"name": "profile", "description": "👤 사용자 개인화 프로필 관리"},
+            {"name": "quality", "description": "📊 텍스트 품질 분석 (문법/가독성/격식성)"},
+            {"name": "feedback", "description": "💭 사용자 피드백 수집 및 AI 학습"},
+            {"name": "rag", "description": "📚 RAG 기반 문서 검색 및 지능형 질의응답"},
         ]
         """
         # 보안 스키마 

@@ -9,6 +9,7 @@ Chat Toner FastAPI Main Application
 간소화된 메인 애플리케이션 엔트리포인트
 """
 
+
 import logging
 logger= logging.getLogger('chattoner')
 from fastapi import FastAPI
@@ -25,6 +26,7 @@ from api.v1.router import api_router
 def create_app() -> FastAPI:
     """FastAPI 애플리케이션 팩토리"""
     settings = get_settings()
+    
     logger.info(f"OPENAI_MODEL: {settings.OPENAI_MODEL}")
     logger.info(f"DEBUG: {settings.DEBUG}")
     

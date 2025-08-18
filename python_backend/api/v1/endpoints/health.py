@@ -7,6 +7,7 @@ import os
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Dict, Any
+from core.config import get_settings
 
 router = APIRouter()
 
@@ -50,38 +51,19 @@ async def health_check() -> HealthResponse:
     - **프롬프트 엔지니어링 서비스 상태**  
     - **사용 가능한 기능 목록**
     """
+    settings = get_settings()
     return HealthResponse(
         status="ok",
         service="chat-toner-fastapi",
-        openai_available=bool(os.getenv("OPENAI_API_KEY")),
+        openai_available=bool(settings.OPENAI_API_KEY),
         prompt_engineering_available=True,
         features={
             "basic_conversion": True,
             "advanced_prompts": True,
-            "openai_integration": bool(os.getenv("OPENAI_API_KEY")),
+            "openai_integration": bool(settings.OPENAI_API_KEY),
             "rag_chains": True,
             "finetune_service": True
         }
     )
 
-@router.get("/api/health",
-            response_model=HealthResponse, 
-            summary="API 헬스체크",
-            description="API 전용 헬스체크 엔드포인트입니다.")
-async def api_health_check() -> HealthResponse:
-    """API 전용 헬스체크"""
-    from datetime import datetime
-    
-    return HealthResponse(
-        status="healthy",
-        service="chat-toner-fastapi",
-        openai_available=bool(os.getenv("OPENAI_API_KEY")),
-        prompt_engineering_available=True,
-        features={
-            "basic_conversion": True,
-            "advanced_prompts": True,
-            "openai_integration": bool(os.getenv("OPENAI_API_KEY")),
-            "rag_chains": True,
-            "finetune_service": True
-        }
-    )
+# 중복 경로 제거 ("/api/health" → 삭제). 헬스체크는 "/health"만 제공합니다.

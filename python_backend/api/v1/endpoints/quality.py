@@ -1,15 +1,14 @@
 """
-Text Quality Analysis Endpoints
-텍스트 품질 분석 엔드포인트
+Text Quality Analysis Endpoints (RAG-based)
+RAG를 활용한 텍스트 품질 분석 및 제안 엔드포인트
 """
 
-from typing import Annotated
 from fastapi import APIRouter, HTTPException, Depends
-from dependency_injector.wiring import inject, Provide
-import re
+import json
+from typing import Annotated
 
-from core.container import Container
-from services.openai_services import OpenAIService
+# RAG 서비스를 사용하도록 의존성 변경
+from services.rag_service import RAGService
 from api.v1.schemas.quality import (
     QualityAnalysisRequest,
     QualityAnalysisResponse,
@@ -20,116 +19,101 @@ from api.v1.schemas.quality import (
 import logging
 
 logger = logging.getLogger('chattoner')
-
 router = APIRouter()
 
+# RAG 서비스 의존성 주입 함수
+def get_rag_service():
+    """RAG 서비스 인스턴스 생성"""
+    try:
+        return RAGService()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}")
+
 @router.post("/analyze", response_model=QualityAnalysisResponse)
-@inject
 async def analyze_text_quality(
     request: QualityAnalysisRequest,
-    openai_service: Annotated[
-        OpenAIService,
-        Depends(Provide[Container.openai_service])
-    ]
+    rag_service: Annotated[RAGService, Depends(get_rag_service)]
 ) -> QualityAnalysisResponse:
-    """텍스트 품질 분석"""
+    """텍스트 품질 분석 (RAG 기반)"""
     try:
-        text = request.text
+        # RAG에 보낼 상세한 프롬프트(질문) 구성
+        prompt = f"""'좋은 글쓰기 원칙'과 '문법 규칙' 관련 문서를 참고하여, 아래 텍스트의 품질을 분석해줘.
         
-        # 기본 품질 분석 로직
-        word_count = len(text.split())
-        sentence_count = len([s for s in text.split('.') if s.strip()])
+        분석 항목:
+        1. 문법 정확도 (grammarScore)
+        2. 격식 수준 (formalityScore)
+        3. 가독성 (readabilityScore)
+        4. 개선 제안 (suggestions) - 2개
         
-        # 정중한 표현 패턴 검사
-        polite_patterns = [r'습니다$', r'해주세요$', r'부탁드립니다$', r'감사합니다$']
-        has_polite_endings = any(re.search(pattern, text) for pattern in polite_patterns)
+        반드시 아래 JSON 형식으로만 응답해줘. 다른 설명은 절대 추가하지 마.
+        {{
+            "grammarScore": <0.0에서 100.0 사이의 점수>,
+            "formalityScore": <0.0에서 100.0 사이의 점수>,
+            "readabilityScore": <0.0에서 100.0 사이의 점수>,
+            "suggestions": ["제안1", "제안2"]
+        }}
+
+        --- 분석할 텍스트 ---
+        {request.text}
+        """
         
-        # 업무 용어 검사
-        business_terms = ['보고서', '회의', '검토', '승인', '협의', '논의', '진행', '완료']
-        has_business_terms = any(term in text for term in business_terms)
+        # RAG 서비스 호출 (생성형 답변 함수 사용)
+        rag_result = await rag_service.ask_generative_question(query=prompt, context="텍스트 품질 분석")
         
-        # 점수 계산
-        grammar_score = min(95.0, 80.0 + (len(text) / 10))  # 기본 80점 + 텍스트 길이 보너스
-        formality_score = 90.0 if has_polite_endings else 65.0
-        readability_score = 90.0 if word_count < 50 else max(70.0, 90.0 - (word_count - 50) * 0.5)
-        
-        # 개선 제안 생성
-        suggestions = []
-        if word_count > 50:
-            suggestions.append("문장을 더 짧게 나누어 가독성을 높여보세요")
-        if not has_polite_endings:
-            suggestions.append("좀 더 정중한 표현을 사용해보세요")
-        if has_business_terms:
-            suggestions.append("적절한 업무 용어를 사용하고 계십니다")
-        else:
-            suggestions.append("맥락에 맞는 전문 용어 사용을 고려해보세요")
-        
-        if sentence_count > 5:
-            suggestions.append("긴 문단을 여러 개의 짧은 문단으로 나누는 것을 고려해보세요")
-            
-        return QualityAnalysisResponse(
-            grammarScore=grammar_score,
-            formalityScore=formality_score,
-            readabilityScore=readability_score,
-            suggestions=suggestions
-        )
-        
+        if not rag_result or not rag_result.get("success"):
+            raise HTTPException(status_code=500, detail="RAG 서비스가 품질 분석에 실패했습니다.")
+
+        # RAG의 답변(answer)에 포함된 JSON 문자열을 파싱
+        analysis_data = json.loads(rag_result["answer"])
+
+        return QualityAnalysisResponse(**analysis_data)
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="RAG 서비스의 응답(JSON)을 파싱하는 데 실패했습니다.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"품질 분석 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"품질 분석 중 오류 발생: {str(e)}")
+
 
 @router.post("/suggestions", response_model=ContextSuggestionsResponse)
-@inject
 async def get_context_suggestions(
     request: ContextSuggestionsRequest,
-    openai_service: Annotated[
-        OpenAIService,
-        Depends(Provide[Container.openai_service])
-    ]
+    rag_service: Annotated[RAGService, Depends(get_rag_service)]
 ) -> ContextSuggestionsResponse:
-    """맥락별 표현 개선 제안"""
+    """맥락별 표현 개선 제안 (RAG 기반)"""
     try:
-        context = request.context
-        text = request.text
+        # RAG에 보낼 상세한 프롬프트(질문) 구성
+        prompt = f"""'글쓰기 스타일 가이드' 문서를 참고하여, '{request.context}' 맥락에서 아래 텍스트의 표현을 더 좋게 바꿀 수 있는 제안들을 3개만 찾아줘.
         
-        # 맥락별 제안 데이터베이스
-        suggestion_database = {
-            "business": [
-                {"original": "확인", "suggestion": "검토", "reason": "업무상 더 정확한 표현"},
-                {"original": "해주세요", "suggestion": "부탁드립니다", "reason": "비즈니스 매너"},
-                {"original": "빨리", "suggestion": "신속히", "reason": "전문적인 표현"},
-                {"original": "좋다", "suggestion": "적절하다", "reason": "객관적 평가 표현"}
-            ],
-            "casual": [
-                {"original": "확인해주세요", "suggestion": "한번 봐주세요", "reason": "친근한 표현"},
-                {"original": "검토", "suggestion": "체크", "reason": "일상적 표현"},
-                {"original": "부탁드립니다", "suggestion": "부탁해요", "reason": "캐주얼한 톤"},
-                {"original": "진행하겠습니다", "suggestion": "해볼게요", "reason": "자연스러운 표현"}
-            ],
-            "report": [
-                {"original": "많이", "suggestion": "상당히", "reason": "공식 문서 표현"},
-                {"original": "좋다", "suggestion": "양호하다", "reason": "보고서 적합 표현"},
-                {"original": "빨리", "suggestion": "조속히", "reason": "공문서 표현"},
-                {"original": "문제", "suggestion": "이슈", "reason": "전문 용어"}
-            ]
-        }
+        반드시 아래의 JSON 형식으로만 응답해야 해. 다른 설명은 절대 추가하지 마.
+        [
+          {{
+            "original": "개선이 필요한 원본 단어 또는 구절",
+            "suggestion": "더 나은 표현 제안",
+            "reason": "왜 그렇게 제안하는지에 대한 간단한 이유"
+          }}
+        ]
+
+        --- 개선할 텍스트 ---
+        {request.text}
+        """
         
-        # 맥락에 맞는 제안 선택
-        suggestions = suggestion_database.get(context, suggestion_database["business"])
+        # RAG 서비스 호출 (생성형 답변 함수 사용)
+        rag_result = await rag_service.ask_generative_question(query=prompt, context="표현 개선 제안")
+
+        if not rag_result or not rag_result.get("success"):
+            raise HTTPException(status_code=500, detail="RAG 서비스가 표현 제안에 실패했습니다.")
+
+        # RAG의 답변(answer)에 포함된 JSON 문자열을 파싱
+        suggestions_list = json.loads(rag_result["answer"])
         
-        # 텍스트에 실제로 포함된 단어들과 매칭되는 제안만 필터링
-        relevant_suggestions = []
-        for suggestion in suggestions:
-            if suggestion["original"] in text:
-                relevant_suggestions.append(SuggestionItem(**suggestion))
-        
-        # 관련 제안이 없으면 기본 제안 제공
-        if not relevant_suggestions:
-            relevant_suggestions = [SuggestionItem(**s) for s in suggestions[:2]]
-        
+        relevant_suggestions = [SuggestionItem(**s) for s in suggestions_list]
+
         return ContextSuggestionsResponse(
             suggestions=relevant_suggestions,
             count=len(relevant_suggestions)
         )
         
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="RAG 서비스의 응답(JSON)을 파싱하는 데 실패했습니다.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"맥락 제안 생성 실패: {str(e)}")

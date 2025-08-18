@@ -38,9 +38,11 @@ def get_embedding():
     dotenv_path = Path(__file__).resolve().parents[3] / ".env"
     load_dotenv(dotenv_path=dotenv_path)
     
-    api_key = os.getenv("OPENAI_API_KEY")
+    from core.config import get_settings
+    settings = get_settings()
+    api_key = settings.OPENAI_API_KEY
     if not api_key:
-        raise ValueError("OPENAI_API_KEY 환경 변수가 설정되지 않았습니다")
+        raise ValueError("OPENAI_API_KEY가 설정되지 않았습니다")
     
     return OpenAIEmbeddings(
         model="text-embedding-3-small",
