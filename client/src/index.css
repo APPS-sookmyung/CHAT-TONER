@@ -6,7 +6,7 @@
 
 :root {
   font-family: Pretendard;
-  background-color: #f5f5f5;
+  background-color: #f8fafc;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,55 +15,48 @@
 }
 
 :root {
-  --color-background: hsl(0, 0%, 100%);
-  --color-foreground: hsl(20, 14.3%, 4.1%);
-  --color-muted: hsl(60, 4.8%, 95.9%);
-  --color-muted-foreground: hsl(25, 5.3%, 44.7%);
-  --color-popover: hsl(0, 0%, 100%);
-  --color-popover-foreground: hsl(20, 14.3%, 4.1%);
-  --color-card: hsl(0, 0%, 100%);
-  --color-card-foreground: hsl(20, 14.3%, 4.1%);
-  --color-border: hsl(20, 5.9%, 90%);
-  --color-input: hsl(20, 5.9%, 90%);
-  --color-primary: hsl(224, 76%, 66%);
-  --color-primary-foreground: hsl(211, 100%, 99%);
-  --color-secondary: hsl(271, 81%, 73%);
-  --color-secondary-foreground: hsl(24, 9.8%, 10%);
-  --color-accent: hsl(329, 77%, 66%);
-  --color-accent-foreground: hsl(24, 9.8%, 10%);
-  --color-success: hsl(142, 76%, 36%);
-  --color-success-foreground: hsl(60, 9.1%, 97.8%);
-  --color-warning: hsl(38, 92%, 50%);
-  --color-warning-foreground: hsl(60, 9.1%, 97.8%);
-  --color-error: hsl(0, 84.2%, 60.2%);
-  --color-error-foreground: hsl(60, 9.1%, 97.8%);
-  --color-destructive: hsl(0, 84.2%, 60.2%);
-  --color-destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --color-ring: hsl(20, 14.3%, 4.1%);
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
   --radius: 0.5rem;
 }
 
 .dark {
-  --color-background: hsl(240, 10%, 3.9%);
-  --color-foreground: hsl(0, 0%, 98%);
-  --color-muted: hsl(240, 3.7%, 15.9%);
-  --color-muted-foreground: hsl(240, 5%, 64.9%);
-  --color-popover: hsl(240, 10%, 3.9%);
-  --color-popover-foreground: hsl(0, 0%, 98%);
-  --color-card: hsl(240, 10%, 3.9%);
-  --color-card-foreground: hsl(0, 0%, 98%);
-  --color-border: hsl(240, 4.9%, 83.9%);
-  --color-input: hsl(240, 3.7%, 15.9%);
-  --color-primary: hsl(224, 76%, 66%);
-  --color-primary-foreground: hsl(211, 100%, 99%);
-  --color-secondary: hsl(240, 3.7%, 15.9%);
-  --color-secondary-foreground: hsl(0, 0%, 98%);
-  --color-accent: hsl(240, 3.7%, 15.9%);
-  --color-accent-foreground: hsl(0, 0%, 98%);
-  --color-destructive: hsl(0, 62.8%, 30.6%);
-  --color-destructive-foreground: hsl(0, 0%, 98%);
-  --color-ring: hsl(240, 4.9%, 83.9%);
-  --radius: 0.5rem;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
 }
 
 @layer utilities {
@@ -75,39 +68,39 @@
 
 /* Custom color utilities */
 .text-success {
-  color: hsl(var(--color-success));
+  color: hsl(142, 76%, 36%);
 }
 
 .text-warning {
-  color: hsl(var(--color-warning));
+  color: hsl(38, 92%, 50%);
 }
 
 .text-error {
-  color: hsl(var(--color-error));
+  color: hsl(0, 84.2%, 60.2%);
 }
 
 .bg-success {
-  background-color: hsl(var(--color-success));
+  background-color: hsl(142, 76%, 36%);
 }
 
 .bg-warning {
-  background-color: hsl(var(--color-warning));
+  background-color: hsl(38, 92%, 50%);
 }
 
 .bg-error {
-  background-color: hsl(var(--color-error));
+  background-color: hsl(0, 84.2%, 60.2%);
 }
 
 .bg-success\/10 {
-  background-color: hsl(var(--color-success) / 0.1);
+  background-color: hsl(142, 76%, 36% / 0.1);
 }
 
 .bg-warning\/10 {
-  background-color: hsl(var(--color-warning) / 0.1);
+  background-color: hsl(38, 92%, 50% / 0.1);
 }
 
 .bg-error\/10 {
-  background-color: hsl(var(--color-error) / 0.1);
+  background-color: hsl(0, 84.2%, 60.2% / 0.1);
 }
 
 /* Korean text optimization */

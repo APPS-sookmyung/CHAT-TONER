@@ -22,19 +22,33 @@ interface NegativePromptSettingsProps {
   onSave?: (preferences: UserNegativePreferences) => void;
 }
 
+const defaultPreferences: UserNegativePreferences = {
+  rhetoricLevel: 'moderate',
+  repetitionTolerance: 'moderate',
+  punctuationStyle: 'standard',
+  contentFocus: 'balanced',
+  bulletPreference: 'minimal',
+  emoticonPolicy: 'contextual'
+};
+
 export function NegativePromptSettings({ userId, onSave }: NegativePromptSettingsProps) {
-  const [preferences, setPreferences] = useState<UserNegativePreferences>({
-    rhetoricLevel: 'moderate',
-    repetitionTolerance: 'moderate',
-    punctuationStyle: 'standard',
-    contentFocus: 'balanced',
-    bulletPreference: 'minimal',
-    emoticonPolicy: 'contextual'
-  });
-  
+  const [preferences, setPreferences] = useState<UserNegativePreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // 컴포넌트 마운트 시 저장된 설정 불러오기
+  useEffect(() => {
+    const savedPreferences = localStorage.getItem(`negative-preferences-${userId}`);
+    if (savedPreferences) {
+      try {
+        const parsed = JSON.parse(savedPreferences);
+        setPreferences({ ...defaultPreferences, ...parsed });
+      } catch (error) {
+        console.error('설정 불러오기 실패:', error);
+      }
+    }
+  }, [userId]);
+  
   const rhetoricOptions = [
     { value: 'strict', label: '엄격', description: '모든 과장 표현 금지' },
     { value: 'moderate', label: '보통', description: '적당한 수준의 표현' },
@@ -75,26 +89,16 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/negative-preferences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          preferences
-        }),
+      // 로컬 스토리지에 저장
+      localStorage.setItem(`negative-preferences-${userId}`, JSON.stringify(preferences));
+      
+      // 성공 토스트 표시
+      toast({
+        title: "설정 저장 완료",
+        description: "네거티브 프롬프트 선호도가 저장되었습니다.",
       });
-
-      if (response.ok) {
-        toast({
-          title: "설정 저장 완료",
-          description: "네거티브 프롬프트 선호도가 저장되었습니다.",
-        });
-        onSave?.(preferences);
-      } else {
-        throw new Error('저장 실패');
-      }
+      
+      onSave?.(preferences);
     } catch (error) {
       toast({
         title: "저장 실패",
