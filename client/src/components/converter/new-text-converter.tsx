@@ -170,11 +170,42 @@ export default function NewTextConverter({
 
   const convertMutation = useMutation({
     mutationFn: async (): Promise<ConversionResponse> => {
-      // 백엔드 API 대신 모의 데이터 사용
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5초 지연
-      const data = generateMockConversion(inputText.trim(), context, userProfile);
-      if (data.conversionId) setLastConversionId(data.conversionId);
-      return data;
+      const response = await fetch('/api/v1/conversion/convert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: inputText.trim(),
+          user_profile: userProfile,
+          context: context,
+          negative_preferences: null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // 백엔드 응답을 프론트엔드 형식으로 변환
+      const convertedData: ConversionResponse = {
+        conversionId: Date.now(), // 임시 ID
+        versions: {
+          direct: result.converted_texts?.direct || inputText,
+          gentle: result.converted_texts?.gentle || inputText,
+          neutral: result.converted_texts?.neutral || inputText,
+        },
+        analysis: {
+          formalityLevel: userProfile.baseFormalityLevel,
+          friendlinessLevel: userProfile.baseFriendlinessLevel,
+          emotionLevel: userProfile.baseEmotionLevel,
+        }
+      };
+
+      if (convertedData.conversionId) setLastConversionId(convertedData.conversionId);
+      return convertedData;
     },
     onSuccess: (data) => {
       toast({

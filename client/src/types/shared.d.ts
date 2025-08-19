@@ -30,19 +30,23 @@ declare module "@shared/schema" {
   };
 
   export type ConversionRequest = {
-    userId: string;
-    inputText: string;
-    targetStyleTags?: string[];
-    options?: {
-      preserveEmojis?: boolean;
-      preserveAbbreviations?: boolean;
-    };
+    text: string;
+    user_profile: UserProfile;
+    context?: string;
+    negative_preferences?: any;
   };
 
   export type ConversionResponse = {
-    direct: string;
-    gentle: string;
-    neutral: string;
-    conversionId?: number;
+    success: boolean;
+    original_text?: string;
+    converted_texts?: {
+      direct: string;
+      gentle: string;  
+      neutral: string;
+    };
+    context?: string;
+    sentiment_analysis?: any;
+    metadata?: any;
+    error?: string;
   };
 }

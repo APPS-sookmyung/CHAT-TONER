@@ -44,6 +44,7 @@ class ConversionService:
                 context=context,
                 negative_preferences=negative_preferences
             )
+            print(f"Generated prompts: {prompts}")
             
             # 2. OpenAI API 호출하여 텍스트 변환
             converted_texts = self.openai_service.convert_text_styles(
@@ -72,7 +73,9 @@ class ConversionService:
             return result
             
         except Exception as e:
+            import traceback
             print(f"텍스트 변환 오류: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
             return {
                 "success": False,
                 "error": str(e),

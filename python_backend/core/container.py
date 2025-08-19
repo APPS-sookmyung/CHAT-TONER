@@ -40,14 +40,13 @@ class Container(containers.DeclarativeContainer):
     conversion_service = providers.Singleton(
         ConversionService,
         prompt_engineer=prompt_engineer,
-        openai_service=openai_service,
-        user_preferences_service=user_preferences_service
+        openai_service=openai_service
     )
 
     # 파인튜닝 서비스
     finetune_service = providers.Singleton(
-      FinetuneService,
-      prompt_engineer=prompt_engineer,
-      openai_service=openai_service,
-      user_preferences_service=user_preferences_service
+        FinetuneService,
+        prompt_engineer=prompt_engineer,
+        openai_service=openai_service,
+        user_preferences_service=user_preferences_service
     )

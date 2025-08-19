@@ -11,17 +11,11 @@
 5. pydantic 모델이 request body 에서 명시적임을 보장 
 """
 
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
-from dependency_injector.wiring import inject, Provide
-
-from core.container import Container
-from services.conversion_service import ConversionService
+from fastapi import APIRouter, HTTPException
 from api.v1.schemas.conversion import (
     ConversionRequest,
     ConversionResponse
 )
-from api.v1.dependencies import get_current_user_optional
 from fastapi import status
 import logging 
 
@@ -29,18 +23,31 @@ logger=logging.getLogger('chattoner')
 
 router = APIRouter()
 
-@router.post("/convert", response_model=ConversionResponse)
-@inject
-async def convert_text(
-    request: ConversionRequest,
-    conversion_service: Annotated[
-        ConversionService, 
-        Depends(Provide[Container.conversion_service])
-    ],
-    current_user = Depends(get_current_user_optional)
-) -> ConversionResponse:
+@router.get("/test")
+async def test_endpoint():
+    """간단한 테스트 엔드포인트"""
+    print("[DEBUG] 테스트 엔드포인트 호출됨")
+    return {"message": "테스트 성공", "status": "ok"}
+
+@router.post("/convert")
+async def convert_text(request: ConversionRequest):
     """텍스트 스타일 변환"""
+    print(f"[DEBUG] API 엔드포인트 진입")
+    print(f"[DEBUG] 요청 데이터: {request}")
     try:
+        print(f"[DEBUG] 변환 요청 받음: {request.text}")
+        # 임시로 직접 서비스 생성
+        from services.prompt_engineering import PromptEngineer
+        from services.openai_services import OpenAIService
+        from core.config import get_settings
+        
+        settings = get_settings()
+        print(f"[DEBUG] OpenAI API Key 설정됨: {bool(settings.OPENAI_API_KEY)}")
+        prompt_engineer = PromptEngineer()
+        openai_service = OpenAIService(api_key=settings.OPENAI_API_KEY, model=settings.OPENAI_MODEL)
+        conversion_service = ConversionService(prompt_engineer, openai_service)
+        print(f"[DEBUG] 서비스 생성 완료")
+        
         result = await conversion_service.convert_text(
             input_text=request.text,
             user_profile=request.user_profile.model_dump(),
@@ -51,13 +58,19 @@ async def convert_text(
             )
         )
         
-        return ConversionResponse(**result)
+        return result
         
     # 내가 신경쓴 오류 체킹 
     except ValueError as e:
+        print(f"[ERROR] 입력 값 오류: {e}")
         logger.warning(f"입력 값 오류: {e}")
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except Exception as e:
-        logger.error(f"변환 실패: {e}")
+        import traceback
+        error_msg = f"변환 실패: {e}"
+        traceback_msg = traceback.format_exc()
+        print(f"[ERROR] {error_msg}")
+        print(f"[ERROR] Traceback: {traceback_msg}")
+        logger.error(f"{error_msg}\nTraceback: {traceback_msg}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="텍스트 변환 중 서버 오류가 발생했습니다.") from e
 

@@ -5,12 +5,12 @@ import axios from "axios";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5002;
 
 app.use(express.json());
 
 // Python 백엔드 URL
-const PYTHON_BACKEND_URL = "http://127.0.0.1:5001";
+const PYTHON_BACKEND_URL = "http://127.0.0.1:5005";
 
 // 안전한 헤더 필터링
 function filterHeaders(headers: any) {

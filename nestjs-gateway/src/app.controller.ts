@@ -1,11 +1,16 @@
 import { Body, Controller, HttpException, HttpStatus, Post, Get } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { ConversionRequestDto } from './dto/conversion-request.dto';
 import { ConversionResponseDto } from './dto/conversion-response.dto';
 import { FeedbackRequestDto } from './dto/feedback-request.dto';
 import { FeedbackResponseDto } from './dto/feedback-response.dto';
+import { firstValueFrom } from 'rxjs';
+import { AxiosError } from 'axios';
 
 @Controller()
 export class AppController {
+  constructor(private readonly httpService: HttpService) {}
+
   @Get()
   getRoot(): string {
     return '서버가 정상 작동 중입니다!';
@@ -13,22 +18,31 @@ export class AppController {
 
   @Post('convert')
   async convertText(
-    @Body() body: ConversionRequestDto
+    @Body() body: ConversionRequestDto,
   ): Promise<ConversionResponseDto> {
     try {
-      // 💡 여기에 FastAPI 연동 또는 내부 변환 로직 연결 예정
-      const convertedText = `변환된 텍스트: ${body.text}`; // 임시 결과
-      return {
-        converted_text: convertedText,
-      };
-    } catch (e) {
-      throw new HttpException('텍스트 변환 중 오류 발생', HttpStatus.INTERNAL_SERVER_ERROR);
+      const fastApiUrl = 'http://127.0.0.1:5001/api/v1/conversion/convert';
+      const response = await firstValueFrom(
+        this.httpService.post(fastApiUrl, body),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(
+          error.response.data,
+          error.response.status,
+        );
+      }
+      throw new HttpException(
+        '텍스트 변환 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Post('feedback')
   async submitFeedback(
-    @Body() body: FeedbackRequestDto
+    @Body() body: FeedbackRequestDto,
   ): Promise<FeedbackResponseDto> {
     try {
       // 💡 여기에 피드백 저장 또는 전송 로직 연결 예정
@@ -40,7 +54,10 @@ export class AppController {
         },
       };
     } catch (e) {
-      throw new HttpException('피드백 처리 중 오류 발생', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        '피드백 처리 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
