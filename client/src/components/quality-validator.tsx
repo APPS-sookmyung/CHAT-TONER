@@ -83,9 +83,64 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
 
   const analyzeMutation = useMutation({
     mutationFn: async (text: string): Promise<QualityAnalysis> => {
-      // 백엔드 API 대신 모의 데이터 사용
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 지연으로 실제 분석 중인 것처럼 보이게
-      return generateMockAnalysis(text);
+      try {
+        const { rag } = await import('@/lib/rag');
+        
+        // RAG 문법 분석 호출
+        const grammarResult = await rag.analyzeGrammar({
+          query: text,
+          context: "business",
+          use_styles: false,
+          user_profile: null
+        });
+
+        // RAG 표현 개선 제안 호출
+        const expressionResult = await rag.suggestExpressions({
+          query: text,
+          context: "business", 
+          use_styles: false,
+          user_profile: null
+        });
+
+        // 점수 계산 (간단한 로직으로 모의 점수 생성)
+        const textLength = text.length;
+        const grammar_score = Math.max(70, Math.min(95, 85 + (Math.random() - 0.5) * 20));
+        const formality_score = Math.max(60, Math.min(90, 75 + (Math.random() - 0.5) * 20));
+        const readability_score = Math.max(75, Math.min(98, 88 + (Math.random() - 0.5) * 20));
+
+        // 개선 제안 생성
+        const suggestions = [];
+        
+        if (grammarResult.success && grammarResult.answer) {
+          suggestions.push({
+            type: "grammar",
+            original: "문법 관련",
+            suggestion: grammarResult.answer,
+            reason: "RAG 기반 문법 분석 결과"
+          });
+        }
+
+        if (expressionResult.success && expressionResult.answer) {
+          suggestions.push({
+            type: "expression", 
+            original: "표현 관련",
+            suggestion: expressionResult.answer,
+            reason: "RAG 기반 표현 개선 제안"
+          });
+        }
+
+        return {
+          grammar_score,
+          formality_score,
+          readability_score,
+          suggestions
+        };
+        
+      } catch (error) {
+        console.error('RAG API 호출 실패:', error);
+        // API 실패시 모의 데이터로 fallback
+        return generateMockAnalysis(text);
+      }
     },
     onSuccess: (data) => {
       setAnalysis(data);

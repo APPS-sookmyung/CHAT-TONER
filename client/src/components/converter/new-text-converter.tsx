@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserProfile } from "@shared/schema";
+import { API } from '@/lib/endpoints';
 
 interface ConversionResponse {
   conversionId: number;
@@ -170,14 +171,19 @@ export default function NewTextConverter({
 
   const convertMutation = useMutation({
     mutationFn: async (): Promise<ConversionResponse> => {
-      const response = await fetch('/api/v1/conversion/convert', {
+      const response = await fetch(API.conversion, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           text: inputText.trim(),
-          user_profile: userProfile,
+          user_profile: userProfile || {
+            baseFormalityLevel: 3,
+            baseFriendlinessLevel: 3,
+            baseEmotionLevel: 3,
+            baseDirectnessLevel: 3
+          },
           context: context,
           negative_preferences: null
         })

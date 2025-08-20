@@ -5,12 +5,12 @@ import axios from "axios";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5003;
 
 app.use(express.json());
 
 // Python 백엔드 URL
-const PYTHON_BACKEND_URL = "http://127.0.0.1:5005";
+const PYTHON_BACKEND_URL = "http://127.0.0.1:5001";
 
 // 안전한 헤더 필터링
 function filterHeaders(headers: any) {
@@ -27,7 +27,13 @@ function filterHeaders(headers: any) {
 // Python FastAPI로 프록시하는 함수
 const proxyToPython = async (req, res) => {
   try {
-    const targetUrl = `${PYTHON_BACKEND_URL}${req.originalUrl}`;
+    // /api/* 경로를 /api/v1/* 경로로 매핑
+    let targetPath = req.originalUrl;
+    if (req.originalUrl.startsWith('/api/') && !req.originalUrl.startsWith('/api/v1/')) {
+      targetPath = req.originalUrl.replace('/api/', '/api/v1/');
+    }
+    
+    const targetUrl = `${PYTHON_BACKEND_URL}${targetPath}`;
     console.log(`[프록시] ${req.method} ${req.originalUrl} → ${targetUrl}`);
 
     const headers = filterHeaders(req.headers);
