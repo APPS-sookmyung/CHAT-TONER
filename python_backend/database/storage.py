@@ -21,7 +21,7 @@ class DatabaseStorage:
         """사용자 프로필 조회"""
         with self.session_factory() as db:
             try:
-                profile = db.query(UserProfile).filter(UserProfile.user_id == int(user_id)).first()
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
                 if not profile:
                     return None
                 
@@ -48,7 +48,7 @@ class DatabaseStorage:
         with self.session_factory() as db:
             try:
                 # 기존 프로필 조회
-                profile = db.query(UserProfile).filter(UserProfile.user_id == int(user_id)).first()
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
                 
                 if profile:
                     # 기존 프로필 업데이트
@@ -71,7 +71,7 @@ class DatabaseStorage:
                 else:
                     # 새 프로필 생성
                     profile = UserProfile(
-                        user_id=int(user_id),
+                        user_id=user_id,
                         base_formality_level=profile_data.get('baseFormalityLevel', 3),
                         base_friendliness_level=profile_data.get('baseFriendlinessLevel', 3),
                         base_emotion_level=profile_data.get('baseEmotionLevel', 3),
@@ -97,7 +97,7 @@ class DatabaseStorage:
         with self.session_factory() as db:
             try:
                 conversion = ConversionHistory(
-                    user_id=int(user_id),
+                    user_id=user_id,
                     original_text=conversion_data.get('original_text', ''),
                     converted_texts=conversion_data.get('converted_texts', {}),
                     context=conversion_data.get('context', 'personal'),
@@ -123,7 +123,7 @@ class DatabaseStorage:
         with self.session_factory() as db:
             try:
                 conversions = db.query(ConversionHistory)\
-                    .filter(ConversionHistory.user_id == int(user_id))\
+                    .filter(ConversionHistory.user_id == user_id)\
                     .order_by(ConversionHistory.created_at.desc())\
                     .limit(limit).all()
                 
@@ -151,7 +151,7 @@ class DatabaseStorage:
         with self.session_factory() as db:
             try:
                 prefs = db.query(NegativePreferences)\
-                    .filter(NegativePreferences.user_id == int(user_id)).first()
+                    .filter(NegativePreferences.user_id == user_id).first()
                 
                 if not prefs:
                     return None
@@ -177,7 +177,7 @@ class DatabaseStorage:
             try:
                 # 기존 선호도 조회
                 prefs = db.query(NegativePreferences)\
-                    .filter(NegativePreferences.user_id == int(user_id)).first()
+                    .filter(NegativePreferences.user_id == user_id).first()
                 
                 if prefs:
                     # 기존 선호도 업데이트
@@ -192,7 +192,7 @@ class DatabaseStorage:
                 else:
                     # 새 선호도 생성
                     prefs = NegativePreferences(
-                        user_id=int(user_id),
+                        user_id=user_id,
                         avoid_flowery_language=preferences.get('avoidFloweryLanguage', 'moderate'),
                         avoid_repetitive_words=preferences.get('avoidRepetitiveWords', 'moderate'),
                         comma_usage_style=preferences.get('commaUsageStyle', 'moderate'),

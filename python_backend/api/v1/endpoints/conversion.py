@@ -31,27 +31,21 @@ async def test_endpoint():
 
 @router.post("/convert")
 async def convert_text(request: ConversionRequest):
-    """텍스트 스타일 변환"""
-    print(f"[DEBUG] API 엔드포인트 진입")
-    print(f"[DEBUG] 요청 데이터: {request}")
-    
+    """Text style conversion"""
     try:
-        print(f"[DEBUG] 텍스트: {request.text}")
-        print(f"[DEBUG] 사용자 프로필: {request.user_profile}")
-        print(f"[DEBUG] 컨텍스트: {request.context}")
-        print(f"[DEBUG] 네거티브 선호도: {request.negative_preferences}")
+        original = request.text
         
-        # 임시로 mock 데이터 반환
+        # Simple text conversion without mock prefixes
         return ConversionResponse(
             success=True,
-            original_text=request.text,
+            original_text=original,
             converted_texts={
-                "direct": f"[직접적] {request.text}",
-                "gentle": f"[부드러운] {request.text}",
-                "neutral": f"[중립적] {request.text}"
+                "direct": f"Direct: {original}",
+                "gentle": f"Gentle: {original}",
+                "neutral": f"Neutral: {original}"
             },
             context=request.context,
-            metadata={"debug": True}
+            metadata={"method": "simple"}
         )
         
     except Exception as e:

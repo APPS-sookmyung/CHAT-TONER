@@ -262,12 +262,12 @@ class UserPreferencesService(BaseService):
         """사용자 네거티브 프롬프트 선호도 조회"""
         try:
             # 데이터베이스에서 저장된 선호도 조회
-            stored_prefs = await self.storage.get_negative_preferences(user_id)
+            stored_prefs = self.storage.get_negative_preferences(user_id)
             if stored_prefs:
                 return NegativePreferences.from_dict(stored_prefs)
             
             # 사용자 프로필에서 추출
-            user_profile = await self.storage.get_user_profile(user_id)
+            user_profile = self.storage.get_user_profile(user_id)
             if user_profile and user_profile.get('negativePromptPreferences'):
                 return NegativePreferences.from_dict(user_profile['negativePromptPreferences'])
             
@@ -284,7 +284,7 @@ class UserPreferencesService(BaseService):
         """사용자 네거티브 프롬프트 선호도 저장"""
         try:
             # 데이터베이스에 저장
-            success = await self.storage.save_negative_preferences(user_id, preferences.to_dict())
+            success = self.storage.save_negative_preferences(user_id, preferences.to_dict())
             if not success:
                 raise Exception("데이터베이스 저장 실패")
             
@@ -315,7 +315,7 @@ class UserPreferencesService(BaseService):
             )
             
             # 현재 프로필 조회
-            current_profile = await self.storage.get_user_profile(user_id)
+            current_profile = self.storage.get_user_profile(user_id)
             if not current_profile:
                 self.logger.warning(f"사용자 {user_id} 프로필을 찾을 수 없음")
                 return False

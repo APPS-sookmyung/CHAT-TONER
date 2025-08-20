@@ -171,44 +171,67 @@ export default function NewTextConverter({
 
   const convertMutation = useMutation({
     mutationFn: async (): Promise<ConversionResponse> => {
-      const response = await fetch(API.conversion, {
+      const isFinetune = context === "report";
+      const url = isFinetune ? API.finetune.convert : API.conversion;
+
+      const requestBody = {
+        text: inputText.trim(),
+        user_profile: userProfile || {
+          baseFormalityLevel: 3,
+          baseFriendlinessLevel: 3,
+          baseEmotionLevel: 3,
+          baseDirectnessLevel: 3
+        },
+        context: context,
+        ...(isFinetune && { force_convert: false }),
+      };
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          text: inputText.trim(),
-          user_profile: userProfile || {
-            baseFormalityLevel: 3,
-            baseFriendlinessLevel: 3,
-            baseEmotionLevel: 3,
-            baseDirectnessLevel: 3
-          },
-          context: context,
-          negative_preferences: null
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `API Error: ${response.status}`);
       }
 
       const result = await response.json();
       
-      // 백엔드 응답을 프론트엔드 형식으로 변환
-      const convertedData: ConversionResponse = {
-        conversionId: Date.now(), // 임시 ID
-        versions: {
-          direct: result.converted_texts?.direct || inputText,
-          gentle: result.converted_texts?.gentle || inputText,
-          neutral: result.converted_texts?.neutral || inputText,
-        },
-        analysis: {
-          formalityLevel: userProfile.baseFormalityLevel,
-          friendlinessLevel: userProfile.baseFriendlinessLevel,
-          emotionLevel: userProfile.baseEmotionLevel,
-        }
-      };
+      let convertedData: ConversionResponse;
+
+      if (isFinetune) {
+        convertedData = {
+          conversionId: Date.now(),
+          versions: {
+            direct: inputText, // 파인튜닝은 단일 결과만 반환하므로 원본 텍스트를 대체 표시
+            gentle: inputText,
+            neutral: result.converted_text || inputText,
+          },
+          analysis: { // 분석 정보는 프로필 기반으로 유지
+            formalityLevel: userProfile.baseFormalityLevel,
+            friendlinessLevel: userProfile.baseFriendlinessLevel,
+            emotionLevel: userProfile.baseEmotionLevel,
+          }
+        };
+      } else {
+        convertedData = {
+          conversionId: Date.now(),
+          versions: {
+            direct: result.converted_texts?.direct || inputText,
+            gentle: result.converted_texts?.gentle || inputText,
+            neutral: result.converted_texts?.neutral || inputText,
+          },
+          analysis: {
+            formalityLevel: userProfile.baseFormalityLevel,
+            friendlinessLevel: userProfile.baseFriendlinessLevel,
+            emotionLevel: userProfile.baseEmotionLevel,
+          }
+        };
+      }
 
       if (convertedData.conversionId) setLastConversionId(convertedData.conversionId);
       return convertedData;

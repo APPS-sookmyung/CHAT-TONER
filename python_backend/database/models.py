@@ -24,17 +24,17 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # 관계 설정
-    profile = relationship("UserProfile", back_populates="user", uselist=False)
-    conversion_history = relationship("ConversionHistory", back_populates="user")
-    negative_preferences = relationship("NegativePreferences", back_populates="user", uselist=False)
+    # 관계 설정 (외래키 제약조건 제거)
+    # profile = relationship("UserProfile", back_populates="user", uselist=False)
+    # conversion_history = relationship("ConversionHistory", back_populates="user")
+    # negative_preferences = relationship("NegativePreferences", back_populates="user", uselist=False)
 
 class UserProfile(Base):
     """사용자 스타일 선호도 프로필"""
     __tablename__ = "user_profiles"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(255), nullable=False, index=True)
     
     # 기본 스타일 레벨 (1-5 스케일)
     base_formality_level = Column(Integer, default=3)
@@ -56,14 +56,14 @@ class UserProfile(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # 관계 설정
-    user = relationship("User", back_populates="profile")
+    # user = relationship("User", back_populates="profile")
 
 class ConversionHistory(Base):
     """텍스트 변환 기록"""
     __tablename__ = "conversion_history"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(255), nullable=False, index=True)
     
     # 변환 데이터
     original_text = Column(Text, nullable=False)
@@ -84,14 +84,14 @@ class ConversionHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # 관계 설정
-    user = relationship("User", back_populates="conversion_history")
+    # user = relationship("User", back_populates="conversion_history")
 
 class NegativePreferences(Base):
     """사용자 네거티브 프롬프트 선호도"""
     __tablename__ = "negative_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(255), nullable=False, index=True)
     
     # 6가지 네거티브 프롬프트 카테고리 (strict, moderate, lenient)
     avoid_flowery_language = Column(String(20), default="moderate")
@@ -109,7 +109,7 @@ class NegativePreferences(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # 관계 설정
-    user = relationship("User", back_populates="negative_preferences")
+    # user = relationship("User", back_populates="negative_preferences")
 
 # 데이터베이스 엔진 및 세션 설정
 def create_database_engine():

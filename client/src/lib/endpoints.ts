@@ -1,6 +1,9 @@
 export const API = {
   base: '/api',
   conversion: '/api/conversion/convert',
+  finetune: {
+    convert: '/api/finetune/convert',
+  },
   rag: {
     ask: '/api/rag/ask',
     analyzeGrammar: '/api/rag/analyze-grammar',

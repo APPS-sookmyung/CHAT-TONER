@@ -26,7 +26,7 @@ export const NEGATIVE_PROMPTS = {
 };
 
 export function analyzeUserProfile(userProfile: UserProfile) {
-  const responses = userProfile.responses as any;
+  const responses = userProfile.responses as any || {};
 
   return {
     formalityDescription: getFormalityDescription(
