@@ -9,20 +9,20 @@ from pydantic import BaseModel
 class QualityAnalysisRequest(BaseModel):
     text: str
 
-class QualityAnalysisResponse(BaseModel):
-    grammarScore: float
-    formalityScore: float
-    readabilityScore: float
-    suggestions: List[str]
-
-class ContextSuggestionsRequest(BaseModel):
-    text: str
-    context: str  # business, casual, report
-
 class SuggestionItem(BaseModel):
     original: str
     suggestion: str
     reason: str
+
+class QualityAnalysisResponse(BaseModel):
+    grammarScore: float
+    formalityScore: float
+    readabilityScore: float
+    suggestions: List[SuggestionItem]
+
+class ContextSuggestionsRequest(BaseModel):
+    text: str
+    context: str  # business, casual, report
 
 class ContextSuggestionsResponse(BaseModel):
     suggestions: List[SuggestionItem]

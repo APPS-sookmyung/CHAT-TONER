@@ -50,7 +50,13 @@ async def analyze_text_quality(
             "grammarScore": <0.0에서 100.0 사이의 점수>,
             "formalityScore": <0.0에서 100.0 사이의 점수>,
             "readabilityScore": <0.0에서 100.0 사이의 점수>,
-            "suggestions": ["제안1", "제안2"]
+            "suggestions": [
+                {{
+                    "original": "개선이 필요한 원본 단어나 구절",
+                    "suggestion": "개선된 표현",
+                    "reason": "개선 이유"
+                }}
+            ]
         }}
 
         --- 분석할 텍스트 ---
@@ -65,8 +71,16 @@ async def analyze_text_quality(
 
         # RAG의 답변(answer)에 포함된 JSON 문자열을 파싱
         analysis_data = json.loads(rag_result["answer"])
-
-        return QualityAnalysisResponse(**analysis_data)
+        
+        # suggestions를 SuggestionItem 객체로 변환
+        suggestions = [SuggestionItem(**s) for s in analysis_data.get("suggestions", [])]
+        
+        return QualityAnalysisResponse(
+            grammarScore=analysis_data["grammarScore"],
+            formalityScore=analysis_data["formalityScore"], 
+            readabilityScore=analysis_data["readabilityScore"],
+            suggestions=suggestions
+        )
 
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="RAG 서비스의 응답(JSON)을 파싱하는 데 실패했습니다.")

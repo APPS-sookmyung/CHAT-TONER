@@ -24,13 +24,30 @@ class UserProfile(BaseModel):
 
 class NegativePreferences(BaseModel):
     """네거티브 프롬프트 선호도 (명시적 스키마)"""
-    avoidFloweryLanguage: Optional[str] = Field(
-        default=None,
-        description="과장/수사적 표현 회피 수준 (예: strict/medium/off)"
+    rhetoricLevel: Optional[str] = Field(
+        default="moderate",
+        description="수사법 수준 (low/moderate/high)"
     )
-    avoidSlang: Optional[bool] = Field(default=None, description="속어/은어 회피 여부")
-    avoidHonorifics: Optional[bool] = Field(default=None, description="지나친 존칭 회피 여부")
-    avoidPassiveAggression: Optional[bool] = Field(default=None, description="수동공격성 표현 회피")
+    repetitionTolerance: Optional[str] = Field(
+        default="moderate", 
+        description="반복 허용도 (low/moderate/high)"
+    )
+    punctuationStyle: Optional[str] = Field(
+        default="standard",
+        description="문장부호 스타일 (minimal/standard/expressive)"
+    )
+    contentFocus: Optional[str] = Field(
+        default="balanced",
+        description="내용 초점 (content/balanced/format)"
+    )
+    bulletPreference: Optional[str] = Field(
+        default="minimal",
+        description="불릿 포인트 선호도 (avoid/minimal/prefer)"
+    )
+    emoticonPolicy: Optional[str] = Field(
+        default="contextual",
+        description="이모티콘 정책 (none/minimal/contextual/frequent)"
+    )
 
 class ConversionRequest(BaseModel):
     """텍스트 변환 요청 모델"""

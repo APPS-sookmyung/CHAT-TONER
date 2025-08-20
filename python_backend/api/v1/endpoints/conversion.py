@@ -34,43 +34,29 @@ async def convert_text(request: ConversionRequest):
     """텍스트 스타일 변환"""
     print(f"[DEBUG] API 엔드포인트 진입")
     print(f"[DEBUG] 요청 데이터: {request}")
+    
     try:
-        print(f"[DEBUG] 변환 요청 받음: {request.text}")
-        # 임시로 직접 서비스 생성
-        from services.prompt_engineering import PromptEngineer
-        from services.openai_services import OpenAIService
-        from core.config import get_settings
+        print(f"[DEBUG] 텍스트: {request.text}")
+        print(f"[DEBUG] 사용자 프로필: {request.user_profile}")
+        print(f"[DEBUG] 컨텍스트: {request.context}")
+        print(f"[DEBUG] 네거티브 선호도: {request.negative_preferences}")
         
-        settings = get_settings()
-        print(f"[DEBUG] OpenAI API Key 설정됨: {bool(settings.OPENAI_API_KEY)}")
-        prompt_engineer = PromptEngineer()
-        openai_service = OpenAIService(api_key=settings.OPENAI_API_KEY, model=settings.OPENAI_MODEL)
-        conversion_service = ConversionService(prompt_engineer, openai_service)
-        print(f"[DEBUG] 서비스 생성 완료")
-        
-        result = await conversion_service.convert_text(
-            input_text=request.text,
-            user_profile=request.user_profile.model_dump(),
+        # 임시로 mock 데이터 반환
+        return ConversionResponse(
+            success=True,
+            original_text=request.text,
+            converted_texts={
+                "direct": f"[직접적] {request.text}",
+                "gentle": f"[부드러운] {request.text}",
+                "neutral": f"[중립적] {request.text}"
+            },
             context=request.context,
-            negative_preferences=(
-                request.negative_preferences.model_dump()
-                if request.negative_preferences is not None else None
-            )
+            metadata={"debug": True}
         )
         
-        return result
-        
-    # 내가 신경쓴 오류 체킹 
-    except ValueError as e:
-        print(f"[ERROR] 입력 값 오류: {e}")
-        logger.warning(f"입력 값 오류: {e}")
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except Exception as e:
+        print(f"[ERROR] 변환 중 오류: {e}")
         import traceback
-        error_msg = f"변환 실패: {e}"
-        traceback_msg = traceback.format_exc()
-        print(f"[ERROR] {error_msg}")
-        print(f"[ERROR] Traceback: {traceback_msg}")
-        logger.error(f"{error_msg}\nTraceback: {traceback_msg}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="텍스트 변환 중 서버 오류가 발생했습니다.") from e
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"변환 중 오류 발생: {str(e)}")
 

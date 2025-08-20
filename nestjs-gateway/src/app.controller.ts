@@ -6,8 +6,10 @@ import { FeedbackRequestDto } from './dto/feedback-request.dto';
 import { FeedbackResponseDto } from './dto/feedback-response.dto';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
+import { FinetuneRequestDto } from './dto/finetune-request.dto';
+import { FinetuneResponseDto } from './dto/finetune-response.dto';
 
-@Controller()
+@Controller('api')
 export class AppController {
   constructor(private readonly httpService: HttpService) {}
 
@@ -16,7 +18,7 @@ export class AppController {
     return '서버가 정상 작동 중입니다!';
   }
 
-  @Post('convert')
+  @Post('conversion/convert')
   async convertText(
     @Body() body: ConversionRequestDto,
   ): Promise<ConversionResponseDto> {
@@ -35,6 +37,30 @@ export class AppController {
       }
       throw new HttpException(
         '텍스트 변환 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('finetune/convert')
+  async finetuneConvert(
+    @Body() body: FinetuneRequestDto,
+  ): Promise<FinetuneResponseDto> {
+    try {
+      const fastApiUrl = 'http://127.0.0.1:5001/api/v1/finetune/convert';
+      const response = await firstValueFrom(
+        this.httpService.post(fastApiUrl, body),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(
+          error.response.data,
+          error.response.status,
+        );
+      }
+      throw new HttpException(
+        '파인튜닝 변환 중 오류 발생',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
