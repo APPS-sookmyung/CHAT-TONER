@@ -5,6 +5,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: 'http://localhost:5173', // Vite client's address
+    credentials: true,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('Chattoner API')
     .setDescription('AI 텍스트 변환 서비스 API 문서')

@@ -11,12 +11,12 @@
 5. pydantic 모델이 request body 에서 명시적임을 보장 
 """
 
-from fastapi import APIRouter, HTTPException
-from api.v1.schemas.conversion import (
-    ConversionRequest,
-    ConversionResponse
-)
-from fastapi import status
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+
+from services.conversion_service import ConversionService
+from ..schemas.conversion import ConversionRequest, ConversionResponse
+from ..dependencies import get_conversion_service
 import logging 
 
 logger=logging.getLogger('chattoner')
