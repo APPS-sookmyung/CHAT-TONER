@@ -126,14 +126,16 @@ text
 
 ## 팀원 소개 (Team)
 
-| 이름       | 역할        | 담당 내용                 | 연락처                |
-| :--------- | :---------- | :------------------------ | :-------------------- |
-| **윤지원** | PM          | 프로젝트 기획, 총괄       | geenieeyoon@gmail.com |
-| **권유진** | Development | 풀스택, ML 모델 개발 지원 | apps@email.com        |
-| **김지민** | Development | 파인튜닝, RAG 구현       | onlypotato637@gmail.com|
+| 이름       | 역할        | 담당 내용                      | 연락처                  |
+| :--------- | :---------- | :----------------------------- | :---------------------- |
+| **윤지원** | PM          | 프로젝트 기획, 총괄            | geenieeyoon@gmail.com   |
+| **권유진** | Development | 풀스택, ML 모델 개발 지원      | thinz0083@daum.net      |
+| **김지민** | Development | 파인튜닝, RAG 구현             | onlypotato637@gmail.com |
+| **정지은** | Development | 모델 개발, 파인튜닝            | jje49jieun@gmail.com    |
+| **하지민** | Development | 프론트엔드 설계·구현, API 연동 | tracygkwlals@gmail.com  |
 
 > **APPS (앱/웹 개발 학회)**  
-> 이 프로젝트는 소프트웨어학부 APPS 학회가 수행하는 연구 프로젝트입니다.
+> 이 프로젝트는 숙명여자대학교 소프트웨어학부 학회 APPS에서 수행하는 연구 프로젝트입니다.
 
 ---
 

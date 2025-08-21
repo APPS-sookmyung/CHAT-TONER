@@ -1,6 +1,35 @@
+python_backend/venv/
+
+__pycache__/
+*.py[cod]
+*.log
+
 
 node_modules
+python_backend/jiwon 
+.venv
+python_backend/.env
 
 .env
+*.env
 
-.env
+
+.vscode/
+
+
+.ipynb_checkpoints/
+
+
+.DS_Store
+Thumbs.db
+
+python_backend/.venv/
+**/.venv/
+.venv/
+
+__pycache__/
+
+backup_before_reset/
+python_backend/.venv/
+
+python_backend/core/config.py

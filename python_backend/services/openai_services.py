@@ -11,12 +11,26 @@ import json
 class OpenAIService:
     """OpenAI API 호출 관리 클래스"""
     
-    def __init__(self):
-        self.client = OpenAI(
-            api_key=os.getenv('OPENAI_API_KEY')
-        )
-        # GPT-4o 최신 모델 사용
-        self.model = "gpt-4o"
+    def __init__(self, api_key=None, model=None):
+        # 설정에서 API 키를 가져오거나 직접 환경변수에서 가져옴
+        from core.config import get_settings
+        settings = get_settings()
+        self.api_key = api_key or settings.OPENAI_API_KEY
+        self.model = model or settings.OPENAI_MODEL
+        
+        # API 키가 없거나 placeholder인 경우 Mock 모드로 동작
+        if not self.api_key or self.api_key == "your-openai-api-key-here":
+            print("⚠️  OpenAI API 키가 없습니다. Mock 모드로 동작합니다.")
+            self.client = None
+            self.mock_mode = True
+        else:
+            try:
+                self.client = OpenAI(api_key=self.api_key)
+                self.mock_mode = False
+            except Exception as e:
+                print(f"⚠️  OpenAI 클라이언트 초기화 실패: {e}. Mock 모드로 동작합니다.")
+                self.client = None
+                self.mock_mode = True
     #3가지 스타일(direct, gentle, neutral)을 변환하는 메인 함수.
     def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
         """

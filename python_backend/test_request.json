@@ -1,0 +1,10 @@
+{
+  "text": "테스트입니다",
+  "user_profile": {
+    "baseFormalityLevel": 3,
+    "baseFriendlinessLevel": 4,
+    "baseEmotionLevel": 2,
+    "baseDirectnessLevel": 3
+  },
+  "context": "general"
+}
