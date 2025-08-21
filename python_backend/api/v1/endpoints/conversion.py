@@ -30,22 +30,25 @@ async def test_endpoint():
     return {"message": "테스트 성공", "status": "ok"}
 
 @router.post("/convert")
-async def convert_text(request: ConversionRequest):
-    """Text style conversion"""
+async def convert_text(request: ConversionRequest, 
+                      conversion_service: ConversionService = Depends(get_conversion_service)):
+    """Text style conversion using actual AI service"""
     try:
-        original = request.text
-        
-        # Simple text conversion without mock prefixes
-        return ConversionResponse(
-            success=True,
-            original_text=original,
-            converted_texts={
-                "direct": f"Direct: {original}",
-                "gentle": f"Gentle: {original}",
-                "neutral": f"Neutral: {original}"
-            },
+        # Use the actual ConversionService
+        result = await conversion_service.convert_text(
+            input_text=request.text,
+            user_profile=request.user_profile.model_dump(),
             context=request.context,
-            metadata={"method": "simple"}
+            negative_preferences=request.negative_preferences.model_dump() if request.negative_preferences else None
+        )
+        
+        return ConversionResponse(
+            success=result.get("success", True),
+            original_text=request.text,
+            converted_texts=result.get("converted_texts", {}),
+            context=request.context,
+            sentiment_analysis=result.get("sentiment_analysis"),
+            metadata=result.get("metadata", {})
         )
         
     except Exception as e:
