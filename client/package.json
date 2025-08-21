@@ -36,6 +36,7 @@
     "wouter": "^3.7.1"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.20",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
