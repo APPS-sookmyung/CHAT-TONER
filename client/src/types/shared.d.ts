@@ -3,6 +3,7 @@ declare module "@shared/schema" {
   // src/shared/schema.ts
 
   export type UserProfile = {
+    id?: number;
     baseFormalityLevel: number;
     baseFriendlinessLevel: number;
     baseEmotionLevel: number;
@@ -11,6 +12,20 @@ declare module "@shared/schema" {
     sessionFriendlinessLevel?: number;
     sessionEmotionLevel?: number;
     sessionDirectnessLevel?: number;
+    completedAt?: Date;
+    responses?: UserResponses;
+  };
+
+  export type UserResponses = {
+    formality_level: number;
+    friendliness_level: number;
+    emotion_level: number;
+    directness_level: number;
+    uses_abbreviations?: boolean;
+    uses_emoticons?: boolean;
+    gratitude_expressions?: string[] | Record<string, any>;
+    request_expressions?: string[] | Record<string, any>;
+    situation_responses?: string[] | Record<string, any>;
   };
 
   export type NegativePreferences = {

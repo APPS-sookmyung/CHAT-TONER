@@ -30,7 +30,7 @@ export default function ModeSelectPage() {
         return p;
       } catch (error) {
         // 404 에러는 정상적인 상황이므로 로그 출력하지 않음
-        if (!error.message.includes('404')) {
+        if (!(error instanceof Error) || !error.message.includes('404')) {
           console.error("Failed to fetch profile:", error);
         }
         const raw = localStorage.getItem("chatToner_profile");
@@ -54,7 +54,7 @@ export default function ModeSelectPage() {
     },
     enabled: Boolean(userId), 
     staleTime: Infinity, 
-    cacheTime: Infinity,
+    gcTime: Infinity,
   });
 
   const createDefaultProfile = () => {
