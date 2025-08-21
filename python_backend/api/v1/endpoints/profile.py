@@ -15,14 +15,14 @@ router = APIRouter()
 # Request/Response Models
 class ProfileRequest(BaseModel):
     userId: str
-    baseFormalityLevel: int = Field(default=5, ge=1, le=5, description="격식도 수준 (1-5)", example=5)
-    baseFriendlinessLevel: int = Field(default=5, ge=1, le=5, description="친근함 수준 (1-5)", example=5)
-    baseEmotionLevel: int = Field(default=5, ge=1, le=5, description="감정 표현 수준 (1-5)", example=5)
-    baseDirectnessLevel: int = Field(default=5, ge=1, le=5, description="직설성 수준 (1-5)", example=5)
-    sessionFormalityLevel: Optional[int] = Field(None, ge=1, le=5, description="세션별 격식도 수준")
-    sessionFriendlinessLevel: Optional[int] = Field(None, ge=1, le=5, description="세션별 친근함 수준")
-    sessionEmotionLevel: Optional[int] = Field(None, ge=1, le=5, description="세션별 감정 표현 수준")
-    sessionDirectnessLevel: Optional[int] = Field(None, ge=1, le=5, description="세션별 직설성 수준")
+    baseFormalityLevel: int = Field(default=5, ge=1, le=10, description="격식도 수준 (1-10)", example=5)
+    baseFriendlinessLevel: int = Field(default=5, ge=1, le=10, description="친근함 수준 (1-10)", example=5)
+    baseEmotionLevel: int = Field(default=5, ge=1, le=10, description="감정 표현 수준 (1-10)", example=5)
+    baseDirectnessLevel: int = Field(default=5, ge=1, le=10, description="직설성 수준 (1-10)", example=5)
+    sessionFormalityLevel: Optional[int] = Field(None, ge=1, le=10, description="세션별 격식도 수준")
+    sessionFriendlinessLevel: Optional[int] = Field(None, ge=1, le=10, description="세션별 친근함 수준")
+    sessionEmotionLevel: Optional[int] = Field(None, ge=1, le=10, description="세션별 감정 표현 수준")
+    sessionDirectnessLevel: Optional[int] = Field(None, ge=1, le=10, description="세션별 직설성 수준")
     responses: Optional[Dict[str, Any]] = Field(default_factory=dict, description="추가 응답 데이터")
 
     class Config:

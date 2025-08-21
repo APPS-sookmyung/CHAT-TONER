@@ -29,6 +29,7 @@ interface QualityAnalysis {
   grammar_score: number;
   formality_score: number;
   readability_score: number;
+  improved_text?: string;
   suggestions: Array<{
     type: string;
     original: string;
@@ -117,10 +118,25 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
           Math.min(98, 88 + (Math.random() - 0.5) * 20)
         );
 
-        // 개선 제안 생성
+        // 개선 제안 생성 및 개선된 텍스트 추출
         const suggestions = [];
+        let improved_text = "";
 
         if (grammarResult.success && grammarResult.answer) {
+          // "개선된 텍스트" 부분 추출 시도 - 더 유연한 패턴
+          let improvedTextMatch = grammarResult.answer.match(/개선된 ?텍스트[:\s]*([ｓ\S]*)/i);
+          if (!improvedTextMatch) {
+            // "개선된:" 또는 "개선:" 패턴도 찾기
+            improvedTextMatch = grammarResult.answer.match(/개선[된]?[:\s]*([ｓ\S]*)/i);
+          }
+          if (!improvedTextMatch) {
+            // 따옴표 안의 긴 텍스트 찾기 (개선된 텍스트일 가능성)
+            improvedTextMatch = grammarResult.answer.match(/"([^"]{50,})"/);
+          }
+          if (improvedTextMatch && improvedTextMatch[1].trim()) {
+            improved_text = improvedTextMatch[1].trim();
+          }
+          
           suggestions.push({
             type: "grammar",
             original: "문법 관련",
@@ -129,7 +145,17 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
           });
         }
 
-        if (expressionResult.success && expressionResult.answer) {
+        if (expressionResult.success && expressionResult.answer && !improved_text) {
+          // 문법 결과에서 찾지 못했으면 표현 결과에서 찾기 - 더 유연한 패턴
+          let improvedTextMatch = expressionResult.answer.match(/개선된 ?텍스트[:\s]*([ｓ\S]*)/i);
+          if (!improvedTextMatch) {
+            // 따옴표 안의 긴 텍스트 찾기 - expressionResult는 보통 전체 개선 텍스트
+            improvedTextMatch = expressionResult.answer.match(/^([^"]{50,})/);
+          }
+          if (improvedTextMatch && improvedTextMatch[1].trim()) {
+            improved_text = improvedTextMatch[1].trim();
+          }
+          
           suggestions.push({
             type: "expression",
             original: "표현 관련",
@@ -142,6 +168,7 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
           grammar_score,
           formality_score,
           readability_score,
+          improved_text: improved_text || undefined,
           suggestions,
         };
       } catch (error) {
@@ -286,6 +313,48 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
       {/* Analysis Results */}
       {analysis && (
         <div className="space-y-6">
+          {/* Improved Text Display */}
+          {analysis.improved_text && (
+            <Card className="bg-gradient-to-br from-white to-emerald-50/30 border-emerald-100/50 shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-emerald-700">
+                  <CheckCircle className="w-5 h-5" />
+                  개선된 텍스트
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{analysis.improved_text}</p>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(analysis.improved_text!)}
+                    className="hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 hover:border-emerald-300 transition-all duration-300"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    복사하기
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setInputText(analysis.improved_text!);
+                      toast({
+                        title: "텍스트 대체",
+                        description: "개선된 텍스트로 입력란을 업데이트했습니다.",
+                      });
+                    }}
+                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-300 transition-all duration-300"
+                  >
+                    입력란에 적용
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Score Cards */}
           <div className="grid md:grid-cols-3 gap-4">
             <Card>
@@ -390,7 +459,7 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
                       <div className="space-y-2">
                         <div>
                           <span className="text-sm text-gray-600">원문: </span>
-                          <span className="text-red-600 line-through">
+                          <span className="text-gray-800">
                             {suggestion.original}
                           </span>
                         </div>

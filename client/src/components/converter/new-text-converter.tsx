@@ -20,6 +20,9 @@ import {
   MessageSquare,
   Sparkles,
   BarChart3,
+  Settings,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserProfile } from "@shared/schema";
@@ -166,6 +169,16 @@ export default function NewTextConverter({
     "general" | "report" | "education" | "social"
   >("general");
   const [lastConversionId, setLastConversionId] = useState<number | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<"direct" | "gentle" | "neutral" | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [negativePreferences, setNegativePreferences] = useState({
+    rhetoricLevel: "moderate",
+    repetitionTolerance: "moderate", 
+    punctuationStyle: "standard",
+    contentFocus: "balanced",
+    bulletPreference: "minimal",
+    emoticonPolicy: "contextual"
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -183,8 +196,12 @@ export default function NewTextConverter({
           baseDirectnessLevel: 3
         },
         context: context,
+        negative_preferences: negativePreferences,
         ...(isFinetune && { force_convert: false }),
       };
+
+      console.log("🚀 전송할 요청 데이터:", requestBody);
+      console.log("📝 네거티브 프리퍼런스:", negativePreferences);
 
       const response = await fetch(url, {
         method: 'POST',
@@ -204,12 +221,13 @@ export default function NewTextConverter({
       let convertedData: ConversionResponse;
 
       if (isFinetune) {
+        const convertedText = result.converted_text || inputText;
         convertedData = {
           conversionId: Date.now(),
           versions: {
-            direct: inputText, // 파인튜닝은 단일 결과만 반환하므로 원본 텍스트를 대체 표시
-            gentle: inputText,
-            neutral: result.converted_text || inputText,
+            direct: convertedText, // 파인튜닝 결과를 모든 버전에 적용
+            gentle: convertedText,
+            neutral: convertedText,
           },
           analysis: { // 분석 정보는 프로필 기반으로 유지
             formalityLevel: userProfile.baseFormalityLevel,
@@ -301,6 +319,7 @@ export default function NewTextConverter({
     version: "direct" | "gentle" | "neutral",
     feedback?: string
   ) => {
+    setSelectedVersion(version);
     feedbackMutation.mutate({
       selectedVersion: version,
       userFeedback: feedback,
@@ -366,6 +385,11 @@ export default function NewTextConverter({
                   <SelectItem value="social">소셜미디어</SelectItem>
                 </SelectContent>
               </Select>
+              {context === "report" && (
+                <div className="text-xs text-blue-600 mt-1">
+                  ℹ️ 보고서/공문 모드는 특화된 파인튜닝 모델을 사용하여 단일 최적화 결과를 제공합니다.
+                </div>
+              )}
             </div>
 
             <Button
@@ -385,6 +409,134 @@ export default function NewTextConverter({
                 </>
               )}
             </Button>
+          </div>
+
+          {/* Advanced Settings Toggle */}
+          <div className="border-t pt-4">
+            <Button
+              variant="ghost"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full justify-between p-2"
+            >
+              <span className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                고급 설정 (네거티브 프롬프트)
+              </span>
+              {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+
+            {showAdvanced && (
+              <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">수사법 수준</label>
+                    <Select
+                      value={negativePreferences.rhetoricLevel}
+                      onValueChange={(value) => setNegativePreferences({...negativePreferences, rhetoricLevel: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">낮음</SelectItem>
+                        <SelectItem value="moderate">보통</SelectItem>
+                        <SelectItem value="high">높음</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">반복 허용도</label>
+                    <Select
+                      value={negativePreferences.repetitionTolerance}
+                      onValueChange={(value) => setNegativePreferences({...negativePreferences, repetitionTolerance: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">낮음</SelectItem>
+                        <SelectItem value="moderate">보통</SelectItem>
+                        <SelectItem value="high">높음</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">문장부호 스타일</label>
+                    <Select
+                      value={negativePreferences.punctuationStyle}
+                      onValueChange={(value) => setNegativePreferences({...negativePreferences, punctuationStyle: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="minimal">최소화</SelectItem>
+                        <SelectItem value="standard">표준</SelectItem>
+                        <SelectItem value="expressive">표현력</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">내용 초점</label>
+                    <Select
+                      value={negativePreferences.contentFocus}
+                      onValueChange={(value) => setNegativePreferences({...negativePreferences, contentFocus: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="content">내용 중심</SelectItem>
+                        <SelectItem value="balanced">균형</SelectItem>
+                        <SelectItem value="format">형식 중심</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">불릿 포인트</label>
+                    <Select
+                      value={negativePreferences.bulletPreference}
+                      onValueChange={(value) => setNegativePreferences({...negativePreferences, bulletPreference: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="avoid">피하기</SelectItem>
+                        <SelectItem value="minimal">최소한</SelectItem>
+                        <SelectItem value="prefer">선호</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">이모티콘 정책</label>
+                    <Select
+                      value={negativePreferences.emoticonPolicy}
+                      onValueChange={(value) => setNegativePreferences({...negativePreferences, emoticonPolicy: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">사용 안함</SelectItem>
+                        <SelectItem value="minimal">최소한</SelectItem>
+                        <SelectItem value="contextual">상황에 맞게</SelectItem>
+                        <SelectItem value="frequent">자주 사용</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="text-xs text-gray-600">
+                  💡 네거티브 프롬프트는 AI가 피해야 할 스타일을 지정하여 더 정확한 변환을 도와줍니다.
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -425,102 +577,143 @@ export default function NewTextConverter({
           </Card>
 
           {/* Version Cards */}
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Direct Version */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="text-lg">직접적</span>
-                  <Badge variant="outline">직설적</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                  {convertMutation.data.versions.direct}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleVersionSelect("direct")}
-                    className="flex-1"
-                  >
-                    <ThumbsUp className="w-4 h-4 mr-1" />
-                    선택
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleCopy(convertMutation.data.versions.direct)}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className={`grid gap-4 ${context === "report" ? "grid-cols-1 max-w-2xl mx-auto" : "md:grid-cols-3"}`}>
+            {context === "report" ? (
+              /* Single Optimized Version for Report Mode */
+              <Card className={selectedVersion === "neutral" ? "ring-2 ring-blue-500 bg-blue-50" : ""}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="text-lg">최적화된 공문체</span>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">파인튜닝</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    {convertMutation.data.versions.neutral}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleVersionSelect("neutral")}
+                      className={`flex-1 ${selectedVersion === "neutral" ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                      variant={selectedVersion === "neutral" ? "default" : "default"}
+                    >
+                      <ThumbsUp className={`w-4 h-4 mr-1 ${selectedVersion === "neutral" ? "fill-current" : ""}`} />
+                      {selectedVersion === "neutral" ? "선택됨" : "선택"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCopy(convertMutation.data.versions.neutral)}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              /* Three Versions for Other Modes */
+              <>
+                {/* Direct Version */}
+                <Card className={selectedVersion === "direct" ? "ring-2 ring-blue-500 bg-blue-50" : ""}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="text-lg">직접적</span>
+                      <Badge variant="outline">직설적</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                      {convertMutation.data.versions.direct}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleVersionSelect("direct")}
+                        className={`flex-1 ${selectedVersion === "direct" ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                        variant={selectedVersion === "direct" ? "default" : "default"}
+                      >
+                        <ThumbsUp className={`w-4 h-4 mr-1 ${selectedVersion === "direct" ? "fill-current" : ""}`} />
+                        {selectedVersion === "direct" ? "선택됨" : "선택"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopy(convertMutation.data.versions.direct)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* Gentle Version */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="text-lg">부드러운</span>
-                  <Badge variant="outline" className="bg-green-100 text-green-800">친근</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                  {convertMutation.data.versions.gentle}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleVersionSelect("gentle")}
-                    className="flex-1"
-                  >
-                    <ThumbsUp className="w-4 h-4 mr-1" />
-                    선택
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleCopy(convertMutation.data.versions.gentle)}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                {/* Gentle Version */}
+                <Card className={selectedVersion === "gentle" ? "ring-2 ring-green-500 bg-green-50" : ""}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="text-lg">부드러운</span>
+                      <Badge variant="outline" className="bg-green-100 text-green-800">친근</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                      {convertMutation.data.versions.gentle}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleVersionSelect("gentle")}
+                        className={`flex-1 ${selectedVersion === "gentle" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                        variant={selectedVersion === "gentle" ? "default" : "default"}
+                      >
+                        <ThumbsUp className={`w-4 h-4 mr-1 ${selectedVersion === "gentle" ? "fill-current" : ""}`} />
+                        {selectedVersion === "gentle" ? "선택됨" : "선택"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopy(convertMutation.data.versions.gentle)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* Neutral Version */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="text-lg">중립적</span>
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800">균형</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                  {convertMutation.data.versions.neutral}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleVersionSelect("neutral")}
-                    className="flex-1"
-                  >
-                    <ThumbsUp className="w-4 h-4 mr-1" />
-                    선택
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleCopy(convertMutation.data.versions.neutral)}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                {/* Neutral Version */}
+                <Card className={selectedVersion === "neutral" ? "ring-2 ring-purple-500 bg-purple-50" : ""}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="text-lg">중립적</span>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800">균형</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                      {convertMutation.data.versions.neutral}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleVersionSelect("neutral")}
+                        className={`flex-1 ${selectedVersion === "neutral" ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                        variant={selectedVersion === "neutral" ? "default" : "default"}
+                      >
+                        <ThumbsUp className={`w-4 h-4 mr-1 ${selectedVersion === "neutral" ? "fill-current" : ""}`} />
+                        {selectedVersion === "neutral" ? "선택됨" : "선택"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopy(convertMutation.data.versions.neutral)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         </div>
       )}
