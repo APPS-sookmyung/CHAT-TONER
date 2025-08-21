@@ -34,12 +34,15 @@ async def convert_text(request: ConversionRequest,
                       conversion_service: ConversionService = Depends(get_conversion_service)):
     """Text style conversion using actual AI service"""
     try:
-        # Use the actual ConversionService
+        # Use the actual ConversionService with camelCase preservation
+        user_profile_dict = request.user_profile.model_dump(by_alias=True, exclude_none=True)
+        negative_preferences_dict = request.negative_preferences.model_dump(by_alias=True, exclude_none=True) if request.negative_preferences else None
+        
         result = await conversion_service.convert_text(
             input_text=request.text,
-            user_profile=request.user_profile.model_dump(),
+            user_profile=user_profile_dict,
             context=request.context,
-            negative_preferences=request.negative_preferences.model_dump() if request.negative_preferences else None
+            negative_preferences=negative_preferences_dict
         )
         
         return ConversionResponse(
@@ -52,8 +55,8 @@ async def convert_text(request: ConversionRequest,
         )
         
     except Exception as e:
-        print(f"[ERROR] 변환 중 오류: {e}")
-        import traceback
-        print(f"[ERROR] Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"변환 중 오류 발생: {str(e)}")
+        import logging, traceback
+        logger = logging.getLogger(__name__)
+        logger.error("convert failed: %s\n%s", e, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="텍스트 변환 중 서버 오류가 발생했습니다.")
 
