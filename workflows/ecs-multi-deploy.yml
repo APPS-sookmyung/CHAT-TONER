@@ -1,4 +1,4 @@
-name: Deploy all services to ECS
+name: Deploy services to ECS
 
 on:
   push:
@@ -10,12 +10,12 @@ env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
   CLUSTER: chattoner-cluster  
 
-concurrency:
-  group: ecs-${{ github.ref }}-${{ matrix.service }}
-  cancel-in-progress: true
-
 jobs:
   deploy:
+    concurrency:
+    group: ecs-${{ github.ref }}-${{ matrix.service }}
+    cancel-in-progress: true
+
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -29,7 +29,7 @@ jobs:
             ecr_repo: chattoner-backend   
             dockerfile: python_backend/Dockerfile   # Dockerfile 경로
             context: python_backend                 # Build context
-            taskdef: taskdef-backend.json           # 태스크 정의 템플릿
+            taskdef: infra/taskdef-backend.json           # 태스크 정의 템플릿
             container: python-backend            
 
           # ====== 서비스 2: 프론트(컨테이너로 운영 중) ======
@@ -37,7 +37,7 @@ jobs:
             ecr_repo: chattoner-frontend
             dockerfile: client/Dockerfile
             context: frontend
-            taskdef: taskdef-front.json
+            taskdef: infra/taskdef-front.json
             container: react-front
 
           # ====== 서비스 3: NestJS 게이트웨이 ======
@@ -45,7 +45,7 @@ jobs:
             ecr_repo: nestjs-gateway
             dockerfile: nestjs-gateway/Dockerfile
             context: nestjs-gateway
-            taskdef: taskdef-nestjs.json
+            taskdef: infra/taskdef-nestjs.json
             container: nestjs-gateway
 
     steps:

@@ -1,34 +1,27 @@
 {
-    "family": "chattoner-nestjs",
+    "family": "backend-task",
     "networkMode": "awsvpc",
     "cpu": "256",
     "memory": "512",
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole",
-    "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::784434437661:role/ecsTaskExecutionRole",
     "containerDefinitions": [
         {
-            "name": "nestjs",
+            "name": "python-backend",
             "image": "REPLACED_BY_GHACTION",
             "essential": true,
             "portMappings": [
                 {
-                    "containerPort": 3000,
+                    "containerPort": 8000,
                     "protocol": "tcp"
-                }
-            ],
-            "environment": [
-                {
-                    "name": "NODE_ENV",
-                    "value": "production"
                 }
             ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/chattoner-nestjs",
+                    "awslogs-group": "/ecs/backend-task",
                     "awslogs-region": "ap-northeast-2",
                     "awslogs-stream-prefix": "ecs"
                 }
