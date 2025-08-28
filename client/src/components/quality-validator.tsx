@@ -29,6 +29,7 @@ interface QualityAnalysis {
   grammar_score: number;
   formality_score: number;
   readability_score: number;
+  improved_text?: string;
   suggestions: Array<{
     type: string;
     original: string;

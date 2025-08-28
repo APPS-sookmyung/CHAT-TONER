@@ -6,20 +6,20 @@ from typing import Dict, Any, Optional
 
 class UserProfile(BaseModel):
     """사용자 스타일 프로필 (명시적 스키마)"""
-    baseFormalityLevel: int = Field(..., ge=1, le=5,
-        validation_alias=AliasChoices("baseFormalityLevel", "base_formality_level"), description="격식도 (1-5)")
-    baseFriendlinessLevel: int = Field(..., ge=1, le=5,
-        validation_alias=AliasChoices("baseFriendlinessLevel", "base_friendliness_level"), description="친근함 (1-5)")
-    baseEmotionLevel: int = Field(..., ge=1, le=5,
-        validation_alias=AliasChoices("baseEmotionLevel", "base_emotion_level"), description="감정표현 (1-5)")
-    baseDirectnessLevel: int = Field(..., ge=1, le=5,
-        validation_alias=AliasChoices("baseDirectnessLevel", "base_directness_level"), description="직설성 (1-5)")
+    baseFormalityLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseFormalityLevel", "base_formality_level"), description="격식도 (1-10)")
+    baseFriendlinessLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseFriendlinessLevel", "base_friendliness_level"), description="친근함 (1-10)")
+    baseEmotionLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseEmotionLevel", "base_emotion_level"), description="감정표현 (1-10)")
+    baseDirectnessLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseDirectnessLevel", "base_directness_level"), description="직설성 (1-10)")
 
     # 세션(일시적) 조정값은 선택적
-    sessionFormalityLevel: Optional[int] = Field(None, ge=1, le=5)
-    sessionFriendlinessLevel: Optional[int] = Field(None, ge=1, le=5)
-    sessionEmotionLevel: Optional[int] = Field(None, ge=1, le=5)
-    sessionDirectnessLevel: Optional[int] = Field(None, ge=1, le=5)
+    sessionFormalityLevel: Optional[int] = Field(None, ge=1, le=10)
+    sessionFriendlinessLevel: Optional[int] = Field(None, ge=1, le=10)
+    sessionEmotionLevel: Optional[int] = Field(None, ge=1, le=10)
+    sessionDirectnessLevel: Optional[int] = Field(None, ge=1, le=10)
 
 
 class NegativePreferences(BaseModel):

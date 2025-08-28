@@ -20,6 +20,9 @@ import {
   MessageSquare,
   Sparkles,
   BarChart3,
+  Settings,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserProfile } from "@shared/schema";
@@ -67,7 +70,7 @@ const generateMockConversion = (inputText: string, context: string, userProfile:
   // 실제 텍스트 변환 로직
   const transformText = (text: string, style: 'direct' | 'gentle' | 'neutral') => {
     let transformed = text;
-    
+
     // 직접적 스타일 - 간결하고 명확하게
     if (style === 'direct') {
       transformed = transformed
@@ -82,7 +85,7 @@ const generateMockConversion = (inputText: string, context: string, userProfile:
         .replace(/~일 수도 있습니다/g, '~입니다')
         .replace(/~할 수도 있습니다/g, '~합니다');
     }
-    
+
     // 부드러운 스타일 - 친근하고 공손하게
     else if (style === 'gentle') {
       transformed = transformed
@@ -95,7 +98,7 @@ const generateMockConversion = (inputText: string, context: string, userProfile:
         .replace(/~합니다/g, '~할 것 같습니다')
         .replace(/~해요/g, '~하시는 것 같아요');
     }
-    
+
     // 중립적 스타일 - 균형잡힌 표현
     else if (style === 'neutral') {
       transformed = transformed
@@ -200,7 +203,7 @@ export default function NewTextConverter({
       }
 
       const result = await response.json();
-      
+
       let convertedData: ConversionResponse;
 
       if (isFinetune) {
@@ -270,11 +273,11 @@ export default function NewTextConverter({
         userId,
         timestamp: new Date().toISOString()
       };
-      
+
       const existingFeedback = JSON.parse(localStorage.getItem('chatToner_feedback') || '[]');
       existingFeedback.push(feedbackData);
       localStorage.setItem('chatToner_feedback', JSON.stringify(existingFeedback));
-      
+
       return { success: true };
     },
     onSuccess: () => {
