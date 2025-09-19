@@ -76,6 +76,7 @@ const generateMockAnalysis = (text: string): QualityAnalysis => {
 
 export default function QualityValidator({ onBack }: QualityValidatorProps) {
   const [inputText, setInputText] = useState("");
+  const [targetAudience, setTargetAudience] = useState<string>("일반인");
   const [context, setContext] = useState<"business" | "report" | "casual">(
     "business"
   );
@@ -85,91 +86,42 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
   const analyzeMutation = useMutation({
     mutationFn: async (text: string): Promise<QualityAnalysis> => {
       try {
-        const { rag } = await import("@/lib/rag");
-
-        // RAG 문법 분석 호출
-        const grammarResult = await rag.analyzeGrammar({
-          query: text,
-          context: "business",
-          use_styles: false,
-          user_profile: null,
+        // 새로운 품질 분석 API 호출
+        const response = await fetch("/api/quality/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: text,
+            target_audience: targetAudience,
+            context:
+              context === "business"
+                ? "일반"
+                : context === "report"
+                ? "보고서"
+                : "일반",
+          }),
         });
 
-        // RAG 표현 개선 제안 호출
-        const expressionResult = await rag.suggestExpressions({
-          query: text,
-          context: "business",
-          use_styles: false,
-          user_profile: null,
-        });
-
-        // 점수 계산 (간단한 로직으로 모의 점수 생성)
-        const textLength = text.length;
-        const grammar_score = Math.max(
-          70,
-          Math.min(95, 85 + (Math.random() - 0.5) * 20)
-        );
-        const formality_score = Math.max(
-          60,
-          Math.min(90, 75 + (Math.random() - 0.5) * 20)
-        );
-        const readability_score = Math.max(
-          75,
-          Math.min(98, 88 + (Math.random() - 0.5) * 20)
-        );
-
-        // 개선 제안 생성 및 개선된 텍스트 추출
-        const suggestions = [];
-        let improved_text = "";
-
-        if (grammarResult.success && grammarResult.answer) {
-          // "개선된 텍스트" 부분 추출 시도 - 더 유연한 패턴
-          let improvedTextMatch = grammarResult.answer.match(/개선된 ?텍스트[:\s]*([ｓ\S]*)/i);
-          if (!improvedTextMatch) {
-            // "개선된:" 또는 "개선:" 패턴도 찾기
-            improvedTextMatch = grammarResult.answer.match(/개선[된]?[:\s]*([ｓ\S]*)/i);
-          }
-          if (!improvedTextMatch) {
-            // 따옴표 안의 긴 텍스트 찾기 (개선된 텍스트일 가능성)
-            improvedTextMatch = grammarResult.answer.match(/"([^"]{50,})"/);
-          }
-          if (improvedTextMatch && improvedTextMatch[1].trim()) {
-            improved_text = improvedTextMatch[1].trim();
-          }
-          
-          suggestions.push({
-            type: "grammar",
-            original: "문법 관련",
-            suggestion: grammarResult.answer,
-            reason: "RAG 기반 문법 분석 결과",
-          });
+        if (!response.ok) {
+          throw new Error(`API 호출 실패: ${response.status}`);
         }
 
-        if (expressionResult.success && expressionResult.answer && !improved_text) {
-          // 문법 결과에서 찾지 못했으면 표현 결과에서 찾기 - 더 유연한 패턴
-          let improvedTextMatch = expressionResult.answer.match(/개선된 ?텍스트[:\s]*([ｓ\S]*)/i);
-          if (!improvedTextMatch) {
-            // 따옴표 안의 긴 텍스트 찾기 - expressionResult는 보통 전체 개선 텍스트
-            improvedTextMatch = expressionResult.answer.match(/^([^"]{50,})/);
-          }
-          if (improvedTextMatch && improvedTextMatch[1].trim()) {
-            improved_text = improvedTextMatch[1].trim();
-          }
-          
-          suggestions.push({
-            type: "expression",
-            original: "표현 관련",
-            suggestion: expressionResult.answer,
-            reason: "RAG 기반 표현 개선 제안",
-          });
-        }
+        const result = await response.json();
 
+        // 응답 형식을 기존 인터페이스에 맞게 변환
         return {
-          grammar_score,
-          formality_score,
-          readability_score,
-          improved_text: improved_text || undefined,
-          suggestions,
+          grammar_score: result.grammarScore || 0,
+          formality_score: result.formalityScore || 0,
+          readability_score: result.readabilityScore || 0,
+          suggestions: (result.suggestions || []).map((s: any) => ({
+            type: "improvement",
+            original: s.original || "",
+            suggestion: s.suggestion || "",
+            reason: s.reason || "",
+            confidence: 0.9,
+          })),
         };
       } catch (error) {
         console.error("RAG API 호출 실패:", error);
@@ -280,7 +232,28 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
           <div className="flex gap-4 items-end">
             <div className="flex-1">
               <label className="text-sm font-medium mb-2 block">
-                분석 맥락
+                대상 청중
+              </label>
+              <Select value={targetAudience} onValueChange={setTargetAudience}>
+                <SelectTrigger>
+                  <SelectValue placeholder="분석 대상을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="초등학생">초등학생</SelectItem>
+                  <SelectItem value="중학생">중학생</SelectItem>
+                  <SelectItem value="고등학생">고등학생</SelectItem>
+                  <SelectItem value="대학생">대학생</SelectItem>
+                  <SelectItem value="성인학습자">성인학습자</SelectItem>
+                  <SelectItem value="교사">교사</SelectItem>
+                  <SelectItem value="학부모">학부모</SelectItem>
+                  <SelectItem value="일반인">일반인</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">
+                상황 맥락 (선택사항)
               </label>
               <Select
                 value={context}
@@ -292,9 +265,9 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  <SelectItem value="business">업무/비즈니스</SelectItem>
-                  <SelectItem value="report">보고서/공문</SelectItem>
-                  <SelectItem value="casual">일상/캐주얼</SelectItem>
+                  <SelectItem value="business">일반</SelectItem>
+                  <SelectItem value="report">교육</SelectItem>
+                  <SelectItem value="casual">보고서/공문</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -324,7 +297,9 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
               </CardHeader>
               <CardContent>
                 <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
-                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{analysis.improved_text}</p>
+                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                    {analysis.improved_text}
+                  </p>
                 </div>
                 <div className="flex gap-2 mt-4">
                   <Button
@@ -343,7 +318,8 @@ export default function QualityValidator({ onBack }: QualityValidatorProps) {
                       setInputText(analysis.improved_text!);
                       toast({
                         title: "텍스트 대체",
-                        description: "개선된 텍스트로 입력란을 업데이트했습니다.",
+                        description:
+                          "개선된 텍스트로 입력란을 업데이트했습니다.",
                       });
                     }}
                     className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-300 transition-all duration-300"
