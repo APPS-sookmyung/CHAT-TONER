@@ -142,3 +142,56 @@ text
 - Email: [앱스 학회 이메일]
 - GitHub: [Organization GitHub]
 - Notion: [프로젝트 노션 페이지]
+
+---
+
+# Repository Guidelines
+
+## Project Structure & Module Organization
+
+- Source lives in `src/`; tests in `tests/`; configs in `configs/`; scripts in `scripts/`. Common extras: `Dockerfile`, `.env.example`, `docs/`.
+- Typical entrypoints: Node `src/index.ts` or `src/server.ts`; Python `src/main.py` or `app/main.py`.
+- Organize features under `src/<feature>/` (e.g., `src/auth/`, `src/chat/`) with small, focused modules.
+
+## Build, Test, and Development Commands
+
+- Node.js
+  - `npm ci` — install exact deps. `npm run dev` — start in watch mode.
+  - `npm test` — run unit tests. `npm run build` — produce production build.
+  - `npm run lint` / `npm run format` — check/auto-fix style.
+- Python
+  - `python -m venv .venv && . .venv/bin/activate` then `pip install -r requirements.txt`.
+  - `pytest` — run tests. `ruff check .` and `black .` — lint/format.
+  - `uvicorn app.main:app --reload` or `python -m src.main` — run locally.
+- Docker
+  - `docker compose up --build` — run full stack with services.
+
+## Coding Style & Naming Conventions
+
+- TypeScript/JS: 2-space indent, `camelCase` for vars, `PascalCase` for classes, file names `kebab-case.ts`.
+- Python: 4-space indent, `snake_case` for vars, `PascalCase` for classes, file names `snake_case.py`.
+- Keep functions focused (<50 LOC), prefer pure utils, validate inputs at boundaries.
+- Use linters/formatters configured in the repo (e.g., ESLint+Prettier or Ruff+Black) before committing.
+
+## Testing Guidelines
+
+- Mirror structure: `tests/<feature>/` matches `src/<feature>/`.
+- Name tests `*.spec.ts`/`*.test.ts` (Node) or `test_*.py` (Python).
+- Target ≥80% line coverage; include happy-path and edge cases. Run with `npm test -- --coverage` or `pytest --cov`.
+
+## Commit & Pull Request Guidelines
+
+- Use Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `ci:`, `chore:`.
+- PRs include: concise description, linked issues (e.g., `Closes #123`), local test steps, and API examples (e.g., `curl` sample) or screenshots when UI-related.
+- Keep PRs small and focused; update docs and `.env.example` when config changes.
+
+## Security & Configuration Tips
+
+- Never commit secrets. Copy `.env.example` to `.env` and adjust locally.
+- Restrict CORS, validate all inputs, avoid logging PII, and run `npm audit` or `pip-audit` regularly.
+- Review Docker base images and pin critical versions.
+
+## Agent-Specific Notes
+
+- If unsure of stack, check `package.json` (Node) or `pyproject.toml/requirements.txt` (Python) and follow matching commands above.
+- Follow this AGENTS.md across the repo; prefer minimal, targeted changes with matching tests.
