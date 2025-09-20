@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/questionnaire/progress-bar";
 import QuestionCard from "@/components/questionnaire/question-card";
 import { questions } from "@/data/questions";
@@ -20,14 +19,16 @@ export default function QuestionnairePage() {
   const [, setLoc] = useLocation();
   const userId = getUserId();
 
-  const [idx, setIdx] = useState<number>(() => {
-    const raw = localStorage.getItem("chatToner_q_index");
-    return raw ? JSON.parse(raw) : 0;
-  });
-  const [responses, setResponses] = useState<Record<string, any>>(() => {
-    const raw = localStorage.getItem("chatToner_q_responses");
-    return raw ? JSON.parse(raw) : {};
-  });
+  const [idx, setIdx] = useState<number>(0); // 항상 첫 번째 페이지부터 시작
+  const [responses, setResponses] = useState<Record<string, any>>({});
+
+  // 설문조사 페이지 진입 시 항상 초기화
+  useEffect(() => {
+    localStorage.removeItem("chatToner_q_index");
+    localStorage.removeItem("chatToner_q_responses");
+    setIdx(0);
+    setResponses({});
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("chatToner_q_index", JSON.stringify(idx));
@@ -83,15 +84,14 @@ export default function QuestionnairePage() {
       ...profileData,
       completedAt: new Date(),
     } as UserProfile;
-    
+
     localStorage.setItem("chatToner_profile", JSON.stringify(saved));
-    setLoc("/results");
+    setLoc("/style-definition/results");
   };
 
   const next = () =>
     idx < questions.length - 1 ? setIdx(idx + 1) : toResults();
   const prev = () => idx > 0 && setIdx(idx - 1);
-  const skip = () => next(); // 건너뛰기도 next와 동일하게 처리
 
   const skipAllToConverter = async () => {
     const defaultProfileData = {
@@ -119,7 +119,7 @@ export default function QuestionnairePage() {
       ...defaultProfileData,
       completedAt: new Date(),
     } as UserProfile;
-    
+
     localStorage.setItem("chatToner_profile", JSON.stringify(saved));
     setLoc("/converter");
   };
@@ -134,12 +134,6 @@ export default function QuestionnairePage() {
         progress={progress}
       />
 
-      <div className="text-center">
-        <Button variant="outline" onClick={skipAllToConverter} className="mb-4">
-          설문 건너뛰고 바로 변환기 사용하기
-        </Button>
-      </div>
-
       {current && (
         <QuestionCard
           question={current}
@@ -148,7 +142,6 @@ export default function QuestionnairePage() {
           onAnswerChange={handleAnswerChange}
           onNext={next}
           onPrevious={prev}
-          onSkip={skip}
           canGoBack={idx > 0}
           isLastQuestion={idx === questions.length - 1}
         />
