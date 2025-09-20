@@ -13,7 +13,11 @@ interface QuestionCardProps {
   question: Question;
   selectedOptions: string[];
   customInput: string;
-  onAnswerChange: (questionId: string, selectedOptions: string[], customInput?: string) => void;
+  onAnswerChange: (
+    questionId: string,
+    selectedOptions: string[],
+    customInput?: string
+  ) => void;
   onNext: () => void;
   onPrevious: () => void;
   canGoBack: boolean;
@@ -28,23 +32,23 @@ export default function QuestionCard({
   onNext,
   onPrevious,
   canGoBack,
-  isLastQuestion
+  isLastQuestion,
 }: QuestionCardProps) {
   const [localCustomInput, setLocalCustomInput] = useState(customInput);
 
   const handleOptionChange = (optionValue: string, checked: boolean) => {
     let newSelected: string[];
-    
+
     if (question.allowMultiple) {
       if (checked) {
         newSelected = [...selectedOptions, optionValue];
       } else {
-        newSelected = selectedOptions.filter(opt => opt !== optionValue);
+        newSelected = selectedOptions.filter((opt) => opt !== optionValue);
       }
     } else {
       newSelected = checked ? [optionValue] : [];
     }
-    
+
     onAnswerChange(question.id, newSelected, localCustomInput);
   };
 
@@ -55,14 +59,14 @@ export default function QuestionCard({
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'situational':
-        return 'bg-primary/10 text-primary';
-      case 'preferences':
-        return 'bg-secondary/10 text-secondary';
-      case 'expressions':
-        return 'bg-accent/10 text-accent';
+      case "situational":
+        return "bg-primary/10 text-primary";
+      case "preferences":
+        return "bg-secondary/10 text-secondary";
+      case "expressions":
+        return "bg-accent/10 text-accent";
       default:
-        return 'bg-gray-100 text-gray-600';
+        return "bg-gray-100 text-gray-600";
     }
   };
 
@@ -73,7 +77,9 @@ export default function QuestionCard({
       <CardContent className="p-8">
         <div className="mb-6">
           <div className="flex items-center space-x-2 mb-3">
-            <Badge className={`${getCategoryColor(question.category)} font-medium`}>
+            <Badge
+              className={`${getCategoryColor(question.category)} font-medium`}
+            >
               {question.categoryLabel}
             </Badge>
             {question.allowMultiple && (
@@ -83,28 +89,36 @@ export default function QuestionCard({
               </div>
             )}
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">{question.question}</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {question.question}
+          </h3>
           <p className="text-gray-600">{question.description}</p>
         </div>
 
-        {/* Answer Options */}
+        {/* 답 옵션들 */}
         <div className="space-y-3 mb-6">
           {question.allowMultiple ? (
-            // Multiple choice with checkboxes
+            // 중복 선택
             <div className="space-y-3">
               {question.options.map((option, index) => (
                 <div key={index} className="group">
-                  <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                    selectedOptions.includes(option) 
-                      ? 'border-primary bg-primary/5' 
-                      : 'border-gray-200 hover:border-primary/30 hover:bg-primary/5'
-                  }`}>
+                  <label
+                    className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                      selectedOptions.includes(option)
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-200 hover:border-primary/30 hover:bg-primary/5"
+                    }`}
+                  >
                     <Checkbox
                       checked={selectedOptions.includes(option)}
-                      onCheckedChange={(checked) => handleOptionChange(option, checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        handleOptionChange(option, checked as boolean)
+                      }
                       className="mr-4"
                     />
-                    <span className="text-gray-700 font-medium flex-1">{option}</span>
+                    <span className="text-gray-700 font-medium flex-1">
+                      {option}
+                    </span>
                     {selectedOptions.includes(option) && (
                       <div className="text-primary">
                         <ChevronRight className="w-4 h-4" />
@@ -115,21 +129,25 @@ export default function QuestionCard({
               ))}
             </div>
           ) : (
-            // Single choice with radio buttons
-            <RadioGroup 
-              value={selectedOptions[0] || ''} 
+            // 단일 선택
+            <RadioGroup
+              value={selectedOptions[0] || ""}
               onValueChange={(value) => handleOptionChange(value, true)}
               className="space-y-3"
             >
               {question.options.map((option, index) => (
                 <div key={index} className="group">
-                  <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                    selectedOptions.includes(option) 
-                      ? 'border-primary bg-primary/5' 
-                      : 'border-gray-200 hover:border-primary/30 hover:bg-primary/5'
-                  }`}>
+                  <label
+                    className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                      selectedOptions.includes(option)
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-200 hover:border-primary/30 hover:bg-primary/5"
+                    }`}
+                  >
                     <RadioGroupItem value={option} className="mr-4" />
-                    <span className="text-gray-700 font-medium flex-1">{option}</span>
+                    <span className="text-gray-700 font-medium flex-1">
+                      {option}
+                    </span>
                     {selectedOptions.includes(option) && (
                       <div className="text-primary">
                         <ChevronRight className="w-4 h-4" />
@@ -142,12 +160,14 @@ export default function QuestionCard({
           )}
         </div>
 
-        {/* Custom Input Option */}
+        {/* 직접 입력*/}
         {question.allowCustom && (
           <div className="mb-6 p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center space-x-2 mb-2">
               <Plus className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-700">직접 입력</span>
+              <span className="text-sm font-medium text-gray-700">
+                직접 입력
+              </span>
             </div>
             <Input
               value={localCustomInput}
@@ -158,7 +178,6 @@ export default function QuestionCard({
           </div>
         )}
 
-        {/* Navigation Buttons */}
         <div className="flex justify-between items-center">
           <Button
             variant="ghost"
@@ -172,13 +191,13 @@ export default function QuestionCard({
 
           <Button
             onClick={() => {
-              console.log('버튼 클릭됨:', isLastQuestion ? '완료' : '다음');
+              console.log("버튼 클릭됨:", isLastQuestion ? "완료" : "다음");
               onNext();
             }}
-            disabled={false} // Allow progression even without answers
+            disabled={false}
             className="flex items-center space-x-2 px-8"
           >
-            <span>{isLastQuestion ? '완료' : '다음'}</span>
+            <span>{isLastQuestion ? "완료" : "다음"}</span>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
