@@ -1,6 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, AlertTriangle, Lightbulb, Copy, Check } from "lucide-react";
+import {
+  CheckCircle,
+  AlertTriangle,
+  Lightbulb,
+  Copy,
+  Check,
+} from "lucide-react";
 import { useState } from "react";
 
 interface QualityScore {
@@ -19,33 +25,20 @@ interface Improvement {
 }
 
 interface QualityAnalysisResultProps {
-  inputText: string;
+  inputText?: string;
   scores: QualityScore[];
   improvements: Improvement[];
+  onApplyImprovement?: (improvement: Improvement, index: number) => void;
 }
 
 export default function QualityAnalysisResult({
   inputText,
   scores,
-  improvements
+  improvements,
+  onApplyImprovement = () => {}, // 기본값: 빈 함수
 }: QualityAnalysisResultProps) {
   return (
     <div className="space-y-6">
-      {/* 입력 텍스트 표시 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-[#00C4B7]" />
-            상황 맥락 (선택사항)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-gray-700">{inputText}</p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* 품질 점수 카드들 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {scores.map((score, index) => (
@@ -53,14 +46,22 @@ export default function QualityAnalysisResult({
             <CardContent className="p-6">
               <div className="flex items-center justify-center mb-4">
                 <score.icon className={`w-6 h-6 ${score.color}`} />
-                <span className="ml-2 font-semibold text-gray-700">{score.name}</span>
+                <span className="ml-2 font-semibold text-gray-700">
+                  {score.name}
+                </span>
               </div>
               <div className="mb-4">
-                <span className="text-3xl font-bold text-red-500">{score.score}</span>
+                <span className="text-3xl font-bold text-red-500">
+                  {score.score}
+                </span>
                 <span className="text-gray-500 ml-1">/ {score.maxScore}</span>
               </div>
               {score.score < score.maxScore * 0.7 && (
-                <Button variant="outline" size="sm" className="text-red-500 border-red-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 border-red-200"
+                >
                   개선 필요
                 </Button>
               )}
@@ -79,7 +80,11 @@ export default function QualityAnalysisResult({
         </CardHeader>
         <CardContent className="space-y-4">
           {improvements.map((improvement, index) => (
-            <ImprovementItem key={index} improvement={improvement} />
+            <ImprovementItem
+              key={index}
+              improvement={improvement}
+              onApply={() => onApplyImprovement(improvement, index)}
+            />
           ))}
         </CardContent>
       </Card>
@@ -87,7 +92,13 @@ export default function QualityAnalysisResult({
   );
 }
 
-function ImprovementItem({ improvement }: { improvement: Improvement }) {
+function ImprovementItem({
+  improvement,
+  onApply = () => {},
+}: {
+  improvement: Improvement;
+  onApply?: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -101,7 +112,7 @@ function ImprovementItem({ improvement }: { improvement: Improvement }) {
       <div className="flex items-center justify-between">
         <span className="font-medium text-gray-900">{improvement.title}</span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={onApply}>
             적용
           </Button>
           <Button
@@ -110,7 +121,11 @@ function ImprovementItem({ improvement }: { improvement: Improvement }) {
             onClick={handleCopy}
             className="flex items-center gap-2"
           >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -122,11 +137,15 @@ function ImprovementItem({ improvement }: { improvement: Improvement }) {
         </div>
         <div>
           <span className="text-sm text-gray-500">제안:</span>
-          <span className="ml-2 text-[#00C4B7] font-medium">{improvement.improved}</span>
+          <span className="ml-2 text-[#00C4B7] font-medium">
+            {improvement.improved}
+          </span>
         </div>
         <div>
           <span className="text-sm text-gray-500">이유:</span>
-          <span className="ml-2 text-gray-600 text-sm">{improvement.reason}</span>
+          <span className="ml-2 text-gray-600 text-sm">
+            {improvement.reason}
+          </span>
         </div>
       </div>
     </div>

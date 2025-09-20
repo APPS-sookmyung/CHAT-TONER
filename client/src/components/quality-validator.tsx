@@ -10,15 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import {
-  BarChart3,
-  CheckCircle,
-  AlertTriangle,
-  Lightbulb,
-  Copy,
-} from "lucide-react";
+import { BarChart3, CheckCircle, AlertTriangle, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import QualityAnalysisResult from "@/components/quality-analysis-result";
 
 interface QualityValidatorProps {}
 
@@ -49,6 +43,42 @@ const generateMockAnalysis = (text: string): QualityAnalysis => {
         reason: "API 호출 실패 시 보여지는 예시 데이터입니다.",
       },
     ],
+  };
+};
+
+// QualityAnalysis를 QualityAnalysisResult props 형식으로 변환
+const convertToResultProps = (inputText: string, analysis: QualityAnalysis) => {
+  return {
+    inputText,
+    scores: [
+      {
+        name: "문법",
+        score: Math.round(analysis.grammar_score),
+        maxScore: 100,
+        icon: CheckCircle,
+        color: "text-green-600",
+      },
+      {
+        name: "격식",
+        score: Math.round(analysis.formality_score),
+        maxScore: 100,
+        icon: AlertTriangle,
+        color: "text-blue-600",
+      },
+      {
+        name: "가독성",
+        score: Math.round(analysis.readability_score),
+        maxScore: 100,
+        icon: Lightbulb,
+        color: "text-purple-600",
+      },
+    ],
+    improvements: analysis.suggestions.map((suggestion) => ({
+      title: suggestion.type,
+      original: suggestion.original,
+      improved: suggestion.suggestion,
+      reason: suggestion.reason,
+    })),
   };
 };
 
@@ -128,31 +158,6 @@ export default function QualityValidator({}: QualityValidatorProps) {
     analyzeMutation.mutate(inputText.trim());
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "복사 완료",
-      description: "텍스트가 클립보드에 복사되었습니다.",
-    });
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-green-600";
-    if (score >= 80) return "text-blue-600";
-    if (score >= 70) return "text-yellow-600";
-    return "text-red-600";
-  };
-
-  const getScoreBadge = (score: number) => {
-    if (score >= 90)
-      return <Badge className="bg-green-100 text-green-800">우수</Badge>;
-    if (score >= 80)
-      return <Badge className="bg-blue-100 text-blue-800">양호</Badge>;
-    if (score >= 70)
-      return <Badge className="bg-yellow-100 text-yellow-800">보통</Badge>;
-    return <Badge className="bg-red-100 text-red-800">개선 필요</Badge>;
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -220,138 +225,22 @@ export default function QualityValidator({}: QualityValidatorProps) {
       </Card>
 
       {analysis && (
-        <div className="space-y-6">
-          {analysis.improved_text && (
-            <Card className="bg-gradient-to-br from-white to-emerald-50/30 border-emerald-100/50 shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-emerald-700">
-                  <CheckCircle className="w-5 h-5" />
-                  개선된 텍스트
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
-                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                    {analysis.improved_text}
-                  </p>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(analysis.improved_text!)}
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    복사하기
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <QualityAnalysisResult
+          {...convertToResultProps(inputText, analysis)}
+          onApplyImprovement={(improvement, index) => {
+            // 개선사항을 원본 텍스트에 적용
+            const newText = inputText.replace(
+              improvement.original,
+              improvement.improved
+            );
+            setInputText(newText);
 
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <h3 className="font-semibold">문법 점수</h3>
-                </div>
-                <div
-                  className={`text-3xl font-bold ${getScoreColor(
-                    analysis.grammar_score
-                  )}`}
-                >
-                  {Math.round(analysis.grammar_score)}
-                </div>
-                <div className="text-sm text-gray-600">/ 100</div>
-                {getScoreBadge(analysis.grammar_score)}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-blue-600" />
-                  <h3 className="font-semibold">격식 점수</h3>
-                </div>
-                <div
-                  className={`text-3xl font-bold ${getScoreColor(
-                    analysis.formality_score
-                  )}`}
-                >
-                  {Math.round(analysis.formality_score)}
-                </div>
-                <div className="text-sm text-gray-600">/ 100</div>
-                {getScoreBadge(analysis.formality_score)}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Lightbulb className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-semibold">가독성 점수</h3>
-                </div>
-                <div
-                  className={`text-3xl font-bold ${getScoreColor(
-                    analysis.readability_score
-                  )}`}
-                >
-                  {Math.round(analysis.readability_score)}
-                </div>
-                <div className="text-sm text-gray-600">/ 100</div>
-                {getScoreBadge(analysis.readability_score)}
-              </CardContent>
-            </Card>
-          </div>
-
-          {analysis.suggestions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5" />
-                  개선 제안 ({analysis.suggestions.length}개)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {analysis.suggestions.map((suggestion, index) => (
-                    <div
-                      key={index}
-                      className="border border-gray-200 rounded-lg p-4"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <Badge variant="outline" className="capitalize">
-                          {suggestion.type}
-                        </Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-sm text-gray-600">원문: </span>
-                          <span className="text-gray-800">
-                            {suggestion.original}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">제안: </span>
-                          <span className="text-green-600 font-medium">
-                            {suggestion.suggestion}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">이유: </span>
-                          <span className="text-gray-700">
-                            {suggestion.reason}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+            toast({
+              title: "개선사항 적용 완료",
+              description: `"${improvement.original}"을(를) "${improvement.improved}"으(로) 변경했습니다.`,
+            });
+          }}
+        />
       )}
     </div>
   );
