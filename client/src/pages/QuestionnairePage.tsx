@@ -93,37 +93,6 @@ export default function QuestionnairePage() {
     idx < questions.length - 1 ? setIdx(idx + 1) : toResults();
   const prev = () => idx > 0 && setIdx(idx - 1);
 
-  const skipAllToConverter = async () => {
-    const defaultProfileData = {
-      userId,
-      baseFormalityLevel: 5,
-      baseFriendlinessLevel: 5,
-      baseEmotionLevel: 5,
-      baseDirectnessLevel: 5,
-      responses: {
-        formality_level: 5,
-        friendliness_level: 5,
-        emotion_level: 5,
-        directness_level: 5,
-        uses_abbreviations: false,
-        uses_emoticons: false,
-        gratitude_expressions: ["감사합니다"],
-        request_expressions: ["도움 좀 받을 수 있을까요?"],
-        situation_responses: {},
-      },
-    };
-
-    // 백엔드 API 없이 로컬 스토리지만 사용
-    const saved: UserProfile = {
-      id: 0,
-      ...defaultProfileData,
-      completedAt: new Date(),
-    } as UserProfile;
-
-    localStorage.setItem("chatToner_profile", JSON.stringify(saved));
-    setLoc("/converter");
-  };
-
   useEffect(() => window.scrollTo({ top: 0, behavior: "auto" }), [idx]);
 
   return (
