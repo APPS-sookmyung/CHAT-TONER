@@ -16,7 +16,6 @@ interface QuestionCardProps {
   onAnswerChange: (questionId: string, selectedOptions: string[], customInput?: string) => void;
   onNext: () => void;
   onPrevious: () => void;
-  onSkip: () => void;
   canGoBack: boolean;
   isLastQuestion: boolean;
 }
@@ -28,7 +27,6 @@ export default function QuestionCard({
   onAnswerChange,
   onNext,
   onPrevious,
-  onSkip,
   canGoBack,
   isLastQuestion
 }: QuestionCardProps) {
@@ -172,26 +170,17 @@ export default function QuestionCard({
             <span>이전</span>
           </Button>
 
-          <div className="flex space-x-3">
-            <Button
-              variant="ghost"
-              onClick={onSkip}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              건너뛰기
-            </Button>
-            <Button
-              onClick={() => {
-                console.log('버튼 클릭됨:', isLastQuestion ? '완료' : '다음');
-                onNext();
-              }}
-              disabled={false} // Allow progression even without answers
-              className="flex items-center space-x-2 px-8"
-            >
-              <span>{isLastQuestion ? '완료' : '다음'}</span>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button
+            onClick={() => {
+              console.log('버튼 클릭됨:', isLastQuestion ? '완료' : '다음');
+              onNext();
+            }}
+            disabled={false} // Allow progression even without answers
+            className="flex items-center space-x-2 px-8"
+          >
+            <span>{isLastQuestion ? '완료' : '다음'}</span>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>
