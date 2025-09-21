@@ -11,5 +11,5 @@
       "@shared/*": ["../shared/src/*"] // 실제 경로에 맞게
     }
   },
-  "include": ["src"]
+  "include": ["src", "vite.config.ts", "tailwind.config.ts"]
 }

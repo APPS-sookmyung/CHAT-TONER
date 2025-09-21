@@ -1,11 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700&display=swap");
 
 @import "tailwindcss";
 
 :root {
-  font-family: Pretendard;
+  font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   background-color: #f8fafc;
 
   font-synthesis: none;

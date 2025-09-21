@@ -18,10 +18,10 @@ const Progress = React.forwardRef<
   const clampedValue = Math.min(100, Math.max(0, v));
 
   const variantStyles = {
-    default: "bg-blue-500",
-    primary: "bg-blue-600",
-    secondary: "bg-green-500", 
-    accent: "bg-purple-500"
+    default: "bg-[#00C4B7]",
+    primary: "bg-[#00C4B7]",
+    secondary: "bg-[#00C4B7]",
+    accent: "bg-[#00C4B7]"
   };
 
   const sizeStyles = {
