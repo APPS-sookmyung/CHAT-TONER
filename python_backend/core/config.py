@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     CORS_METHODS: list = ["*"]
     CORS_HEADERS: list = ["*"]
     
+    # 피드백 보안키 설정
+    SECRET_KEY: str = "default-secret-key-for-dev"
+
     class Config:
         env_file = ".env"
         case_sensitive = True
