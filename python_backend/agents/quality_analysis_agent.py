@@ -6,14 +6,12 @@ Base Agent를 상속한 Quality Analysis Agent
 from typing import TypedDict, Dict, Any, List
 from langgraph.graph import StateGraph, END
 from dataclasses import dataclass
-from enum import Enum
 
 from agents.base_agent import (
     BaseAgent, BaseAgentState, BaseAgentConfig, BaseAgentResult,
     CommonAgentNodes, AgentFactory, agent_monitor
 )
 
-# Quality Agent 전용 상태
 class QualityAnalysisState(BaseAgentState):
     """Quality Analysis Agent 전용 상태"""
     text: str
@@ -26,12 +24,6 @@ class QualityAnalysisState(BaseAgentState):
     target_feedback: Dict[str, Any]
     suggestions: List[Dict[str, str]]
 
-# 맥락별 설정
-class ContextType(Enum):
-    GENERAL = "일반"
-    EDUCATION = "교육"
-    OFFICIAL_DOCUMENT = "보고서_공문"  
-
 @dataclass
 class ContextConfig:
     name: str
@@ -42,7 +34,7 @@ class ContextConfig:
 
 # 맥락별 설정 정의
 CONTEXT_CONFIGS = {
-    ContextType.GENERAL: ContextConfig(
+    "일반": ContextConfig(
         name="일반",
         description="일상적 소통을 위한 글쓰기",
         scoring_criteria={
@@ -58,8 +50,7 @@ CONTEXT_CONFIGS = {
 
 텍스트: {text}"""
     ),
-    
-    ContextType.EDUCATION: ContextConfig(
+    "교육": ContextConfig(
         name="교육",
         description="교육 목적의 설명이나 안내문",
         scoring_criteria={
@@ -76,8 +67,7 @@ CONTEXT_CONFIGS = {
 
 텍스트: {text}"""
     ),
-    
-    ContextType.OFFICIAL_DOCUMENT: ContextConfig(
+    "보고서_공문": ContextConfig(
         name="보고서_공문",
         description="업무용 보고서나 공식 행정 문서",
         scoring_criteria={
@@ -190,17 +180,11 @@ class QualityAnalysisAgent(BaseAgent):
         """맥락별 분석 (BaseAgent의 유틸리티 활용)"""
         
         async with self._step_context("맥락 분석", state):
-            # 맥락 타입 확인
-            context_type = None
-            for ctx in ContextType:
-                if ctx.value == state["context"]:
-                    context_type = ctx
-                    break
+            context_key = state["context"]
+            if context_key not in CONTEXT_CONFIGS:
+                context_key = "일반"  # 기본값
             
-            if not context_type:
-                context_type = ContextType.GENERAL
-            
-            config = CONTEXT_CONFIGS[context_type]
+            config = CONTEXT_CONFIGS[context_key]
             prompt = self._build_context_prompt(config, state["text"])
             
             # BaseAgent의 retry 로직 활용
@@ -392,7 +376,6 @@ JSON 형식으로 응답:
         else:
             return "낮음"
     
-    # 간편한 실행 메서드 (기존 호환성 유지)
     async def analyze(self, text: str, target_audience: str, context: str) -> Dict[str, Any]:
         """기존 인터페이스 유지를 위한 래퍼 메서드"""
         result = await self.execute(

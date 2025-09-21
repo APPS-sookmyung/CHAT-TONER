@@ -7,9 +7,7 @@ import asyncio
 import logging
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
-from enum import Enum
-
-from agents.quality_analysis_agent import QualityAnalysisAgent, CONTEXT_CONFIGS, ContextType
+from agents.quality_analysis_agent import QualityAnalysisAgent, CONTEXT_CONFIGS
 from services.rag_service import RAGService
 
 logger = logging.getLogger('chattoner.quality_service')
@@ -254,10 +252,9 @@ class QualityAnalysisService:
             })
         
         if scores['formality_score'] < 70:
-            context_name = CONTEXT_CONFIGS.get(
-                ContextType(context), 
-                CONTEXT_CONFIGS[ContextType.GENERAL]
-            ).name
+            context_config = CONTEXT_CONFIGS.get(context, CONTEXT_CONFIGS["일반"])
+            context_name = context_config.name
+            
             suggestions.append({
                 'category': '격식도',
                 'original': '전체 텍스트',
@@ -373,15 +370,7 @@ class QualityAnalysisService:
         """맥락별 제안 생성"""
         
         try:
-            # 맥락 설정 확인
-            context_config = None
-            for ctx in ContextType:
-                if ctx.value == context:
-                    context_config = CONTEXT_CONFIGS[ctx]
-                    break
-            
-            if not context_config:
-                context_config = CONTEXT_CONFIGS[ContextType.GENERAL]
+            context_config = CONTEXT_CONFIGS.get(context, CONTEXT_CONFIGS["일반"])
             
             # RAG를 통한 맥락별 제안 생성
             prompt = self._build_context_suggestions_prompt(context_config, text)
@@ -458,11 +447,8 @@ class QualityAnalysisService:
         context: str
     ) -> Dict[str, Any]:
         """맥락별 제안 Fallback"""
-        
-        context_name = CONTEXT_CONFIGS.get(
-            ContextType(context), 
-            CONTEXT_CONFIGS[ContextType.GENERAL]
-        ).name
+        context_config = CONTEXT_CONFIGS.get(context, CONTEXT_CONFIGS["일반"])
+        context_name = context_config.name
         
         fallback_suggestions = [{
             'original': '전체 텍스트',

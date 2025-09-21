@@ -22,7 +22,7 @@ from api.v1.schemas.quality import (
     TargetAudience,
     ImprovementCategory
 )
-from agents.quality_analysis_agent import ContextType, CONTEXT_CONFIGS
+from agents.quality_analysis_agent import CONTEXT_CONFIGS
 
 logger = logging.getLogger('chattoner')
 router = APIRouter()
@@ -59,7 +59,7 @@ async def analyze_text_quality(
     """
     
     try:
-        logger.info(f"품질 분석 요청 - 대상: {request.target_audience.value}, 맥락: {request.context.value}, 텍스트 길이: {len(request.text)}")
+        logger.info(f"품질 분석 요청 - 대상: {request.target_audience}, 맥락: {request.context}, 텍스트 길이: {len(request.text)}")
         
         # 빈 텍스트/ 길이 제한 검사
         if not request.text.strip():
@@ -71,19 +71,22 @@ async def analyze_text_quality(
         # 통합 서비스를 통한 분석 실행
         analysis_result = await quality_service.analyze_text_quality(
             text=request.text,
-            target_audience=request.target_audience.value,
-            context=request.context.value,
+            target_audience=request.target_audience,
+            context=request.context,
             detailed=False
         )
         
         # 결과 변환
         suggestions = []
         for sugg in analysis_result.get("suggestions", []):
+            category = sugg.get("category")
+            valid_categories = ["문법", "격식도", "가독성", "맥락별", "대상별", "일반"]
+            
             suggestions.append(SuggestionItem(
                 original=sugg.get("original", ""),
                 suggestion=sugg.get("suggestion", ""),
                 reason=sugg.get("reason", ""),
-                category=ImprovementCategory(sugg.get("category", "일반")) if sugg.get("category") in [c.value for c in ImprovementCategory] else None,
+                category=category if category in valid_categories else None,
                 priority=sugg.get("priority")
             ))
         
@@ -123,28 +126,30 @@ async def get_detailed_analysis(
     """
     
     try:
-        logger.info(f"상세 분석 요청 - 대상: {request.target_audience.value}, 맥락: {request.context.value}")
+        logger.info(f"상세 분석 요청 - 대상: {request.target_audience}, 맥락: {request.context}")
         
         # 상세 분석 실행
         analysis_result = await quality_service.analyze_text_quality(
             text=request.text,
-            target_audience=request.target_audience.value,
-            context=request.context.value,
+            target_audience=request.target_audience,
+            context=request.context,
             detailed=True
         )
         
         # 상세 응답 구성
         suggestions = []
         for sugg in analysis_result.get("suggestions", []):
+            category = sugg.get("category")
+            valid_categories = ["문법", "격식도", "가독성", "맥락별", "대상별", "일반"]
+            
             suggestions.append(SuggestionItem(
                 original=sugg.get("original", ""),
                 suggestion=sugg.get("suggestion", ""),
                 reason=sugg.get("reason", ""),
-                category=ImprovementCategory(sugg.get("category", "일반")) if sugg.get("category") in [c.value for c in ImprovementCategory] else None,
+                category=category if category in valid_categories else None,
                 priority=sugg.get("priority")
             ))
         
-        # 상세 응답 구성
         detailed_response = {
             "basic_scores": {
                 "grammar_score": analysis_result.get("grammar_score", 65.0),
@@ -190,22 +195,25 @@ async def get_context_suggestions(
     """
     
     try:
-        logger.info(f"맥락별 제안 요청 - 맥락: {request.context.value}, 텍스트 길이: {len(request.text)}")
+        logger.info(f"맥락별 제안 요청 - 맥락: {request.context}, 텍스트 길이: {len(request.text)}")
         
         # 맥락별 제안 생성
         suggestions_result = await quality_service.get_context_suggestions(
             text=request.text,
-            context=request.context.value
+            context=request.context
         )
         
         # 결과 변환
         suggestions = []
         for sugg in suggestions_result.get("suggestions", []):
+            category = sugg.get("category")
+            valid_categories = ["문법", "격식도", "가독성", "맥락별", "대상별", "일반"]
+            
             suggestions.append(SuggestionItem(
                 original=sugg.get("original", ""),
                 suggestion=sugg.get("suggestion", ""),
                 reason=sugg.get("reason", ""),
-                category=ImprovementCategory(sugg.get("category", "일반")) if sugg.get("category") in [c.value for c in ImprovementCategory] else None
+                category=category if category in valid_categories else None
             ))
         
         return ContextSuggestionsResponse(
@@ -222,21 +230,13 @@ async def get_context_information(context_type: str) -> ContextInfo:
     """맥락별 상세 정보 제공"""
     
     try:
-        # 맥락 타입 확인
-        context_config = None
-        context_enum = None
         
-        for ctx in ContextType:
-            if ctx.value == context_type:
-                context_config = CONTEXT_CONFIGS[ctx]
-                context_enum = ctx
-                break
-        
+        context_config = CONTEXT_CONFIGS.get(context_type)
         if not context_config:
             raise HTTPException(status_code=404, detail=f"'{context_type}' 맥락을 찾을 수 없습니다.")
         
         return ContextInfo(
-            context_type=context_enum,
+            context_type=context_type,  # context_enum,
             name=context_config.name,
             description=context_config.description,
             scoring_criteria=context_config.scoring_criteria,
@@ -258,10 +258,10 @@ async def get_available_contexts() -> AvailableContextsResponse:
     """사용 가능한 모든 맥락 목록 반환"""
     
     contexts = []
-    for ctx in ContextType:
-        config = CONTEXT_CONFIGS[ctx]
+    
+    for context_key, config in CONTEXT_CONFIGS.items():
         contexts.append({
-            "type": ctx.value,
+            "type": context_key,
             "name": config.name,
             "description": config.description
         })

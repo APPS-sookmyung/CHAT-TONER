@@ -4,41 +4,19 @@
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from enum import Enum
+from typing import List, Optional, Dict, Any, Union, Literal
 
-class TargetAudience(str, Enum):
-    """대상 청중 타입"""
-    ELEMENTARY = "초등학생"
-    MIDDLE_SCHOOL = "중학생"
-    HIGH_SCHOOL = "고등학생"
-    UNIVERSITY = "대학생"
-    ADULT_LEARNER = "성인학습자"
-    TEACHER = "교사"
-    PARENT = "학부모"
-    GENERAL = "일반인"
+TargetAudience = Literal[
+    "초등학생", "중학생", "고등학생", "대학생", 
+    "성인학습자", "교사", "학부모", "일반인"
+]
 
-class ContextType(str, Enum):
-    """맥락 타입"""
-    GENERAL = "일반"
-    EDUCATION = "교육"
-    OFFICIAL_DOCUMENT = "보고서_공문" 
+ContextType = Literal["일반", "교육", "보고서_공문"]
 
-class ConfidenceLevel(str, Enum):
-    """분석 신뢰도"""
-    HIGH = "높음"
-    MEDIUM = "보통"
-    LOW = "낮음"
+ConfidenceLevel = Literal["높음", "보통", "낮음"]
 
-class ImprovementCategory(str, Enum):
-    """개선 카테고리"""
-    GRAMMAR = "문법"
-    FORMALITY = "격식도"
-    READABILITY = "가독성"
-    CONTEXT_SPECIFIC = "맥락별"
-    TARGET_SPECIFIC = "대상별"
+ImprovementCategory = Literal["문법", "격식도", "가독성", "맥락별", "대상별"]
 
-# 기존 스키마 유지 및 확장
 class SuggestionItem(BaseModel):
     """개선 제안 항목"""
     original: str = Field(description="원본 표현")
@@ -114,7 +92,7 @@ class DetailedAnalysisResponse(BaseModel):
 
 class ContextInfo(BaseModel):
     """맥락 정보"""
-    context_type: ContextType = Field(description="맥락 타입")
+    context_type: Union[ContextType, str] = Field(description="맥락 타입")
     name: str = Field(description="맥락 이름")
     description: str = Field(description="맥락 설명")
     scoring_criteria: Dict[str, str] = Field(description="평가 기준")
