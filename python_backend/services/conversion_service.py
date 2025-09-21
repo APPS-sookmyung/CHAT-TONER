@@ -118,13 +118,13 @@ class ConversionService:
             current_directness = updated_profile.get('sessionDirectnessLevel',
                                                    updated_profile.get('baseDirectnessLevel', 3))
             
-            updated_profile['sessionFormalityLevel'] = max(1, min(5, 
+            updated_profile['sessionFormalityLevel'] = max(1, min(10, 
                 current_formality + style_deltas.get('formalityDelta', 0) * 2))
-            updated_profile['sessionFriendlinessLevel'] = max(1, min(5,
+            updated_profile['sessionFriendlinessLevel'] = max(1, min(10,
                 current_friendliness + style_deltas.get('friendlinessDelta', 0) * 2))
-            updated_profile['sessionEmotionLevel'] = max(1, min(5,
+            updated_profile['sessionEmotionLevel'] = max(1, min(10,
                 current_emotion + style_deltas.get('emotionDelta', 0) * 2))
-            updated_profile['sessionDirectnessLevel'] = max(1, min(5,
+            updated_profile['sessionDirectnessLevel'] = max(1, min(10,
                 current_directness + style_deltas.get('directnessDelta', 0) * 2))
             
             return {
