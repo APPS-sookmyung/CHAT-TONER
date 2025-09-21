@@ -1,133 +1,306 @@
 """
-Text Quality Analysis Endpoints (RAG-based)
-RAG를 활용한 텍스트 품질 분석 및 제안 엔드포인트
+최종 통합된 텍스트 품질 분석 엔드포인트
+LangGraph Agent + RAG + Fallback 시스템 완전 통합
 """
 
-from fastapi import APIRouter, HTTPException, Depends
-import json
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import Annotated, Dict, List, Any, Optional
+import logging
+import asyncio
 
-# RAG 서비스를 사용하도록 의존성 변경
 from services.rag_service import RAGService
+from services.quality_analysis_service import create_quality_analysis_service, monitor_performance
 from api.v1.schemas.quality import (
     QualityAnalysisRequest,
     QualityAnalysisResponse,
     ContextSuggestionsRequest,
     ContextSuggestionsResponse,
-    SuggestionItem
+    DetailedAnalysisResponse,
+    ContextInfo,
+    AvailableContextsResponse,
+    SuggestionItem,
+    TargetAudience,
+    ImprovementCategory
 )
-import logging
+from agents.quality_analysis_agent import ContextType, CONTEXT_CONFIGS
 
 logger = logging.getLogger('chattoner')
 router = APIRouter()
 
-# RAG 서비스 의존성 주입 함수
 def get_rag_service():
-    """RAG 서비스 인스턴스 생성"""
+    """RAG 서비스 인스턴스"""
     try:
         return RAGService()
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}")
 
+def get_quality_service(rag_service: Annotated[RAGService, Depends(get_rag_service)]):
+    """품질 분석 서비스 인스턴스"""
+    try:
+        return create_quality_analysis_service(
+            rag_service=rag_service,
+            enable_agent=True,
+            fallback_enabled=True
+        )
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"품질 분석 서비스를 초기화할 수 없습니다: {str(e)}")
+
 @router.post("/analyze", response_model=QualityAnalysisResponse)
+@monitor_performance
 async def analyze_text_quality(
     request: QualityAnalysisRequest,
-    rag_service: Annotated[RAGService, Depends(get_rag_service)]
+    quality_service: Annotated[Any, Depends(get_quality_service)]
 ) -> QualityAnalysisResponse:
-    """텍스트 품질 분석 (RAG 기반)"""
+    """
+    통합 텍스트 품질 분석
+    - LangGraph Agent 우선 사용
+    - RAG 기반 맥락별/대상별 분석
+    - Fallback 시스템으로 안정성 보장
+    """
+    
     try:
-        # RAG에 보낼 상세한 프롬프트(질문) 구성
-        prompt = f"""'좋은 글쓰기 원칙'과 '문법 규칙' 관련 문서를 참고하여, 아래 텍스트의 품질을 분석해줘.
+        logger.info(f"품질 분석 요청 - 대상: {request.target_audience.value}, 맥락: {request.context.value}, 텍스트 길이: {len(request.text)}")
         
-        분석 항목:
-        1. 문법 정확도 (grammarScore)
-        2. 격식 수준 (formalityScore)
-        3. 가독성 (readabilityScore)
-        4. 개선 제안 (suggestions) - 2개
+        # 빈 텍스트/ 길이 제한 검사
+        if not request.text.strip():
+            raise HTTPException(status_code=400, detail="분석할 텍스트가 비어있습니다.")
         
-        반드시 아래 JSON 형식으로만 응답해줘. 다른 설명은 절대 추가하지 마.
-        {{
-            "grammarScore": <0.0에서 100.0 사이의 점수>,
-            "formalityScore": <0.0에서 100.0 사이의 점수>,
-            "readabilityScore": <0.0에서 100.0 사이의 점수>,
-            "suggestions": [
-                {{
-                    "original": "개선이 필요한 원본 단어나 구절",
-                    "suggestion": "개선된 표현",
-                    "reason": "개선 이유"
-                }}
-            ]
-        }}
-
-        --- 분석할 텍스트 ---
-        {request.text}
-        """
+        if len(request.text) > 5000:
+            raise HTTPException(status_code=400, detail="텍스트가 너무 깁니다. (최대 5000자)")
         
-        # RAG 서비스 호출 (생성형 답변 함수 사용)
-        rag_result = await rag_service.ask_generative_question(query=prompt, context="텍스트 품질 분석")
+        # 통합 서비스를 통한 분석 실행
+        analysis_result = await quality_service.analyze_text_quality(
+            text=request.text,
+            target_audience=request.target_audience.value,
+            context=request.context.value,
+            detailed=False
+        )
         
-        if not rag_result or not rag_result.get("success"):
-            raise HTTPException(status_code=500, detail="RAG 서비스가 품질 분석에 실패했습니다.")
-
-        # RAG의 답변(answer)에 포함된 JSON 문자열을 파싱
-        analysis_data = json.loads(rag_result["answer"])
+        # 결과 변환
+        suggestions = []
+        for sugg in analysis_result.get("suggestions", []):
+            suggestions.append(SuggestionItem(
+                original=sugg.get("original", ""),
+                suggestion=sugg.get("suggestion", ""),
+                reason=sugg.get("reason", ""),
+                category=ImprovementCategory(sugg.get("category", "일반")) if sugg.get("category") in [c.value for c in ImprovementCategory] else None,
+                priority=sugg.get("priority")
+            ))
         
-        # suggestions를 SuggestionItem 객체로 변환
-        suggestions = [SuggestionItem(**s) for s in analysis_data.get("suggestions", [])]
-        
-        return QualityAnalysisResponse(
-            grammarScore=analysis_data["grammarScore"],
-            formalityScore=analysis_data["formalityScore"], 
-            readabilityScore=analysis_data["readabilityScore"],
+        response = QualityAnalysisResponse(
+            grammarScore=round(analysis_result.get("grammar_score", 65.0), 1),
+            formalityScore=round(analysis_result.get("formality_score", 65.0), 1),
+            readabilityScore=round(analysis_result.get("readability_score", 65.0), 1),
             suggestions=suggestions
         )
-
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="RAG 서비스의 응답(JSON)을 파싱하는 데 실패했습니다.")
+        
+        # 성능 로깅
+        method_used = analysis_result.get("method_used", "unknown")
+        processing_time = analysis_result.get("processing_time", 0)
+        
+        logger.info(f"품질 분석 완료 - 방법: {method_used}, 소요시간: {processing_time:.2f}초, "
+                   f"점수: G{response.grammarScore}/F{response.formalityScore}/R{response.readabilityScore}")
+        
+        return response
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"품질 분석 중 오류 발생: {str(e)}")
+        logger.error(f"품질 분석 중 예기치 못한 오류: {e}")
+        raise HTTPException(status_code=500, detail="분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
 
-
-@router.post("/suggestions", response_model=ContextSuggestionsResponse)
-async def get_context_suggestions(
-    request: ContextSuggestionsRequest,
-    rag_service: Annotated[RAGService, Depends(get_rag_service)]
-) -> ContextSuggestionsResponse:
-    """맥락별 표현 개선 제안 (RAG 기반)"""
+@router.post("/detailed-analysis", response_model=DetailedAnalysisResponse)
+@monitor_performance
+async def get_detailed_analysis(
+    request: QualityAnalysisRequest,
+    quality_service: Annotated[Any, Depends(get_quality_service)]
+) -> DetailedAnalysisResponse:
+    """
+    상세 텍스트 품질 분석
+    - 모든 단계별 분석 결과 제공
+    - 텍스트 통계 및 개선 우선순위 포함
+    - RAG 분석 정보 제공
+    """
+    
     try:
-        # RAG에 보낼 상세한 프롬프트(질문) 구성
-        prompt = f"""'글쓰기 스타일 가이드' 문서를 참고하여, '{request.context}' 맥락에서 아래 텍스트의 표현을 더 좋게 바꿀 수 있는 제안들을 3개만 찾아줘.
+        logger.info(f"상세 분석 요청 - 대상: {request.target_audience.value}, 맥락: {request.context.value}")
         
-        반드시 아래의 JSON 형식으로만 응답해야 해. 다른 설명은 절대 추가하지 마.
-        [
-          {{
-            "original": "개선이 필요한 원본 단어 또는 구절",
-            "suggestion": "더 나은 표현 제안",
-            "reason": "왜 그렇게 제안하는지에 대한 간단한 이유"
-          }}
-        ]
-
-        --- 개선할 텍스트 ---
-        {request.text}
-        """
-        
-        # RAG 서비스 호출 (생성형 답변 함수 사용)
-        rag_result = await rag_service.ask_generative_question(query=prompt, context="표현 개선 제안")
-
-        if not rag_result or not rag_result.get("success"):
-            raise HTTPException(status_code=500, detail="RAG 서비스가 표현 제안에 실패했습니다.")
-
-        # RAG의 답변(answer)에 포함된 JSON 문자열을 파싱
-        suggestions_list = json.loads(rag_result["answer"])
-        
-        relevant_suggestions = [SuggestionItem(**s) for s in suggestions_list]
-
-        return ContextSuggestionsResponse(
-            suggestions=relevant_suggestions,
-            count=len(relevant_suggestions)
+        # 상세 분석 실행
+        analysis_result = await quality_service.analyze_text_quality(
+            text=request.text,
+            target_audience=request.target_audience.value,
+            context=request.context.value,
+            detailed=True
         )
         
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="RAG 서비스의 응답(JSON)을 파싱하는 데 실패했습니다.")
+        # 상세 응답 구성
+        suggestions = []
+        for sugg in analysis_result.get("suggestions", []):
+            suggestions.append(SuggestionItem(
+                original=sugg.get("original", ""),
+                suggestion=sugg.get("suggestion", ""),
+                reason=sugg.get("reason", ""),
+                category=ImprovementCategory(sugg.get("category", "일반")) if sugg.get("category") in [c.value for c in ImprovementCategory] else None,
+                priority=sugg.get("priority")
+            ))
+        
+        # 상세 응답 구성
+        detailed_response = {
+            "basic_scores": {
+                "grammar_score": analysis_result.get("grammar_score", 65.0),
+                "formality_score": analysis_result.get("formality_score", 65.0),
+                "readability_score": analysis_result.get("readability_score", 65.0)
+            },
+            "context_analysis": {
+                "context_type": request.context,
+                "analysis_details": analysis_result.get("context_analysis", {}),
+                "context_specific_feedback": analysis_result.get("context_feedback", [])
+            },
+            "target_analysis": {
+                "target_audience": request.target_audience,
+                "analysis_details": analysis_result.get("target_analysis", {}),
+                "target_specific_feedback": analysis_result.get("target_feedback", [])
+            },
+            "suggestions": suggestions,
+            "rag_analysis": {
+                "sources_used": analysis_result.get("rag_sources_count", 0),
+                "confidence_level": analysis_result.get("confidence_level", "낮음")
+            },
+            "text_statistics": analysis_result.get("text_statistics", {}),
+            "improvement_priority": analysis_result.get("improvement_priority", [])
+        }
+        
+        return detailed_response
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"맥락 제안 생성 실패: {str(e)}")
+        logger.error(f"상세 분석 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"상세 분석 중 오류가 발생했습니다: {str(e)}")
+
+@router.post("/suggestions", response_model=ContextSuggestionsResponse)
+@monitor_performance
+async def get_context_suggestions(
+    request: ContextSuggestionsRequest,
+    quality_service: Annotated[Any, Depends(get_quality_service)]
+) -> ContextSuggestionsResponse:
+    """
+    맥락별 표현 개선 제안
+    - 맥락 특성에 맞는 전용 피드백
+    - RAG 기반 개선 제안
+    - 맥락별 피드백 템플릿 적용
+    """
+    
+    try:
+        logger.info(f"맥락별 제안 요청 - 맥락: {request.context.value}, 텍스트 길이: {len(request.text)}")
+        
+        # 맥락별 제안 생성
+        suggestions_result = await quality_service.get_context_suggestions(
+            text=request.text,
+            context=request.context.value
+        )
+        
+        # 결과 변환
+        suggestions = []
+        for sugg in suggestions_result.get("suggestions", []):
+            suggestions.append(SuggestionItem(
+                original=sugg.get("original", ""),
+                suggestion=sugg.get("suggestion", ""),
+                reason=sugg.get("reason", ""),
+                category=ImprovementCategory(sugg.get("category", "일반")) if sugg.get("category") in [c.value for c in ImprovementCategory] else None
+            ))
+        
+        return ContextSuggestionsResponse(
+            suggestions=suggestions,
+            count=len(suggestions)
+        )
+        
+    except Exception as e:
+        logger.error(f"맥락별 제안 생성 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"제안 생성 중 오류가 발생했습니다: {str(e)}")
+
+@router.get("/context-info/{context_type}", response_model=ContextInfo)
+async def get_context_information(context_type: str) -> ContextInfo:
+    """맥락별 상세 정보 제공"""
+    
+    try:
+        # 맥락 타입 확인
+        context_config = None
+        context_enum = None
+        
+        for ctx in ContextType:
+            if ctx.value == context_type:
+                context_config = CONTEXT_CONFIGS[ctx]
+                context_enum = ctx
+                break
+        
+        if not context_config:
+            raise HTTPException(status_code=404, detail=f"'{context_type}' 맥락을 찾을 수 없습니다.")
+        
+        return ContextInfo(
+            context_type=context_enum,
+            name=context_config.name,
+            description=context_config.description,
+            scoring_criteria=context_config.scoring_criteria,
+            example_feedback=context_config.feedback_template.format(
+                original="예시 표현",
+                reason="개선이 필요한 이유",
+                suggestion="개선된 표현"
+            )
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"맥락 정보 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail="맥락 정보를 가져오는데 실패했습니다.")
+
+@router.get("/available-contexts", response_model=AvailableContextsResponse)
+async def get_available_contexts() -> AvailableContextsResponse:
+    """사용 가능한 모든 맥락 목록 반환"""
+    
+    contexts = []
+    for ctx in ContextType:
+        config = CONTEXT_CONFIGS[ctx]
+        contexts.append({
+            "type": ctx.value,
+            "name": config.name,
+            "description": config.description
+        })
+    
+    return AvailableContextsResponse(
+        contexts=contexts,
+        total_count=len(contexts)
+    )
+
+@router.get("/health")
+async def health_check(
+    rag_service: Annotated[RAGService, Depends(get_rag_service)]
+) -> Dict[str, Any]:
+    
+    try:
+        # RAG 서비스 상태 확인
+        test_query = "시스템 테스트"
+        rag_status = await rag_service.ask_generative_question(
+            query=test_query,
+            context="상태 확인"
+        )
+        
+        rag_healthy = rag_status and rag_status.get("success", False)
+        
+        return {
+            "status": "healthy" if rag_healthy else "degraded",
+            "timestamp": asyncio.get_event_loop().time(),
+            "services": {
+                "rag_service": "healthy" if rag_healthy else "unhealthy",
+                "quality_agent": "healthy",
+                "fallback_system": "healthy"
+            },
+            "version": "1.0.0"
+        }
+        
+    except Exception as e:
+        logger.error(f"상태 확인 실패: {e}")
+        return {
+            "status": "unhealthy",
+            "timestamp": asyncio.get_event_loop().time(),
+            "error": str(e)
+        }
