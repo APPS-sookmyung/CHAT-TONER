@@ -36,19 +36,21 @@ class RAGChain:
     """RAG (Retrieval-Augmented Generation) 체인"""
     
     def __init__(self, model_name: str = "gpt-4", temperature: float = 0.7):
-        """RAG Chain 초기화"""
-        dotenv_path = Path(__file__).resolve().parents[3] / ".env"
-        load_dotenv(dotenv_path=dotenv_path)
-        
+        """RAG Chain 초기화 (공통 설정 사용)"""
+        from core.rag_config import get_rag_config
+
+        # 공통 설정 로드
+        self.config = get_rag_config()
+
         # Services 지연 로딩 (필요시에만 초기화)
         self.services_available = False
         self._services_cache = {}
         self._check_services_availability()
-        
-        api_key = settings.OPENAI_API_KEY
+
+        api_key = self.config.get_openai_api_key()
         if not api_key:
             raise ValueError("OPENAI_API_KEY가 설정되지 않았습니다")
-        
+
         self.llm = ChatOpenAI(
             model=model_name,
             temperature=temperature,
@@ -126,19 +128,20 @@ class RAGChain:
             return None
     
     def _load_vectorstore(self):
-        """기존 인덱스 로드"""
+        """기존 인덱스 로드 (보안 강화)"""
         try:
-            if FAISS_INDEX_PATH.exists() and any(FAISS_INDEX_PATH.iterdir()):
-                self.vectorstore = FAISS.load_local(
-                    str(FAISS_INDEX_PATH),
-                    embeddings=get_embedding(),
-                    # WARNING: 이 옵션은 악의적으로 조작된 인덱스를 통해 임의 코드 실행이 발생할 수 있습니다.
-                    # 반드시 FAISS 인덱스 파일이 신뢰된 경로에서 생성되었는지 확인하세요.
-                    allow_dangerous_deserialization=True
-                )
+            # vector_db.py의 안전한 로드 함수 사용
+            from langchain_pipeline.retriever.vector_db import load_vector_store
+
+            self.vectorstore = load_vector_store(FAISS_INDEX_PATH)
+
+            if self.vectorstore:
                 self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
                 self.is_initialized = True
-                logger.info(f"RAG Chain 준비 완료: {self.vectorstore.index.ntotal}개 문서")
+                logger.info(f"RAG Chain 안전하게 준비 완료: {self.vectorstore.index.ntotal}개 문서")
+            else:
+                logger.warning("벡터 저장소 로드 실패 - 인덱스가 없거나 신뢰할 수 없습니다")
+
         except Exception as e:
             logger.warning(f"기존 인덱스 로드 실패: {e}")
     
