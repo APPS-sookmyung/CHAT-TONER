@@ -1,33 +1,36 @@
 # nestjs-gateway/Dockerfile
-# =====================================================
-# 1. 빌드(Builder) 스테이지: 앱을 빌드하는 역할만 수행
-# =====================================================
-FROM node:20 AS builder
 
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# 1. package.json을 먼저 복사하여 의존성만 설치 (레이어 캐시 활용 극대화)
+RUN apk add --no-cache python3 make g++ libc6-compat
+
+# 의존성 먼저 설치(캐시 활용)
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# 2. 의존성 설치가 끝난 후, 전체 소스 코드를 복사
 COPY . .
-
-# 3. 애플리케이션 빌드
 RUN npm run build
 
-# =====================================================
-# 2. 프로덕션(Production) 스테이지: 빌드된 앱을 실행하는 역할만 수행
-# =====================================================
-FROM node:20
+RUN npm prune --ombit=dev
 
+FROM node:20-alpine AS runner
 WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
 
-# 1. 빌드 스테이지에서 설치한 node_modules를 복사
+RUN apk add --no-cache tini
+
+# COPY package*.json ./
+# RUN npm ci --omit=dev
+
+# COPY --from=builder /app/dist ./dist
+
 COPY --from=builder /app/node_modules ./node_modules
-
-# 2. 빌드 스테이지에서 빌드된 결과물(dist 폴더)을 복사
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 
-# 3. 앱 실행
-CMD ["node", "dist/main"]
+USER node
+EXPOSE 3000
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "dist/main.js"]

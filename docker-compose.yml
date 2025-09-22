@@ -3,32 +3,49 @@ version: "3.9"
 services:
   backend:
     build: ./python_backend
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/mydb
+      - port: 8000
     ports:
       - "8000:8000"
     command: [ "uvicorn", "run_fastapi:app", "--host", "0.0.0.0", "--port", "8000" ]
     depends_on:
-      - db
+      - db: 
+        condition: service_healthy
+    restart: unless-stopped
 
   gateway:
-    build: ./nestjs-gateway
-    ports:
-      - "3000:3000"
+    build: 
+      context: ./nestjs-gateway
+      dockerfile: Dockerfile
+    env_file: .env
     environment:
       - BACKEND_API_URL=http://backend:8000
+      - port: 3000
+    ports:
+      - "3000:3000"
     depends_on:
-      - backend
+      - backend: 
+        condition: service_started
+    restart: unless-stopped
 
   db:
-    image: postgres:15
-    restart: always
+    image: postgres:17
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: mydb # 생성할 기본 db
-      POSTGRES_USER: user # db 접속용 사용자
-      POSTGRES_PASSWORD: password # db 접속용 비밀번호
+      POSTGRES_DB: cjattoner-db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password 
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d chattoner-db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
-  pgdata:
+  pgdata: {}
