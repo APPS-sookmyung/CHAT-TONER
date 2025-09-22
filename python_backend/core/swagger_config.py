@@ -28,10 +28,10 @@ def configure_swagger(app: FastAPI) -> None:
             - **개인화**: 사용자 피드백 학습 및 프로필 적응
             
             ## 🛠 사용 흐름
-            1. `/api/conversion/convert` - 텍스트 변환 요청
-            2. `/api/quality/analyze` - 품질 점수 확인  
-            3. `/api/feedback/submit` - 피드백 제출
-            4. `/api/rag/ask` - 스타일 가이드 질의응답
+            1. `/api/v1/conversion/convert` - 텍스트 변환 요청
+            2. `/api/v1/quality/analyze` - 품질 점수 확인  
+            3. `/api/v1/feedback` - 피드백 제출
+            4. `/api/v1/rag/ask` - 스타일 가이드 질의응답
             """,
             routes=app.routes,
         )

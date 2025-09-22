@@ -139,3 +139,29 @@ class DocumentChunker:
                 })
         
         return chunked_docs
+
+
+def split_documents(documents):
+    """LangChain 호환성을 위한 wrapper 함수"""
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        length_function=len,
+        separators=["\n\n", "\n", ".", "!", "?", " ", ""]
+    )
+    
+    return text_splitter.split_documents(documents)
+
+
+def get_text_splitter():
+    """텍스트 분할기 인스턴스 반환"""
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    
+    return RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        length_function=len,
+        separators=["\n\n", "\n", ".", "!", "?", " ", ""]
+    )

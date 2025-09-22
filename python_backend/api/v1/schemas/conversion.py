@@ -1,32 +1,53 @@
 """변환 API 요청/응답 스키마"""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, AliasChoices
 from typing import Dict, Any, Optional
 
 
 class UserProfile(BaseModel):
     """사용자 스타일 프로필 (명시적 스키마)"""
-    baseFormalityLevel: int = Field(..., ge=1, le=5, description="격식도 (1-5)")
-    baseFriendlinessLevel: int = Field(..., ge=1, le=5, description="친근함 (1-5)")
-    baseEmotionLevel: int = Field(..., ge=1, le=5, description="감정표현 (1-5)")
-    baseDirectnessLevel: int = Field(..., ge=1, le=5, description="직설성 (1-5)")
+    baseFormalityLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseFormalityLevel", "base_formality_level"), description="격식도 (1-10)")
+    baseFriendlinessLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseFriendlinessLevel", "base_friendliness_level"), description="친근함 (1-10)")
+    baseEmotionLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseEmotionLevel", "base_emotion_level"), description="감정표현 (1-10)")
+    baseDirectnessLevel: int = Field(..., ge=1, le=10,
+        validation_alias=AliasChoices("baseDirectnessLevel", "base_directness_level"), description="직설성 (1-10)")
 
     # 세션(일시적) 조정값은 선택적
-    sessionFormalityLevel: Optional[int] = Field(None, ge=1, le=5)
-    sessionFriendlinessLevel: Optional[int] = Field(None, ge=1, le=5)
-    sessionEmotionLevel: Optional[int] = Field(None, ge=1, le=5)
-    sessionDirectnessLevel: Optional[int] = Field(None, ge=1, le=5)
+    sessionFormalityLevel: Optional[int] = Field(None, ge=1, le=10)
+    sessionFriendlinessLevel: Optional[int] = Field(None, ge=1, le=10)
+    sessionEmotionLevel: Optional[int] = Field(None, ge=1, le=10)
+    sessionDirectnessLevel: Optional[int] = Field(None, ge=1, le=10)
 
 
 class NegativePreferences(BaseModel):
     """네거티브 프롬프트 선호도 (명시적 스키마)"""
-    avoidFloweryLanguage: Optional[str] = Field(
-        default=None,
-        description="과장/수사적 표현 회피 수준 (예: strict/medium/off)"
+    rhetoricLevel: Optional[str] = Field(
+        default="moderate",
+        description="수사법 수준 (low/moderate/high)"
     )
-    avoidSlang: Optional[bool] = Field(default=None, description="속어/은어 회피 여부")
-    avoidHonorifics: Optional[bool] = Field(default=None, description="지나친 존칭 회피 여부")
-    avoidPassiveAggression: Optional[bool] = Field(default=None, description="수동공격성 표현 회피")
+    repetitionTolerance: Optional[str] = Field(
+        default="moderate", 
+        description="반복 허용도 (low/moderate/high)"
+    )
+    punctuationStyle: Optional[str] = Field(
+        default="standard",
+        description="문장부호 스타일 (minimal/standard/expressive)"
+    )
+    contentFocus: Optional[str] = Field(
+        default="balanced",
+        description="내용 초점 (content/balanced/format)"
+    )
+    bulletPreference: Optional[str] = Field(
+        default="minimal",
+        description="불릿 포인트 선호도 (avoid/minimal/prefer)"
+    )
+    emoticonPolicy: Optional[str] = Field(
+        default="contextual",
+        description="이모티콘 정책 (none/minimal/contextual/frequent)"
+    )
 
 class ConversionRequest(BaseModel):
     """텍스트 변환 요청 모델"""

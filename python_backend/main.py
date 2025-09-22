@@ -9,6 +9,7 @@ Chat Toner FastAPI Main Application
 간소화된 메인 애플리케이션 엔트리포인트
 """
 
+
 import logging
 logger= logging.getLogger('chattoner')
 from fastapi import FastAPI
@@ -22,16 +23,28 @@ from core.middleware import setup_middleware
 from core.exception_handlers import setup_exception_handlers
 from api.v1.router import api_router
 
-
 def create_app() -> FastAPI:
     """FastAPI 애플리케이션 팩토리"""
     settings = get_settings()
+    
     logger.info(f"OPENAI_MODEL: {settings.OPENAI_MODEL}")
     logger.info(f"DEBUG: {settings.DEBUG}")
     
     # 컨테이너 초기화
     container = Container()
-    container.config.from_dict(settings.dict())
+    #container.config.from_dict(settings.dict())
+    container.config.from_dict(settings.model_dump())
+
+    # 와이어링 추가
+    container.wire(modules=[
+        "api.v1.endpoints.conversion",
+        "api.v1.endpoints.finetune",
+        "api.v1.endpoints.health",
+        "api.v1.endpoints.profile", 
+        "api.v1.endpoints.quality",
+        "api.v1.endpoints.feedback",
+        "api.v1.endpoints.rag"
+    ])
     
     # FastAPI 앱 생성
     swagger_params = get_swagger_ui_parameters()
