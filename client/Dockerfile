@@ -26,7 +26,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # 정적 산출물만 복사
 COPY --from=builder /app/dist/ ./
 
-EXPOSE 80
+EXPOSE 8080
 
 # 컨테이너 내부 헬스체크 (ALB 헬스체크는 /healthz 사용)
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1/healthz || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:8080/healthz || exit 1

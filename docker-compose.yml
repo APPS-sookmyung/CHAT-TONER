@@ -5,7 +5,7 @@ services:
     build: ./python_backend
     ports:
       - "8000:8000"
-    command: ["uvicorn", "run_fastapi:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: [ "uvicorn", "run_fastapi:app", "--host", "0.0.0.0", "--port", "8000" ]
     depends_on:
       - db
 
@@ -15,7 +15,7 @@ services:
       - "3000:3000"
 
   db:
-    image: postgres:15
+    image: postgres:17
     restart: always
     environment:
       POSTGRES_DB: mydb # 생성할 기본 db
