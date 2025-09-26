@@ -19,7 +19,7 @@ export default function ResultsPage() {
       <ResultsSummary
         userProfile={profile}
         completionRate={100}
-        onStartConversion={() => setLoc("/converter")}
+        onStartConversion={() => setLoc("/quality-analysis")}
         onExportData={() => {
           const dataStr = JSON.stringify(profile, null, 2);
           const url = URL.createObjectURL(
