@@ -113,58 +113,97 @@ class PromptEngineer:
         }
     
     def generate_user_negative_prompts(self, preferences: Dict[str, str]) -> str:
-        """사용자 네거티브 선호도에 따른 맞춤 프롬프트 생성"""
+        """사용자 네거티브 선호도에 따른 맞춤 프롬프트 생성
+
+        새 스키마(rhetoricLevel 등)와 레거시 키(avoidFloweryLanguage 등)를 모두 지원
+        """
         user_negative_parts = []
-        
-        # 미사여구 제한
-        flowery_level = preferences.get('avoidFloweryLanguage', 'moderate')
-        if flowery_level == 'strict':
-            user_negative_parts.append("- 모든 형태의 미사여구, 꾸밈말, 과장된 표현을 완전히 배제")
-        elif flowery_level == 'moderate':
-            user_negative_parts.append("- 과도한 미사여구나 불필요한 꾸밈말 사용 자제")
-        elif flowery_level == 'lenient':
-            user_negative_parts.append("- 지나치게 과장된 표현만 피하고 적절한 수사법은 허용")
-        
-        # 반복 표현 제한
-        repetitive_level = preferences.get('avoidRepetitiveWords', 'moderate')
-        if repetitive_level == 'strict':
-            user_negative_parts.append("- 동일하거나 유사한 단어/구문의 반복을 완전히 금지")
-        elif repetitive_level == 'moderate':
-            user_negative_parts.append("- 불필요한 단어나 구문 반복 최소화")
-        
-        # 쉼표 사용 스타일
-        comma_style = preferences.get('commaUsageStyle', 'moderate')
-        if comma_style == 'strict':
-            user_negative_parts.append("- 쉼표 사용을 최소한으로 제한, 꼭 필요한 경우만 사용")
-        elif comma_style == 'moderate':
-            user_negative_parts.append("- 과도한 쉼표 남발 피하기")
-        
-        # 내용 vs 형식 우선순위
-        content_focus = preferences.get('contentOverFormat', 'moderate')
-        if content_focus == 'strict':
+
+        # 수사법/미사여구 수준 (새: rhetoricLevel = low/moderate/high)
+        # 레거시: avoidFloweryLanguage = strict/moderate/lenient
+        rhetoric = preferences.get("rhetoricLevel")
+        flowery_level = preferences.get("avoidFloweryLanguage")
+        if rhetoric:
+            if rhetoric == "low":
+                user_negative_parts.append("- 모든 형태의 미사여구, 꾸밈말, 과장된 표현을 완전히 배제")
+            elif rhetoric == "moderate":
+                user_negative_parts.append("- 과도한 미사여구나 불필요한 꾸밈말 사용 자제")
+            elif rhetoric == "high":
+                user_negative_parts.append("- 지나치게 과장된 표현만 피하고 적절한 수사법은 허용")
+        elif flowery_level:
+            if flowery_level == "strict":
+                user_negative_parts.append("- 모든 형태의 미사여구, 꾸밈말, 과장된 표현을 완전히 배제")
+            elif flowery_level == "moderate":
+                user_negative_parts.append("- 과도한 미사여구나 불필요한 꾸밈말 사용 자제")
+            elif flowery_level == "lenient":
+                user_negative_parts.append("- 지나치게 과장된 표현만 피하고 적절한 수사법은 허용")
+
+        # 반복 허용도 (새: repetitionTolerance = low/moderate/high)
+        # 레거시: avoidRepetitiveWords = strict/moderate
+        repetition = preferences.get("repetitionTolerance")
+        repetitive_level = preferences.get("avoidRepetitiveWords")
+        if repetition:
+            if repetition == "low":
+                user_negative_parts.append("- 동일하거나 유사한 단어/구문의 반복을 완전히 금지")
+            elif repetition == "moderate":
+                user_negative_parts.append("- 불필요한 단어나 구문 반복 최소화")
+        elif repetitive_level:
+            if repetitive_level == "strict":
+                user_negative_parts.append("- 동일하거나 유사한 단어/구문의 반복을 완전히 금지")
+            elif repetitive_level == "moderate":
+                user_negative_parts.append("- 불필요한 단어나 구문 반복 최소화")
+
+        # 문장부호 스타일 (새: punctuationStyle = minimal/standard/expressive)
+        # 레거시: commaUsageStyle = strict/moderate
+        punctuation = preferences.get("punctuationStyle")
+        comma_style = preferences.get("commaUsageStyle")
+        if punctuation:
+            if punctuation == "minimal":
+                user_negative_parts.append("- 쉼표 사용을 최소한으로 제한, 꼭 필요한 경우만 사용")
+            elif punctuation == "standard":
+                user_negative_parts.append("- 과도한 쉼표 남발 피하기")
+        elif comma_style:
+            if comma_style == "strict":
+                user_negative_parts.append("- 쉼표 사용을 최소한으로 제한, 꼭 필요한 경우만 사용")
+            elif comma_style == "moderate":
+                user_negative_parts.append("- 과도한 쉼표 남발 피하기")
+
+        # 내용 초점 (새: contentFocus = content/balanced/format)
+        # 레거시: contentOverFormat = strict/moderate
+        content_focus = preferences.get("contentFocus") or preferences.get("contentOverFormat")
+        if content_focus in ("content", "strict"):
             user_negative_parts.append("- 형식적 구조보다 내용과 의미 전달에 절대 우선순위")
-        elif content_focus == 'moderate':
+        elif content_focus in ("balanced", "moderate"):
             user_negative_parts.append("- 형식에 치중하여 내용이 빈약해지는 것 방지")
-        
-        # 불렛 포인트 사용
-        bullet_usage = preferences.get('bulletPointUsage', 'moderate')
-        if bullet_usage == 'strict':
+
+        # 불릿 포인트 사용 (새: bulletPreference = avoid/minimal/prefer)
+        # 레거시: bulletPointUsage = strict/moderate
+        bullet_pref = preferences.get("bulletPreference") or preferences.get("bulletPointUsage")
+        if bullet_pref in ("avoid", "strict"):
             user_negative_parts.append("- 불렛 포인트나 리스트 형태 완전 금지")
-        elif bullet_usage == 'moderate':
+        elif bullet_pref in ("minimal", "moderate"):
             user_negative_parts.append("- 과도한 불렛 포인트나 리스트 형태 사용 제한")
-        
-        # 이모티콘 사용
-        emoticon_usage = preferences.get('emoticonUsage', 'moderate')
-        if emoticon_usage == 'strict':
-            user_negative_parts.append("- 모든 이모티콘, 이모지, 특수문자 완전 배제")
-        elif emoticon_usage == 'moderate':
-            user_negative_parts.append("- 이모티콘이나 특수문자 남용 금지")
-        
-        # 커스텀 네거티브 프롬프트 추가
+
+        # 이모티콘 정책 (새: emoticonPolicy = none/minimal/contextual/frequent)
+        # 레거시: emoticonUsage = strict/moderate
+        emoticon_policy = preferences.get("emoticonPolicy")
+        emoticon_usage = preferences.get("emoticonUsage")
+        if emoticon_policy:
+            if emoticon_policy == "none":
+                user_negative_parts.append("- 모든 이모티콘, 이모지, 특수문자 완전 배제")
+            elif emoticon_policy in ("minimal", "contextual"):
+                user_negative_parts.append("- 이모티콘이나 특수문자 남용 금지")
+        elif emoticon_usage:
+            if emoticon_usage == "strict":
+                user_negative_parts.append("- 모든 이모티콘, 이모지, 특수문자 완전 배제")
+            elif emoticon_usage == "moderate":
+                user_negative_parts.append("- 이모티콘이나 특수문자 남용 금지")
+
+        # 커스텀 네거티브 프롬프트 (레거시 지원)
         custom_prompts = preferences.get('customNegativePrompts', [])
-        if custom_prompts:
+        if isinstance(custom_prompts, list) and custom_prompts:
             user_negative_parts.extend([f"- {prompt}" for prompt in custom_prompts])
-        
+
         if user_negative_parts:
             return "\n추가 사용자 맞춤 제한사항:\n" + "\n".join(user_negative_parts)
         return ""
@@ -187,10 +226,10 @@ class PromptEngineer:
         # 기본 사용자 특성 프롬프트
         user_characteristics = f"""
 사용자 스타일 특성:
-- 격식도: {formality_level}/5 (1=매우 캐주얼, 5=매우 격식)
-- 친근함: {friendliness_level}/5 (1=차가운, 5=매우 친근)
-- 감정표현: {emotion_level}/5 (1=건조한, 5=감정적)
-- 직설성: {directness_level}/5 (1=돌려서, 5=직접적)
+- 격식도: {formality_level}/10 (1=매우 캐주얼, 10=매우 격식)
+- 친근함: {friendliness_level}/10 (1=차가운, 10=매우 친근)
+- 감정표현: {emotion_level}/10 (1=건조한, 10=감정적)
+- 직설성: {directness_level}/10 (1=돌려서, 10=직접적)
 """
         
         # 기본 네거티브 프롬프트
