@@ -244,7 +244,7 @@ def load_vector_store(load_path: Path) -> Optional[FAISS]:
         return vectorstore
 
     except Exception as e:
-        logger.error(f"벡터 저장소 로드 실패: {e}")
+        logger.exception(f"벡터 저장소 로드 실패: {e}")
         return None
 
 def ingest_documents_from_folder(folder_path: Path) -> Tuple[Optional[FAISS], List[Document]]:
@@ -282,7 +282,7 @@ def ingest_documents_from_folder(folder_path: Path) -> Tuple[Optional[FAISS], Li
         return vectorstore, documents
 
     except Exception as e:
-        logger.error(f"문서 인덱싱 실패: {e}")
+        logger.exception(f"문서 인덱싱 실패: {e}")
         return None, []
 
 def _save_document_metadata_to_postgres(folder_path: Path, documents: List[Document],
@@ -353,7 +353,7 @@ def search_similar_documents(query: str, top_k: int = 5) -> List[Tuple[Document,
         return results
         
     except Exception as e:
-        logger.error(f"문서 검색 실패: {e}")
+        logger.exception(f"문서 검색 실패: {e}")
         return []
 
 def get_vector_store_stats() -> Dict[str, Any]:
@@ -375,7 +375,7 @@ def get_vector_store_stats() -> Dict[str, Any]:
         }
         
     except Exception as e:
-        logger.error(f"통계 조회 실패: {e}")
+        logger.exception(f"통계 조회 실패: {e}")
         return {
             "status": "error",
             "error": str(e),
