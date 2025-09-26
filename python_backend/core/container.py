@@ -10,6 +10,7 @@ from services.prompt_engineering import PromptEngineer
 from services.openai_services import OpenAIService
 from services.user_preferences import UserPreferencesService
 from services.finetune_service import FinetuneService
+from services.document_service import DocumentService
 from database.storage import DatabaseStorage
 
 class Container(containers.DeclarativeContainer):
@@ -49,4 +50,10 @@ class Container(containers.DeclarativeContainer):
         prompt_engineer=prompt_engineer,
         openai_service=openai_service,
         user_preferences_service=user_preferences_service
+    )
+
+    # 문서 처리 서비스
+    document_service = providers.Singleton(
+        DocumentService,
+        openai_api_key=config.OPENAI_API_KEY
     )
