@@ -6,7 +6,7 @@ Main API Router
 from fastapi import APIRouter
 
 # 개별 엔드포인트 라우터들 import
-from .endpoints import conversion, health, profile, quality, feedback, rag, finetune, company
+from .endpoints import conversion, health, profile, quality, feedback, rag, finetune, company, documents
 
 # 메인 API 라우터 생성
 api_router = APIRouter()
@@ -22,3 +22,4 @@ api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"]
 api_router.include_router(rag.router, prefix="/rag", tags=["rag"])
 api_router.include_router(finetune.router, prefix="/finetune", tags=["finetune"])
 api_router.include_router(company.router, prefix="/company", tags=["company"])
+api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
