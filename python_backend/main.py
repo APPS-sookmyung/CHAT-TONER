@@ -57,6 +57,13 @@ def create_app() -> FastAPI:
         **swagger_params
     )
 
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"], #후에 수정 예정
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     if settings.DEBUG:
         configure_swagger(app)
@@ -70,6 +77,11 @@ def create_app() -> FastAPI:
     # 예외 핸들러 설정
     setup_exception_handlers(app)
     
+    @app.get("/", tags=["Health Check"])
+    async def health_check():
+        """서비스 상태를 확인하는 기본 엔드포인트"""
+        return {"status": "ok", "message": "Welcome to Chat Toner API!"}
+
     # 라우터 포함
     app.include_router(api_router, prefix="/api/v1")
     
