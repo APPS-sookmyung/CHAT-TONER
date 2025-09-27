@@ -15,9 +15,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # 서버 설정
-    #HOST: str = "0.0.0.0"
-    HOST: str = "127.0.0.1"
-    PORT: int = 5001
+    HOST: str = "0.0.0.0"
+    # HOST: str = "127.0.0.1"
+    # PORT: int = 5001
+    PORT: int = int(os.environ.get("PORT", 8080))
     
     #파인 튜닝 추론 서버 설정
     FINETUNE_INFERENCE_HOST: str = Field(default="localhost", validation_alias="RUNPOD_IP")
