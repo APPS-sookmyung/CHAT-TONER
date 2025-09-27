@@ -10,127 +10,95 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarChart3, CheckCircle, AlertTriangle, Lightbulb } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QualityAnalysisResult from "@/components/quality-analysis-result";
+import type { CompanyQualityAnalysisResponse, TargetAudience, ContextType } from "@shared/schema";
 
-interface QualityValidatorProps {}
+// 드롭다운 옵션을 상수로 정의
+const dropdownOptions = {
+  target_audiences: [
+    { value: "직속상사", label: "직속상사" },
+    { value: "팀동료", label: "팀동료" },
+    { value: "타부서담당자", label: "타부서 담당자" },
+    { value: "클라이언트", label: "클라이언트" },
+    { value: "외부협력업체", label: "외부 협력업체" },
+    { value: "후배신입", label: "후배/신입" },
+  ],
+  contexts: [
+    { value: "보고서", label: "보고서" },
+    { value: "회의록", label: "회의록" },
+    { value: "이메일", label: "이메일" },
+    { value: "공지사항", label: "공지사항" },
+    { value: "메시지", label: "메시지" },
+  ],
+};
 
-interface QualityAnalysis {
-  grammar_score: number;
-  formality_score: number;
-  readability_score: number;
-  improved_text?: string;
-  suggestions: Array<{
-    type: string;
-    original: string;
-    suggestion: string;
-    reason: string;
-  }>;
-}
-
-const generateMockAnalysis = (text: string): QualityAnalysis => {
+// Mock-up 데이터 생성 함수 (API 실패 시 사용)
+const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
+  // ... (이하 생략, 기존 코드와 동일)
   return {
-    grammar_score: Math.floor(Math.random() * 30) + 70,
-    formality_score: Math.floor(Math.random() * 40) + 60,
-    readability_score: Math.floor(Math.random() * 25) + 75,
-    improved_text: text + " (품질 개선됨)",
-    suggestions: [
-      {
-        type: "improvement",
-        original: "잘못된 부분",
-        suggestion: "개선된 부분",
-        reason: "API 호출 실패 시 보여지는 예시 데이터입니다.",
-      },
-    ],
+    grammarScore: Math.random() * 10 + 85,
+    formalityScore: Math.random() * 10 + 88,
+    readabilityScore: Math.random() * 10 + 82,
+    protocolScore: Math.random() * 10 + 87,
+    complianceScore: Math.random() * 10 + 86,
+    grammarSection: {
+      score: Math.random() * 10 + 85,
+      suggestions: [
+        { id: "g1", category: "문법", original: "이부분", suggestion: "이 부분", reason: "띄어쓰기 오류", severity: "low" },
+      ],
+    },
+    protocolSection: {
+      score: Math.random() * 10 + 87,
+      suggestions: [
+        { id: "p1", category: "프로토콜", original: "수고하세요", suggestion: "감사합니다", reason: "가이드라인에 따라 '수고하세요'는 지양", severity: "medium" },
+      ],
+    },
+    companyAnalysis: {
+      companyId: "test-company",
+      communicationStyle: "간결하고 명확함",
+      complianceLevel: Math.random() * 10 + 86,
+      methodUsed: "RAG + Fine-tuning (mock)",
+      processingTime: 0.5,
+      ragSourcesCount: 1,
+    },
   };
 };
 
-// QualityAnalysis를 QualityAnalysisResult props 형식으로 변환
-const convertToResultProps = (inputText: string, analysis: QualityAnalysis) => {
-  return {
-    inputText,
-    scores: [
-      {
-        name: "문법",
-        score: Math.round(analysis.grammar_score),
-        maxScore: 100,
-        icon: CheckCircle,
-        color: "text-green-600",
-      },
-      {
-        name: "격식",
-        score: Math.round(analysis.formality_score),
-        maxScore: 100,
-        icon: AlertTriangle,
-        color: "text-blue-600",
-      },
-      {
-        name: "가독성",
-        score: Math.round(analysis.readability_score),
-        maxScore: 100,
-        icon: Lightbulb,
-        color: "text-purple-600",
-      },
-    ],
-    improvements: analysis.suggestions.map((suggestion) => ({
-      title: suggestion.type,
-      original: suggestion.original,
-      improved: suggestion.suggestion,
-      reason: suggestion.reason,
-    })),
-  };
-};
-
-export default function QualityValidator({}: QualityValidatorProps) {
+export default function QualityValidator() {
   const [inputText, setInputText] = useState("");
-  const [targetAudience, setTargetAudience] = useState<string>("일반인");
-  const [context, setContext] = useState<"business" | "report" | "casual">(
-    "business"
-  );
-  const [analysis, setAnalysis] = useState<QualityAnalysis | null>(null);
+  const [targetAudience, setTargetAudience] = useState<TargetAudience>("직속상사");
+  const [context, setContext] = useState<ContextType>("보고서");
+  const [analysis, setAnalysis] = useState<CompanyQualityAnalysisResponse | null>(null);
   const { toast } = useToast();
 
   const analyzeMutation = useMutation({
-    mutationFn: async (text: string): Promise<QualityAnalysis> => {
+    mutationFn: async (text: string): Promise<CompanyQualityAnalysisResponse> => {
       try {
-        const response = await fetch("/api/v1/quality/analyze", {
+        const response = await fetch("/api/v1/quality/company/analyze", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            text: text,
+            text,
             target_audience: targetAudience,
-            context:
-              context === "business"
-                ? "일반"
-                : context === "report"
-                ? "교육"
-                : "보고서/공문",
+            context: context,
+            company_id: "test-company-id", // 임시 ID
+            user_id: "test-user-id", // 임시 ID
           }),
         });
 
         if (!response.ok) {
           throw new Error(`API 호출 실패: ${response.status}`);
         }
-
-        const result = await response.json();
-
-        return {
-          grammar_score: result.grammarScore || 0,
-          formality_score: result.formalityScore || 0,
-          readability_score: result.readabilityScore || 0,
-          improved_text: undefined,
-          suggestions: (result.suggestions || []).map((s: any) => ({
-            type: "improvement",
-            original: s.original || "",
-            suggestion: s.suggestion || "",
-            reason: s.reason || "",
-          })),
-        };
+        return response.json();
       } catch (error) {
         console.error("API 호출 실패:", error);
+        toast({
+          title: "API 호출 실패",
+          description: "Mock 데이터를 대신 표시합니다.",
+          variant: "destructive",
+        });
         return generateMockAnalysis(text);
       }
     },
@@ -164,7 +132,7 @@ export default function QualityValidator({}: QualityValidatorProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
-            분석할 텍스트
+            기업용 품질 분석
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -176,40 +144,34 @@ export default function QualityValidator({}: QualityValidatorProps) {
           />
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">
-                대상 청중
-              </label>
-              <Select value={targetAudience} onValueChange={setTargetAudience}>
+              <label className="text-sm font-medium mb-2 block">대상</label>
+              <Select 
+                value={targetAudience} 
+                onValueChange={v => setTargetAudience(v as TargetAudience)} 
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="분석 대상을 선택하세요" />
+                  <SelectValue placeholder="대상을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="초등학생">초등학생</SelectItem>
-                  <SelectItem value="중학생">중학생</SelectItem>
-                  <SelectItem value="고등학생">고등학생</SelectItem>
-                  <SelectItem value="대학생">대학생</SelectItem>
-                  <SelectItem value="성인학습자">성인학습자</SelectItem>
-                  <SelectItem value="교사">교사</SelectItem>
-                  <SelectItem value="학부모">학부모</SelectItem>
-                  <SelectItem value="일반인">일반인</SelectItem>
+                  {dropdownOptions.target_audiences.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">
-                상황 맥락
-              </label>
-              <Select
-                value={context}
-                onValueChange={(value: any) => setContext(value)}
+              <label className="text-sm font-medium mb-2 block">상황</label>
+              <Select 
+                value={context} 
+                onValueChange={v => setContext(v as ContextType)} 
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="분석할 글의 맥락을 선택하세요" />
+                  <SelectValue placeholder="상황을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="business">일반</SelectItem>
-                  <SelectItem value="report">교육</SelectItem>
-                  <SelectItem value="casual">보고서/공문</SelectItem>
+                  {dropdownOptions.contexts.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -226,19 +188,13 @@ export default function QualityValidator({}: QualityValidatorProps) {
 
       {analysis && (
         <QualityAnalysisResult
-          {...convertToResultProps(inputText, analysis)}
-          onApplyImprovement={(improvement, index) => {
-            // 개선사항을 원본 텍스트에 적용
-            const newText = inputText.replace(
-              improvement.original,
-              improvement.improved
-            );
-            setInputText(newText);
-
-            toast({
-              title: "개선사항 적용 완료",
-              description: `"${improvement.original}"을(를) "${improvement.improved}"으(로) 변경했습니다.`,
-            });
+          analysisResult={analysis}
+          originalText={inputText}
+          targetAudience={targetAudience}
+          context={context}
+          onApplySuggestion={(original, suggestion) => {
+            setInputText(prev => prev.replace(original, suggestion));
+            toast({ title: "적용 완료", description: "제안이 텍스트에 반영되었습니다." });
           }}
         />
       )}
