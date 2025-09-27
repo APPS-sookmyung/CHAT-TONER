@@ -10,6 +10,7 @@ import QuestionnairePage from "@/pages/QuestionnairePage";
 import ResultsPage from "@/pages/ResultsPage";
 import ConverterPage from "@/pages/ConverterPage";
 import ValidatePage from "@/pages/ValidatePage";
+import UploadPage from "@/pages/UploadPage"; // 추가
 import NotFound from "@/pages/not-found";
 import Layout from "@/pages/layout";
 
@@ -22,6 +23,9 @@ function Router() {
 
         {/* 스타일 정의 (설문 페이지) */}
         <Route path="/style-definition" component={QuestionnairePage} />
+
+        {/* 스타일 정의 (문서 업로드) */}
+        <Route path="/upload-documents" component={UploadPage} />
 
         {/* 스타일 분석 결과 */}
         <Route path="/style-definition/results" component={ResultsPage} />
