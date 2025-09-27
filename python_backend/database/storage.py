@@ -5,10 +5,11 @@
 
 from datetime import datetime
 from typing import Dict, List, Optional, Any
+import hashlib
 from sqlalchemy.orm import Session
 from .models import (
-    SessionLocal, UserProfile, ConversionHistory, 
-    NegativePreferences, User
+    SessionLocal, UserProfile, ConversionHistory,
+    NegativePreferences, User, VectorDocumentMetadata, RAGQueryHistory
 )
 
 class DatabaseStorage:
@@ -209,4 +210,172 @@ class DatabaseStorage:
             except Exception as e:
                 db.rollback()
                 print(f"네거티브 선호도 저장 오류: {e}")
+                return False
+
+    # RAG 벡터 메타데이터 관련 메소드들
+    def save_vector_document_metadata(self, metadata: Dict[str, Any]) -> bool:
+        """벡터 문서 메타데이터 저장"""
+        with self.session_factory() as db:
+            try:
+                # 문서 해시 생성
+                content = f"{metadata['file_path']}{metadata['file_size_bytes']}{metadata.get('content_hash', '')}"
+                document_hash = hashlib.sha256(content.encode()).hexdigest()
+
+                # 기존 메타데이터 확인
+                existing = db.query(VectorDocumentMetadata)\
+                    .filter(VectorDocumentMetadata.document_hash == document_hash).first()
+
+                if existing:
+                    # 기존 메타데이터 업데이트
+                    existing.last_accessed = datetime.utcnow()
+                    existing.status = metadata.get('status', 'active')
+                    existing.updated_at = datetime.utcnow()
+                else:
+                    # 새 메타데이터 생성
+                    doc_metadata = VectorDocumentMetadata(
+                        document_hash=document_hash,
+                        file_name=metadata['file_name'],
+                        file_path=metadata['file_path'],
+                        file_size_bytes=metadata['file_size_bytes'],
+                        content_type=metadata.get('content_type', 'text/plain'),
+                        embedding_model=metadata['embedding_model'],
+                        chunk_count=metadata['chunk_count'],
+                        chunk_size=metadata['chunk_size'],
+                        chunk_overlap=metadata['chunk_overlap'],
+                        faiss_index_path=metadata['faiss_index_path'],
+                        vector_dimension=metadata['vector_dimension'],
+                        status=metadata.get('status', 'active')
+                    )
+                    db.add(doc_metadata)
+
+                db.commit()
+                return True
+
+            except Exception as e:
+                db.rollback()
+                print(f"벡터 문서 메타데이터 저장 오류: {e}")
+                return False
+
+    def get_vector_document_metadata(self, document_hash: Optional[str] = None) -> List[Dict[str, Any]]:
+        """벡터 문서 메타데이터 조회"""
+        with self.session_factory() as db:
+            try:
+                query = db.query(VectorDocumentMetadata)
+
+                if document_hash:
+                    query = query.filter(VectorDocumentMetadata.document_hash == document_hash)
+
+                query = query.filter(VectorDocumentMetadata.status == 'active')
+                metadata_list = query.all()
+
+                return [
+                    {
+                        "id": meta.id,
+                        "document_hash": meta.document_hash,
+                        "file_name": meta.file_name,
+                        "file_path": meta.file_path,
+                        "file_size_bytes": meta.file_size_bytes,
+                        "content_type": meta.content_type,
+                        "embedding_model": meta.embedding_model,
+                        "chunk_count": meta.chunk_count,
+                        "chunk_size": meta.chunk_size,
+                        "chunk_overlap": meta.chunk_overlap,
+                        "faiss_index_path": meta.faiss_index_path,
+                        "vector_dimension": meta.vector_dimension,
+                        "status": meta.status,
+                        "last_accessed": meta.last_accessed.isoformat() if meta.last_accessed else None,
+                        "created_at": meta.created_at.isoformat() if meta.created_at else None,
+                        "updated_at": meta.updated_at.isoformat() if meta.updated_at else None
+                    }
+                    for meta in metadata_list
+                ]
+
+            except Exception as e:
+                print(f"벡터 문서 메타데이터 조회 오류: {e}")
+                return []
+
+    def save_rag_query(self, user_id: str, query_data: Dict[str, Any]) -> bool:
+        """RAG 질의 기록 저장"""
+        with self.session_factory() as db:
+            try:
+                # 질의 해시 생성
+                query_hash = hashlib.sha256(query_data['query_text'].encode()).hexdigest()
+
+                rag_query = RAGQueryHistory(
+                    user_id=user_id,
+                    query_text=query_data['query_text'],
+                    query_hash=query_hash,
+                    context_type=query_data.get('context_type', 'general'),
+                    retrieved_documents=query_data.get('retrieved_documents', []),
+                    similarity_scores=query_data.get('similarity_scores', []),
+                    total_search_time_ms=query_data.get('total_search_time_ms', 0),
+                    generated_answer=query_data.get('generated_answer'),
+                    answer_quality_score=query_data.get('answer_quality_score'),
+                    model_used=query_data.get('model_used', 'gpt-4'),
+                    total_generation_time_ms=query_data.get('total_generation_time_ms', 0),
+                    user_rating=query_data.get('user_rating'),
+                    user_feedback=query_data.get('user_feedback'),
+                    was_helpful=query_data.get('was_helpful')
+                )
+
+                db.add(rag_query)
+                db.commit()
+                return True
+
+            except Exception as e:
+                db.rollback()
+                print(f"RAG 질의 기록 저장 오류: {e}")
+                return False
+
+    def get_rag_query_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """RAG 질의 기록 조회"""
+        with self.session_factory() as db:
+            try:
+                queries = db.query(RAGQueryHistory)\
+                    .filter(RAGQueryHistory.user_id == user_id)\
+                    .order_by(RAGQueryHistory.created_at.desc())\
+                    .limit(limit).all()
+
+                return [
+                    {
+                        "id": query.id,
+                        "query_text": query.query_text,
+                        "query_hash": query.query_hash,
+                        "context_type": query.context_type,
+                        "retrieved_documents": query.retrieved_documents,
+                        "similarity_scores": query.similarity_scores,
+                        "total_search_time_ms": query.total_search_time_ms,
+                        "generated_answer": query.generated_answer,
+                        "answer_quality_score": query.answer_quality_score,
+                        "model_used": query.model_used,
+                        "total_generation_time_ms": query.total_generation_time_ms,
+                        "user_rating": query.user_rating,
+                        "user_feedback": query.user_feedback,
+                        "was_helpful": query.was_helpful,
+                        "created_at": query.created_at.isoformat() if query.created_at else None
+                    }
+                    for query in queries
+                ]
+
+            except Exception as e:
+                print(f"RAG 질의 기록 조회 오류: {e}")
+                return []
+
+    def update_vector_document_access(self, document_hash: str) -> bool:
+        """벡터 문서 접근 시간 업데이트"""
+        with self.session_factory() as db:
+            try:
+                metadata = db.query(VectorDocumentMetadata)\
+                    .filter(VectorDocumentMetadata.document_hash == document_hash).first()
+
+                if metadata:
+                    metadata.last_accessed = datetime.utcnow()
+                    db.commit()
+                    return True
+
+                return False
+
+            except Exception as e:
+                db.rollback()
+                print(f"벡터 문서 접근 시간 업데이트 오류: {e}")
                 return False

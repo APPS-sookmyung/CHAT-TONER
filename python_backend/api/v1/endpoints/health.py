@@ -8,6 +8,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Dict, Any
 from core.config import get_settings
+from sqlalchemy import inspect #헬스체크 추가 api 
+from database.models import engine, create_database_engine
 
 router = APIRouter()
 
@@ -67,3 +69,48 @@ async def health_check() -> HealthResponse:
     )
 
 # 중복 경로 제거 ("/api/health" → 삭제). 헬스체크는 "/health"만 제공합니다.
+
+
+class DBHealthResponse(BaseModel):
+    """DB 상태 응답"""
+    connected: bool
+    dialect: str
+    database: str | None = None
+    tables: list[str] = []
+    error: str | None = None
+
+
+@router.get(
+    "/db-health",
+    response_model=DBHealthResponse,
+    summary="데이터베이스 상태 확인",
+    description="DATABASE_URL 기준으로 연결 가능 여부와 테이블 목록을 확인합니다."
+)
+async def db_health() -> DBHealthResponse:
+    try:
+        # 환경설정 기반 엔진 사용 (이미 초기화된 전역 엔진 우선)
+        db_engine = engine if engine is not None else create_database_engine()
+        with db_engine.connect() as conn:
+            insp = inspect(conn)
+            tables = insp.get_table_names()
+            url = db_engine.url
+            return DBHealthResponse(
+                connected=True,
+                dialect=url.get_backend_name(),
+                database=url.database,
+                tables=tables,
+            )
+    except Exception as e:
+        try:
+            url = (engine.url if engine is not None else create_database_engine().url)
+            dialect = url.get_backend_name()
+            database = url.database
+        except Exception:
+            dialect, database = "unknown", None
+        return DBHealthResponse(
+            connected=False,
+            dialect=dialect,
+            database=database,
+            tables=[],
+            error=str(e),
+        )
