@@ -89,10 +89,10 @@ class ConversionHistory(Base):
 class NegativePreferences(Base):
     """사용자 네거티브 프롬프트 선호도"""
     __tablename__ = "negative_preferences"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(255), nullable=False, index=True)
-    
+
     # 6가지 네거티브 프롬프트 카테고리 (strict, moderate, lenient)
     avoid_flowery_language = Column(String(20), default="moderate")
     avoid_repetitive_words = Column(String(20), default="moderate")
@@ -100,16 +100,78 @@ class NegativePreferences(Base):
     content_over_format = Column(String(20), default="moderate")
     bullet_point_usage = Column(String(20), default="moderate")
     emoticon_usage = Column(String(20), default="strict")
-    
+
     # 커스텀 네거티브 프롬프트
     custom_negative_prompts = Column(JSON, default=[])
-    
+
     # 메타데이터
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # 관계 설정
     # user = relationship("User", back_populates="negative_preferences")
+
+class VectorDocumentMetadata(Base):
+    """벡터 데이터베이스 문서 메타데이터"""
+    __tablename__ = "vector_document_metadata"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # 문서 정보
+    document_hash = Column(String(64), unique=True, nullable=False, index=True)  # SHA-256 해시
+    file_name = Column(String(255), nullable=False)
+    file_path = Column(Text, nullable=False)
+    file_size_bytes = Column(Integer, nullable=False)
+    content_type = Column(String(50), default="text/plain")
+
+    # 임베딩 정보
+    embedding_model = Column(String(100), nullable=False)
+    chunk_count = Column(Integer, nullable=False)
+    chunk_size = Column(Integer, nullable=False)
+    chunk_overlap = Column(Integer, nullable=False)
+
+    # FAISS 인덱스 정보
+    faiss_index_path = Column(Text, nullable=False)
+    vector_dimension = Column(Integer, nullable=False)
+
+    # 상태 정보
+    status = Column(String(20), default="active")  # active, deleted, error
+    last_accessed = Column(DateTime, default=datetime.utcnow)
+
+    # 메타데이터
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class RAGQueryHistory(Base):
+    """RAG 질의 응답 기록"""
+    __tablename__ = "rag_query_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(255), nullable=False, index=True)
+
+    # 질의 정보
+    query_text = Column(Text, nullable=False)
+    query_hash = Column(String(64), nullable=False, index=True)  # 중복 질의 추적용
+    context_type = Column(String(50), default="general")
+
+    # 검색 결과
+    retrieved_documents = Column(JSON, default=[])  # 검색된 문서 청크 정보
+    similarity_scores = Column(JSON, default=[])  # 유사도 점수들
+    total_search_time_ms = Column(Integer, default=0)
+
+    # 응답 정보
+    generated_answer = Column(Text)
+    answer_quality_score = Column(Float)  # 0-1 사이 품질 점수
+    model_used = Column(String(50), default="gpt-4")
+    total_generation_time_ms = Column(Integer, default=0)
+
+    # 사용자 피드백
+    user_rating = Column(Integer)  # 1-5 점수
+    user_feedback = Column(Text)
+    was_helpful = Column(Boolean, default=None)
+
+    # 메타데이터
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 # 데이터베이스 엔진 및 세션 설정
 def create_database_engine():

@@ -8,6 +8,7 @@ python-multipart>=0.0.6
 dependency-injector>=4.41.0
 sqlalchemy>=2.0.42
 psycopg2-binary>=2.9.9
+pypdf>=4.2.0
 
 # Testing dependencies
 pytest>=7.4.0
