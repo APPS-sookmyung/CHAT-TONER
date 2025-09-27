@@ -31,7 +31,7 @@ class Settings(BaseSettings):
         return f"http://{self.FINETUNE_INFERENCE_HOST}:{self.FINETUNE_INFERENCE_PORT}"
     
     # OpenAI 설정
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
     
     # 데이터베이스 설정
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     CORS_HEADERS: list = ["*"]
     
     class Config:
-        env_file = ".env"  # 현재 디렉토리의 .env 파일 참조
+        env_file = Path(__file__).resolve().parent.parent / ".env"  # 프로젝트 루트의 .env 파일 참조
         case_sensitive = True
         extra = "ignore"
 
