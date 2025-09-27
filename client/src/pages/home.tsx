@@ -37,6 +37,11 @@ export default function HomePage() {
     setLocation("/style-definition");
   };
 
+  const handleStartUpload = () => {
+    setShowModal(false);
+    setLocation("/upload-documents");
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
   };
@@ -62,6 +67,7 @@ export default function HomePage() {
           onClose={handleCloseModal}
           hasProfile={hasProfile}
           onStartQuestionnaire={handleStartQuestionnaire}
+          onStartUpload={handleStartUpload}
         />
       )}
       {/* 히어로 섹션 */}
