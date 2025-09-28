@@ -1,5 +1,5 @@
 # ---------- Build stage ----------
-FROM node:20-alpine AS builder
+FROM node:20-bookworm AS builder
 WORKDIR /app
 
 # 의존성 설치
@@ -26,7 +26,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # 정적 산출물만 복사
 COPY --from=builder /app/dist/ ./
 
-EXPOSE 8080
+EXPOSE 80
 
 # 컨테이너 내부 헬스체크 (ALB 헬스체크는 /healthz 사용)
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:8080/healthz || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:80/healthz || exit 1
