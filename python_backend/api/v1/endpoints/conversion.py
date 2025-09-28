@@ -11,71 +11,52 @@
 5. pydantic 모델이 request body 에서 명시적임을 보장 
 """
 
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
-from dependency_injector.wiring import inject, Provide
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
-from core.container import Container
 from services.conversion_service import ConversionService
-from api.v1.schemas.conversion import (
-    ConversionRequest,
-    ConversionResponse,
-    FeedbackRequest,
-    FeedbackResponse
-)
-from api.v1.dependencies import get_current_user_optional
-from fastapi import status
+from ..schemas.conversion import ConversionRequest, ConversionResponse
+from ..dependencies import get_conversion_service
 import logging 
 
 logger=logging.getLogger('chattoner')
 
 router = APIRouter()
 
-@router.post("/convert", response_model=ConversionResponse)
-@inject
-async def convert_text(
-    request: ConversionRequest,
-    conversion_service: Annotated[
-        ConversionService, 
-        Depends(Provide[Container.conversion_service])
-    ],
-    current_user = Depends(get_current_user_optional)
-) -> ConversionResponse:
-    """텍스트 스타일 변환"""
+@router.get("/test")
+async def test_endpoint():
+    """간단한 테스트 엔드포인트"""
+    print("[DEBUG] 테스트 엔드포인트 호출됨")
+    return {"message": "테스트 성공", "status": "ok"}
+
+@router.post("/convert")
+async def convert_text(request: ConversionRequest, 
+                      conversion_service: ConversionService = Depends(get_conversion_service)):
+    """Text style conversion using actual AI service"""
     try:
+        # Use the actual ConversionService with camelCase preservation
+        user_profile_dict = request.user_profile.model_dump(by_alias=True, exclude_none=True)
+        negative_preferences_dict = request.negative_preferences.model_dump(by_alias=True, exclude_none=True) if request.negative_preferences else None
+        
         result = await conversion_service.convert_text(
             input_text=request.text,
-            user_profile=request.user_profile,
+            user_profile=user_profile_dict,
             context=request.context,
-            negative_preferences=request.negative_preferences
+            negative_preferences=negative_preferences_dict
         )
         
-        return ConversionResponse(**result)
+        return ConversionResponse(
+            success=result.get("success", True),
+            original_text=request.text,
+            converted_texts=result.get("converted_texts", {}),
+            context=request.context,
+            sentiment_analysis=result.get("sentiment_analysis"),
+            metadata=result.get("metadata", {})
+        )
         
-    # 내가 신경쓴 오류 체킹 
-    except ValueError as e:
-        logger.warning(f"입력 값 오류: {e}")
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except Exception as e:
-        logger.error(f"변환 실패: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="텍스트 변환 중 서버 오류가 발생했습니다.") from e
+        import logging, traceback
+        logger = logging.getLogger(__name__)
+        logger.error("convert failed: %s\n%s", e, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="텍스트 변환 중 서버 오류가 발생했습니다.")
 
-@router.post("/feedback",response_model=FeedbackResponse)
-@inject
-async def process_feedback(
-     request: FeedbackRequest,
-    conversion_service: Annotated[
-        ConversionService, Depends(Provide[Container.conversion_service])
-    ]
-) -> FeedbackResponse:
-    """사용자 피드백 처리"""
-    try:
-        result = await conversion_service.process_user_feedback(
-            feedback_text=request.feedback_text,
-            user_profile=request.user_profile
-        )
-        return FeedbackResponse(success=True, message="피드백이 반영되었습니다.", data=result)
-    
-    except Exception as e:
-        logger.error(f"피드백 처리 실패: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="피드백 처리 중 오류가 발생했습니다.") from e

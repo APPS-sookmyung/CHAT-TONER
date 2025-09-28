@@ -9,6 +9,9 @@ from services.conversion_service import ConversionService
 from services.prompt_engineering import PromptEngineer
 from services.openai_services import OpenAIService
 from services.user_preferences import UserPreferencesService
+from services.finetune_service import FinetuneService
+from services.document_service import DocumentService
+from database.storage import DatabaseStorage
 
 class Container(containers.DeclarativeContainer):
     """의존성 주입 컨테이너"""
@@ -28,12 +31,29 @@ class Container(containers.DeclarativeContainer):
         model=config.OPENAI_MODEL
     )
     
-    user_preferences_service = providers.Singleton(UserPreferencesService)
+    user_preferences_service = providers.Singleton(
+        UserPreferencesService,
+        storage=DatabaseStorage,
+        openai_service=openai_service
+    )
     
     # 메인 변환 서비스
     conversion_service = providers.Singleton(
         ConversionService,
         prompt_engineer=prompt_engineer,
+        openai_service=openai_service
+    )
+
+    # 파인튜닝 서비스
+    finetune_service = providers.Singleton(
+        FinetuneService,
+        prompt_engineer=prompt_engineer,
         openai_service=openai_service,
         user_preferences_service=user_preferences_service
+    )
+
+    # 문서 처리 서비스
+    document_service = providers.Singleton(
+        DocumentService,
+        openai_api_key=config.OPENAI_API_KEY
     )

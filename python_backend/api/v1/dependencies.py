@@ -2,6 +2,9 @@
 
 from typing import Optional, Annotated
 from fastapi import Depends, HTTPException, Header
+from core.container import Container
+from services.conversion_service import ConversionService # Added import
+from services.document_service import DocumentService
 
 async def get_current_user_optional(
     x_user_id: Annotated[Optional[str], Header()] = None
@@ -13,3 +16,10 @@ async def get_current_user_optional(
     # 실제 사용자 검증 로직
     return {"user_id": x_user_id}
 
+def get_conversion_service() -> ConversionService: # Changed type hint
+    """ConversionService 인스턴스를 제공합니다."""
+    return Container.conversion_service()
+
+def get_document_service() -> DocumentService:
+    """DocumentService 인스턴스를 제공합니다."""
+    return Container.document_service()

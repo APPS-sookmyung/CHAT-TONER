@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from services.user_preferences import UserPreferencesService
 from database.storage import DatabaseStorage
+from typing import List
 
 router = APIRouter()
 
@@ -34,7 +35,7 @@ def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_stor
     openai_service = OpenAIService()
     return UserPreferencesService(db, openai_service)
 
-@router.post("/feedback")
+@router.post("")
 async def submit_feedback(
     feedback: FeedbackRequest,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)
@@ -59,11 +60,14 @@ async def submit_feedback(
             elif feedback.selectedVersion == "gentle":
                 adjustments["politeness_preference"] = "decreased"
         
-        # 실제 학습 로직 (향후 구현)
-        # await user_service.process_feedback(feedback.userId, adjustments)
+        # 실제 학습 로직 (활성화됨)
+        user_service.process_feedback(feedback.userId, adjustments)
         
-        # 피드백 데이터베이스 저장 (향후 구현)
-        # await user_service.save_feedback(feedback)
+        # 피드백 데이터베이스 저장 (활성화됨)
+        was_saved = user_service.save_feedback(feedback)
+
+        if not was_saved:
+            raise HTTPException(status_code=400, detail="Failed to save feedback.")
         
         return FeedbackResponse(
             status="success",
@@ -71,24 +75,37 @@ async def submit_feedback(
             adjustments_made=adjustments
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"피드백 처리 실패: {str(e)}")
 
-@router.get("/feedback/stats/{user_id}")
+@router.get("/stats/{user_id}")
 async def get_feedback_stats(user_id: str) -> Dict[str, Any]:
     """사용자의 피드백 통계 조회"""
     try:
-        # 실제 통계 조회 (향후 구현)
-        # stats = await user_service.get_feedback_stats(user_id)
+        # 실제 통계 조회 (활성화됨)
+        stats = user_service.get_feedback_stats(user_id)
         
-        # 임시 통계 데이터
-        return {
-            "total_conversions": 0,
-            "average_rating": 0.0,
-            "preferred_style": "neutral",
-            "improvement_trend": "stable",
-            "last_updated": "2025-08-10T00:00:00Z"
-        }
+        if stats is not None:
+            return stats
+
+        raise HTTPException(status_code=404, detail=f"Statistics for user '{user_id}' not found.")
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"통계 조회 실패: {str(e)}")
+    
+class NegativePromptUpdate(BaseModel):
+    """네거티브 프롬프트 수정을 위한 Pydantic 모델"""
+    negative_prompts: List[str] = []
+
+class UserProfileResponse(BaseModel):
+    """사용자 프로필 조회 응답을 위한 Pydantic 모델"""
+    user_id: str
+    negative_prompts: List[str]
+    # 다른 프로필 정보 추가 가능
+
+    class Config:
+        from_attributes = True # DB 모델 객체를 Pydantic 모델로 변환 가능

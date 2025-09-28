@@ -8,3 +8,12 @@ python-multipart>=0.0.6
 dependency-injector>=4.41.0
 sqlalchemy>=2.0.42
 psycopg2-binary>=2.9.9
+pypdf>=4.2.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+httpx>=0.24.0
+pytest-cov>=4.1.0
+pytest-env>=0.8.2

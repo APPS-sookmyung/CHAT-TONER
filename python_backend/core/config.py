@@ -3,6 +3,9 @@
 from pydantic_settings import BaseSettings
 import os
 from functools import lru_cache
+from pydantic import Field
+from typing import Optional
+from pathlib import Path
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
@@ -13,7 +16,20 @@ class Settings(BaseSettings):
     
     # 서버 설정
     HOST: str = "0.0.0.0"
-    PORT: int = 5001
+    # HOST: str = "127.0.0.1"
+    # PORT: int = 5001
+    PORT: int = int(os.environ.get("PORT", 8080))
+    
+    #파인 튜닝 추론 서버 설정
+    FINETUNE_INFERENCE_HOST: str = Field(default="localhost", validation_alias="RUNPOD_IP")
+    FINETUNE_INFERENCE_PORT: int = 8010
+    FINETUNE_URL_OVERRIDE: Optional[str] = Field(default=None)
+
+    @property
+    def FINETUNE_URL(self) -> str:
+        if self.FINETUNE_URL_OVERRIDE:
+            return self.FINETUNE_URL_OVERRIDE
+        return f"http://{self.FINETUNE_INFERENCE_HOST}:{self.FINETUNE_INFERENCE_PORT}"
     
     # OpenAI 설정
     OPENAI_API_KEY: str = ""
@@ -36,8 +52,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "default-secret-key-for-dev"
 
     class Config:
-        env_file = ".env"
+        env_file = Path(__file__).resolve().parent.parent / ".env"  # 프로젝트 루트의 .env 파일 참조
         case_sensitive = True
+        extra = "ignore"
 
 @lru_cache()
 def get_settings() -> Settings:

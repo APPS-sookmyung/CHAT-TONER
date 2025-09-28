@@ -17,6 +17,9 @@ def setup_exception_handlers(app: FastAPI):
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
         """HTTP 예외 핸들러"""
+        print(f"[EXCEPTION] HTTP Exception: {exc.status_code} - {exc.detail}")
+        print(f"[EXCEPTION] Request URL: {request.url}")
+        logger.error(f"HTTP Exception: {exc.status_code} - {exc.detail} for {request.url}")
         return JSONResponse(
             status_code=exc.status_code,
             content={
