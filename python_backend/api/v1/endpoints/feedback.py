@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from services.user_preferences import UserPreferencesService
 from database.storage import DatabaseStorage
+from typing import List
 
 router = APIRouter()
 
@@ -95,3 +96,16 @@ async def get_feedback_stats(user_id: str) -> Dict[str, Any]:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"통계 조회 실패: {str(e)}")
+    
+class NegativePromptUpdate(BaseModel):
+    """네거티브 프롬프트 수정을 위한 Pydantic 모델"""
+    negative_prompts: List[str] = []
+
+class UserProfileResponse(BaseModel):
+    """사용자 프로필 조회 응답을 위한 Pydantic 모델"""
+    user_id: str
+    negative_prompts: List[str]
+    # 다른 프로필 정보 추가 가능
+
+    class Config:
+        from_attributes = True # DB 모델 객체를 Pydantic 모델로 변환 가능
