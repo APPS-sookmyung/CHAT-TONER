@@ -35,18 +35,21 @@ class GPTTextEmbedder:
     def _initialize_client(self):
         """OpenAI 클라이언트 초기화"""
         try:
-            # .env 파일에서 API 키 로드
-            dotenv_path = Path(__file__).resolve().parents[3] / ".env"
-            if dotenv_path.exists():
-                from dotenv import load_dotenv
-                load_dotenv(dotenv_path=dotenv_path)
-            
             from core.config import get_settings
             settings = get_settings()
+            api_key = settings.OPENAI_API_KEY
+
+            if not api_key or not api_key.startswith("sk-"):
+                logger.warning("OpenAI API 키가 유효하지 않습니다. OpenAI 클라이언트를 초기화할 수 없습니다.")
+                self.client = None
+                return
+
+            self.client = OpenAI(api_key=api_key)
+            logger.info("OpenAI 클라이언트 초기화 성공")
+
         except Exception as e:
             logger.error(f"OpenAI 클라이언트 초기화 실패: {e}")
-            return
-    api_key = settings.OPENAI_API_KEY
+            self.client = None
 
     def _get_embedding(self, text: str) -> Optional[List[float]]:
         """텍스트의 GPT 임베딩 생성"""
