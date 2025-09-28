@@ -96,12 +96,22 @@ export default function DocumentUploader() {
         });
         setFiles([]);
       } else {
-        const errorData = await response.json();
+        let errorMessage = "파일 업로드 중 오류가 발생했습니다.";
+        try {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const errorData = await response.json();
+            errorMessage = errorData.detail || JSON.stringify(errorData);
+          } else {
+            errorMessage = await response.text();
+          }
+        } catch (e) {
+          errorMessage = response.statusText || `HTTP error! status: ${response.status}`;
+        }
         toast({
           variant: "destructive",
           title: "업로드 실패",
-          description:
-            errorData.detail || "파일 업로드 중 오류가 발생했습니다.",
+          description: errorMessage,
         });
       }
     } catch (error) {
