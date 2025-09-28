@@ -109,6 +109,7 @@ text
 
 ## 평가 방법
 
+<<<<<<< Updated upstream
 - 결과 적절성 수동 평가, 사용자 O/X 만족도 조사
 - 다양한 알고리즘(A/B) 성능 비교
 
@@ -143,3 +144,12 @@ text
 
 - Email: [앱스 학회 이메일]
 - GitHub: [https://github.com/APPS-sookmyung/2025-CHATTONER-Server]
+=======
+| Name | Role | Responsibilities | Contact |
+| :--- | :--- | :--- | :--- |
+| **Yoon Jiwon** | PM | Project Planning, Management | geenieeyoon@gmail.com |
+| **Kwon Yujin** | Development | Full-Stack, ML Model Support | thinz0083@daum.net |
+| **Kim Jimin** | Development | Fine-tuning, RAG Implementation | onlypotato637@gmail.com |
+| **Jeong Jieun** | Development | Model Development, Fine-tuning | jje49jieun@gmail.com |
+| **Ha Jimin** | Development | Frontend Design/Implementation, API Integration | tracygkwlals@gmail.com |
+>>>>>>> Stashed changes
