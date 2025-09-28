@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,11 @@ import {
 import { BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QualityAnalysisResult from "@/components/quality-analysis-result";
-import type { CompanyQualityAnalysisResponse, TargetAudience, ContextType } from "@shared/schema";
+import type {
+  CompanyQualityAnalysisResponse,
+  TargetAudience,
+  ContextType,
+} from "@shared/schema";
 
 // 드롭다운 옵션을 상수로 정의
 const dropdownOptions = {
@@ -46,13 +50,27 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
     grammarSection: {
       score: Math.random() * 10 + 85,
       suggestions: [
-        { id: "g1", category: "문법", original: "이부분", suggestion: "이 부분", reason: "띄어쓰기 오류", severity: "low" },
+        {
+          id: "g1",
+          category: "문법",
+          original: "이부분",
+          suggestion: "이 부분",
+          reason: "띄어쓰기 오류",
+          severity: "low",
+        },
       ],
     },
     protocolSection: {
       score: Math.random() * 10 + 87,
       suggestions: [
-        { id: "p1", category: "프로토콜", original: "수고하세요", suggestion: "감사합니다", reason: "가이드라인에 따라 '수고하세요'는 지양", severity: "medium" },
+        {
+          id: "p1",
+          category: "프로토콜",
+          original: "수고하세요",
+          suggestion: "감사합니다",
+          reason: "가이드라인에 따라 '수고하세요'는 지양",
+          severity: "medium",
+        },
       ],
     },
     companyAnalysis: {
@@ -68,13 +86,28 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
 
 export default function QualityValidator() {
   const [inputText, setInputText] = useState("");
-  const [targetAudience, setTargetAudience] = useState<TargetAudience>("직속상사");
+  const [targetAudience, setTargetAudience] =
+    useState<TargetAudience>("직속상사");
   const [context, setContext] = useState<ContextType>("보고서");
-  const [analysis, setAnalysis] = useState<CompanyQualityAnalysisResponse | null>(null);
+  const [analysis, setAnalysis] =
+    useState<CompanyQualityAnalysisResponse | null>(null);
   const { toast } = useToast();
 
+  const companyId = "test-company-id"; // 임시 ID
+  const userId = localStorage.getItem("chatToner_userId");
+
   const analyzeMutation = useMutation({
-    mutationFn: async (text: string): Promise<CompanyQualityAnalysisResponse> => {
+    mutationFn: async (
+      text: string
+    ): Promise<CompanyQualityAnalysisResponse> => {
+      if (!userId) {
+        toast({
+          title: "오류",
+          description: "사용자 ID를 찾을 수 없습니다. 다시 로그인해주세요.",
+          variant: "destructive",
+        });
+        throw new Error("User ID not found");
+      }
       try {
         const response = await fetch("/api/v1/quality/company/analyze", {
           method: "POST",
@@ -83,8 +116,8 @@ export default function QualityValidator() {
             text,
             target_audience: targetAudience,
             context: context,
-            company_id: "test-company-id", // 임시 ID
-            user_id: "test-user-id", // 임시 ID
+            company_id: companyId,
+            user_id: userId,
           }),
         });
 
@@ -142,35 +175,39 @@ export default function QualityValidator() {
             onChange={(e) => setInputText(e.target.value)}
             className="min-h-[150px]"
           />
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">대상</label>
-              <Select 
-                value={targetAudience} 
-                onValueChange={v => setTargetAudience(v as TargetAudience)} 
+              <label className="block mb-2 text-sm font-medium">대상</label>
+              <Select
+                value={targetAudience}
+                onValueChange={(v) => setTargetAudience(v as TargetAudience)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="대상을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  {dropdownOptions.target_audiences.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  {dropdownOptions.target_audiences.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">상황</label>
-              <Select 
-                value={context} 
-                onValueChange={v => setContext(v as ContextType)} 
+              <label className="block mb-2 text-sm font-medium">상황</label>
+              <Select
+                value={context}
+                onValueChange={(v) => setContext(v as ContextType)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="상황을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  {dropdownOptions.contexts.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  {dropdownOptions.contexts.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -178,7 +215,7 @@ export default function QualityValidator() {
             <Button
               onClick={handleAnalyze}
               disabled={analyzeMutation.isPending}
-              className="w-full sm:w-auto self-end"
+              className="self-end w-full sm:w-auto"
             >
               {analyzeMutation.isPending ? "분석 중..." : "품질 분석"}
             </Button>
@@ -186,15 +223,20 @@ export default function QualityValidator() {
         </CardContent>
       </Card>
 
-      {analysis && (
+      {analysis && userId && (
         <QualityAnalysisResult
           analysisResult={analysis}
           originalText={inputText}
           targetAudience={targetAudience}
           context={context}
+          userId={userId}
+          companyId={companyId}
           onApplySuggestion={(original, suggestion) => {
-            setInputText(prev => prev.replace(original, suggestion));
-            toast({ title: "적용 완료", description: "제안이 텍스트에 반영되었습니다." });
+            setInputText((prev) => prev.replace(original, suggestion));
+            toast({
+              title: "적용 완료",
+              description: "제안이 텍스트에 반영되었습니다.",
+            });
           }}
         />
       )}

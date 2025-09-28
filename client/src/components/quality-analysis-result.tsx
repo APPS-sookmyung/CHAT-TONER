@@ -16,11 +16,14 @@ import type {
   ContextType
 } from "@shared/schema";
 
+// Props Interfaces
 interface QualityAnalysisResultProps {
   originalText: string;
   analysisResult: CompanyQualityAnalysisResponse;
   targetAudience: TargetAudience;
   context: ContextType;
+  userId: string;
+  companyId: string;
   onApplySuggestion: (original: string, suggestion: string) => void;
 }
 
@@ -32,6 +35,8 @@ interface SuggestionsTabProps {
   targetAudience: TargetAudience;
   context: ContextType;
   sessionId: string;
+  userId: string;
+  companyId: string;
 }
 
 interface SuggestionItemProps {
@@ -42,14 +47,19 @@ interface SuggestionItemProps {
   targetAudience: TargetAudience;
   context: ContextType;
   sessionId: string;
+  userId: string;
+  companyId: string;
 }
 
+// Main Component
 export default function QualityAnalysisResult({ 
   originalText, 
   analysisResult, 
   onApplySuggestion,
   targetAudience,
-  context
+  context,
+  userId,
+  companyId
 }: QualityAnalysisResultProps) {
   const { toast } = useToast();
   const [selectedGrammarIds, setSelectedGrammarIds] = useState<Set<string>>(new Set());
@@ -97,8 +107,8 @@ export default function QualityAnalysisResult({
       protocol_suggestions: analysisResult.protocolSection.suggestions,
       selected_grammar_ids: Array.from(selectedGrammarIds),
       selected_protocol_ids: Array.from(selectedProtocolIds),
-      user_id: "test-user-id",
-      company_id: "test-company-id",
+      user_id: userId,
+      company_id: companyId,
     });
   };
 
@@ -128,6 +138,8 @@ export default function QualityAnalysisResult({
           targetAudience={targetAudience}
           context={context}
           sessionId={sessionId}
+          userId={userId}
+          companyId={companyId}
         />
       </TabsContent>
 
@@ -140,12 +152,15 @@ export default function QualityAnalysisResult({
           targetAudience={targetAudience}
           context={context}
           sessionId={sessionId}
+          userId={userId}
+          companyId={companyId}
         />
       </TabsContent>
     </Tabs>
   );
 }
 
+// Sub-components
 function OverviewTab({ analysisResult, onGenerateFinal, isGenerating, finalText }: any) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -196,7 +211,7 @@ function ScoreDisplay({ name, score }: { name: string, score: number }) {
     )
 }
 
-function SuggestionsTab({ section, selectedIds, onSelect, onApplySuggestion, targetAudience, context, sessionId }: SuggestionsTabProps) {
+function SuggestionsTab({ section, selectedIds, onSelect, onApplySuggestion, targetAudience, context, sessionId, userId, companyId }: SuggestionsTabProps) {
   const category = section.suggestions[0]?.category || '제안';
   
   return (
@@ -222,6 +237,8 @@ function SuggestionsTab({ section, selectedIds, onSelect, onApplySuggestion, tar
               targetAudience={targetAudience}
               context={context}
               sessionId={sessionId}
+              userId={userId}
+              companyId={companyId}
             />
           ))
         ) : (
@@ -232,13 +249,18 @@ function SuggestionsTab({ section, selectedIds, onSelect, onApplySuggestion, tar
   );
 }
 
-function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, context, sessionId }: SuggestionItemProps) {
+function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, context, sessionId, userId, companyId }: SuggestionItemProps) {
   const { toast } = useToast();
   const feedbackMutation = useMutation({
     mutationFn: async (data: { feedback_value: 'good' | 'bad' }) => {
+        if (!userId || !companyId) {
+          toast({ title: "오류", description: "사용자 또는 회사 ID가 없어 피드백을 보낼 수 없습니다.", variant: "destructive" });
+          return;
+        }
+
         const feedbackData: UserFeedbackRequest = {
-            user_id: 'test-user-id',
-            company_id: 'test-company-id',
+            user_id: userId,
+            company_id: companyId,
             session_id: sessionId,
             original_text: item.original,
             suggested_text: item.suggestion,
