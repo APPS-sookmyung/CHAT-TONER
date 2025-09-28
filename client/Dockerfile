@@ -1,5 +1,5 @@
 # ---------- Build stage ----------
-FROM node:20-alpine AS builder
+FROM node:20-bookworm AS builder
 WORKDIR /app
 
 # 의존성 설치
@@ -29,4 +29,4 @@ COPY --from=builder /app/dist/ ./
 EXPOSE 80
 
 # 컨테이너 내부 헬스체크 (ALB 헬스체크는 /healthz 사용)
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1/healthz || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:80/healthz || exit 1

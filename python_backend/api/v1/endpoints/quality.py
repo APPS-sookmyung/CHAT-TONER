@@ -99,7 +99,7 @@ async def analyze_company_text_quality(
                 ]
             ),
             
-            protocolSection=ProtocolSection(
+                        protocolSection=ProtocolSection(
                 score=result.get('protocol_score', 60.0),
                 suggestions=[
                     CompanySuggestionItem(
@@ -107,7 +107,7 @@ async def analyze_company_text_quality(
                         category=sugg.get('category', 'protocol'),
                         original=sugg.get('violation', sugg.get('rule', '')),
                         suggestion=sugg.get('correction', sugg.get('suggestion', '')),
-                        reason=sugg.get('reason', ''),
+                        reason=sugg.get('reason', '') or sugg.get('rule', ''),
                         severity=sugg.get('severity', 'medium')
                     )
                     for i, sugg in enumerate(result.get('protocol_suggestions', []))

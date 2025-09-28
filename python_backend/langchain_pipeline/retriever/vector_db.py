@@ -233,7 +233,7 @@ def load_vector_store(load_path: Path) -> Optional[FAISS]:
             vectorstore = FAISS.load_local(
                 str(load_path),
                 embeddings,
-                allow_dangerous_deserialization=False
+                allow_dangerous_deserialization=True
             )
         except Exception as security_error:
             logger.warning(f"안전한 역직렬화 실패, 신뢰된 경로 재시도: {security_error}")

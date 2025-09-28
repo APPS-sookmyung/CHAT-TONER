@@ -1,7 +1,7 @@
-// src/types/shared.d.ts
 declare module "@shared/schema" {
-  // src/shared/schema.ts
-
+  // =======================================
+  // 기존 타입들
+  // =======================================
   export type UserProfile = {
     id?: number;
     baseFormalityLevel: number;
@@ -28,32 +28,6 @@ declare module "@shared/schema" {
     situation_responses?: string[] | Record<string, any>;
   };
 
-  export type NegativePreferences = {
-    rhetoricLevel?: string;
-    repetitionTolerance?: string;
-    punctuationStyle?: string;
-    contentFocus?: string;
-    bulletPreference?: string;
-    emoticonPolicy?: string;
-  };
-
-  export type ConversionRequest = {
-    text: string;
-    user_profile: UserProfile;
-    context?: string;
-    negative_preferences?: NegativePreferences;
-  };
-
-  export type ConversionResponse = {
-    success: boolean;
-    original_text?: string;
-    converted_texts?: Record<string, string>;
-    context?: string;
-    sentiment_analysis?: Record<string, any>;
-    metadata?: Record<string, any>;
-    error?: string;
-  };
-
   export type QualityAnalysisRequest = {
     text: string;
   };
@@ -71,53 +45,94 @@ declare module "@shared/schema" {
     suggestions: SuggestionItem[];
   };
 
-  export type ContextSuggestionsRequest = {
-    text: string;
-    context: string; // business, casual, report
-  };
+  // =======================================
+  // 기업용 분석 추가 타입들
+  // =======================================
 
-  export type ContextSuggestionsResponse = {
-    suggestions: SuggestionItem[];
-    count: number;
-  };
+  // Enums
+  export type TargetAudience = "직속상사" | "팀동료" | "타부서담당자" | "클라이언트" | "외부협력업체" | "후배신입";
+  export type ContextType = "보고서" | "회의록" | "이메일" | "공지사항" | "메시지";
+  export type FeedbackType = "grammar" | "protocol";
+  export type FeedbackValue = "good" | "bad";
+  export type SeverityLevel = "high" | "medium" | "low";
 
-  export type FeedbackRequest = {
-    original_text: string;
-    converted_text: string;
-    feedback_score: number; // 1-5
-    feedback_comment: string;
-  };
-
-  export type FeedbackResponse = {
-    success: boolean;
-    message: string;
-  };
-
-  export type FinetuneRequest = {
-    text: string;
-    user_profile: Record<string, any>;
-    context?: "business" | "report" | "personal";
-    force_convert?: boolean;
-  };
-
-  export type FinetuneResponse = {
-    success: boolean;
-    converted_text?: string;
-    lora_output?: string;
-    method: string;
+  // Interfaces
+  export interface CompanySuggestionItem {
+    id: string;
+    category: string;
+    original: string;
+    suggestion: string;
     reason: string;
-    forced?: boolean;
-    error?: string;
-    metadata?: Record<string, any>;
-    timestamp?: string; // datetime in Python is string in TS
-  };
+    severity: SeverityLevel;
+  }
 
-  export type FinetuneStatusResponse = {
-    lora_status: "ready" | "not_ready";
-    lora_model_path: string;
-    services_available: boolean;
-    base_model_loaded: boolean;
-    device: string;
-    model_name: string;
-  };
+  export interface GrammarSection {
+    score: number;
+    suggestions: CompanySuggestionItem[];
+  }
+
+  export interface ProtocolSection {
+    score: number;
+    suggestions: CompanySuggestionItem[];
+  }
+
+  export interface CompanyAnalysis {
+    companyId: string;
+    communicationStyle: string;
+    complianceLevel: number;
+    methodUsed: string;
+    processingTime: number;
+    ragSourcesCount: number;
+  }
+
+  // Request Payloads
+  export interface CompanyQualityAnalysisRequest {
+    text: string;
+    target_audience: TargetAudience;
+    context: ContextType;
+    company_id: string;
+    user_id: string;
+    detailed?: boolean;
+  }
+
+  export interface UserFeedbackRequest {
+    user_id: string;
+    company_id: string;
+    session_id: string;
+    original_text: string;
+    suggested_text: string;
+    feedback_type: FeedbackType;
+    feedback_value: FeedbackValue;
+    target_audience: TargetAudience;
+    context: ContextType;
+    suggestion_category: string;
+    scores?: Record<string, number>;
+  }
+
+  export interface FinalTextGenerationRequest {
+    original_text: string;
+    grammar_suggestions: CompanySuggestionItem[];
+    protocol_suggestions: CompanySuggestionItem[];
+    selected_grammar_ids: string[];
+    selected_protocol_ids: string[];
+    user_id: string;
+    company_id: string;
+  }
+
+  // Response Payloads
+  export interface CompanyQualityAnalysisResponse {
+    grammarScore: number;
+    formalityScore: number;
+    readabilityScore: number;
+    protocolScore: number;
+    complianceScore: number;
+    grammarSection: GrammarSection;
+    protocolSection: ProtocolSection;
+    companyAnalysis: CompanyAnalysis;
+  }
+
+  export interface DropdownOptions {
+    target_audiences: { value: string; label: string; }[];
+    contexts: { value: string; label: string; }[];
+  }
 }

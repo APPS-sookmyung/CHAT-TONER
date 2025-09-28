@@ -18,8 +18,8 @@ class RAGConfig:
     """RAG 관련 경로/모델/청킹 설정을 제공"""
 
     # 단일 회사(stand-alone) 기준 고정 경로
-    faiss_index_path: Path = Path("python_backend/langchain_pipeline/data/faiss_index")
-    documents_path: Path = Path("python_backend/langchain_pipeline/data/documents")
+    faiss_index_path: Path = Path("langchain_pipeline/data/faiss_index")
+    documents_path: Path = Path("langchain_pipeline/data/documents")
 
     # 임베딩/청킹 설정
     _embedding_model: str = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
@@ -55,11 +55,7 @@ class RAGConfig:
         """OpenAI API 키를 환경에서 조회(없으면 None)"""
         from core.config import get_settings
         settings = get_settings()
-        api_key = (
-            os.getenv("OPENAI_API_KEY")
-            or getattr(settings, "OPENAI_API_KEY", "")
-            or None
-        )
+        api_key = getattr(settings, "OPENAI_API_KEY", "") or None
         if api_key and api_key.startswith("sk-"):
             return api_key
         return None
