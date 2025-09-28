@@ -1,52 +1,52 @@
-# ChatToner
+# ChatToner  
 
-**개인화 톤 변환 시스템**  
-Chat-toner는 상황과 대상에 맞는 말투 스타일을 개인화하여 변환해주는 서비스입니다.  
-사용자 피드백을 기반으로 지속적으로 코칭과 추천이 정교화됩니다.
+**Personalized Tone Transformation System**  
+Chat-toner is a service that transforms communication style according to the situation and audience.  
+It continuously improves recommendations and coaching based on user feedback.  
 
-👉 배포 URL: https://www.chattoner.online/
-
----
-
-## 프로젝트 개요 (Project Overview)
-
-Chat-toner는 단순한 어투 변환을 넘어, 대화 목적/상황/대상별 맞춤 스타일을 추천하고  
-사용자 고유의 말투 특성을 학습해 점진적으로 고도화되는 개인화 스타일 변환 시스템입니다.
+Deployment URL: https://client-184664486594.asia-northeast3.run.app
 
 ---
 
-## 주요 기능 (Key Features)
+## Project Overview  
 
-- **상황별 톤 제안**
-  - 업무, 친구, 공식 등 다양한 상황에 맞는 톤 자동 제시
-- **대상 및 목적 기반 스타일 추천**
-- **문장 변환 & 실시간 피드백**
-  - 한 문장을 여러 스타일로 변환, 선택 옵션 제공
-  - 실시간 피드백/수정 UI 제공
-- **개인화 습관 학습**
-  - LoRA 기반 사용자 어투 모델링
-  - 사용자의 선택/피드백을 통한 지속적 개인화
+Chat-toner goes beyond simple tone conversion by recommending personalized styles based on conversation goals, situations, and audiences.  
+It gradually evolves into a highly personalized tone transformation system by learning users’ unique speech habits.  
 
 ---
 
-## 기술 스택 (Tech Stack)
+## Key Features  
 
-| 분류         | 스택/라이브러리                                 | 용도                              |
-| :----------- | :---------------------------------------------- | :-------------------------------- |
-| **Frontend** | React.js, TypeScript, Zustand                   | 인터페이스, 타입 안정성, 상태관리 |
-| **Backend**  | Flask, FastAPI, Express.js                      | ML API, 프록시, 정적 파일         |
-| **ML**       | LoRA, KoGPT, KoAlpaca, HuggingFace Transformers | 스타일 변환, 텍스트 생성          |
-| **Database** | PostgreSQL, FAISS, Redis                        | 데이터 저장, 벡터 검색, 캐싱      |
+- **Tone Suggestions by Situation**  
+  - Automatically suggests tones suited for contexts such as work, friends, and formal conversations  
+- **Audience and Goal-Based Style Recommendations**  
+- **Sentence Transformation & Real-Time Feedback**  
+  - Provides multiple transformed versions of a sentence with selection options  
+  - Real-time feedback/editing UI  
+- **Personalized Habit Learning**  
+  - LoRA-based user tone modeling  
+  - Continuous personalization through user selections and feedback  
 
 ---
 
-## 프로젝트 구조 (Project Structure)
+## Tech Stack  
+
+| Category      | Stack/Library                                | Purpose                              |
+| :------------ | :------------------------------------------- | :----------------------------------- |
+| **Frontend**  | React.js, TypeScript, Zustand                | Interface, type safety, state management |
+| **Backend**   | Flask, FastAPI, Express.js                   | ML API, proxy, static files          |
+| **ML**        | LoRA, KoGPT, KoAlpaca, HuggingFace Transformers | Style transformation, text generation |
+| **Database**  | PostgreSQL, FAISS, Redis                     | Data storage, vector search, caching |
+
+---
+
+## Project Structure  
 
 chattoner/
 ├── client/
-│ └── ... (React 프론트엔드)
+│ └── ... (React frontend)
 ├── server/
-│ └── ... (Express 프록시)
+│ └── ... (Express proxy)
 ├── python_backend/
 │ ├── app/
 │ ├── ml/
@@ -54,94 +54,86 @@ chattoner/
 ├── docker-compose.yml
 └── README.md
 
-text
-
 ---
 
-## 설치 및 실행 (Installation & Setup)
+## Installation & Setup  
 
-1. **프로젝트 클론**
+1. **Clone the Project**  
 
-   ```
+   ```bash
    git clone https://github.com/your-username/chat-toner.git
    cd chat-toner
-   ```
+   
+2. **Install Dependencies**
 
-2. **환경 구성**
+npm install              # Node.js
+cd client && npm install # Client
+cd ../python_backend && pip install -r requirements.txt
 
-   ```
-   npm install              # Node.js
-   cd client && npm install # 클라이언트
-   cd ../python_backend && pip install -r requirements.txt
-   ```
+3. **Database & Environment Variables**
+   
+createdb chattoner
+cp .env.example .env
+# Update DB connection info in .env
 
-3. **DB 및 환경 변수**
-
-   ```
-   createdb chattoner
-   cp .env.example .env
-   # .env에서 DB 연결 정보 수정
-   ```
-
-4. **실행**
-   ```
-   npm run dev          # Dev 전체 실행
-   # 또는
-   npm run client       # React
-   npm run server       # Express
-   npm run python       # Flask
-   ```
+4. **Run the Project**
+   
+npm run dev          # Run all services in dev mode
+# Or run separately
+npm run client       # React
+npm run server       # Express
+npm run python       # Flask
 
 ---
 
-## 사용 방법 (Usage)
+## Usage  
 
-- 텍스트 입력 → 상황 선택(업무/친구/공식) → 변환 옵션 선택 → 결과 피드백 제공
-
----
-
-## 개발 전략 (Development Strategy)
-
-- **MVP**: 프롬프트 기반 기본 기능 우선
-- **모델 개발**: LoRA 활용 개인화 고도화
-- **통합**: RAG, 벡터 검색 최적화
-- **성능/UX 최적화**
+- Input text → Select context (Work/Friends/Formal) → Choose transformation option → Provide feedback on results  
 
 ---
 
-## 평가 방법
+## Development Strategy  
 
-- 결과 적절성 수동 평가, 사용자 O/X 만족도 조사
-- 다양한 알고리즘(A/B) 성능 비교
-
----
-
-## 기여하기 (Contributing)
-
-1. Fork this repo
-2. Create feature branch (`git checkout -b feature/NewFeature`)
-3. Commit (`git commit -m 'Add ...'`)
-4. Push (`git push origin feature/NewFeature`)
-5. Pull Request 제출
+- **MVP**: Start with prompt-based core features  
+- **Model Development**: Enhance personalization with LoRA  
+- **Integration**: Optimize RAG and vector search  
+- **Performance/UX Optimization**  
 
 ---
 
-## 팀원 소개 (Team)
+## Evaluation  
 
-| 이름       | 역할        | 담당 내용                      | 연락처                  |
-| :--------- | :---------- | :----------------------------- | :---------------------- |
-| **윤지원** | PM          | 프로젝트 기획, 총괄            | geenieeyoon@gmail.com   |
-| **권유진** | Development | 풀스택, ML 모델 개발 지원      | thinz0083@daum.net      |
-| **김지민** | Development | 파인튜닝, RAG 구현             | onlypotato637@gmail.com |
-| **정지은** | Development | 모델 개발, 파인튜닝            | jje49jieun@gmail.com    |
-| **하지민** | Development | 프론트엔드 설계·구현, API 연동 | tracygkwlals@gmail.com  |
-
-> **APPS (앱/웹 개발 학회)**  
-> 이 프로젝트는 숙명여자대학교 소프트웨어학부 학회 APPS에서 수행하는 연구 프로젝트입니다.
+- Manual evaluation of appropriateness, user O/X satisfaction survey  
+- A/B testing with different algorithms  
 
 ---
 
-## 연락처 (Contact)
+## Contributing  
 
-- Email: [앱스 학회 이메일]
-- GitHub: [https://github.com/APPS-sookmyung/2025-CHATTONER-Server]
+1. Fork this repo  
+2. Create a feature branch (`git checkout -b feature/NewFeature`)  
+3. Commit changes (`git commit -m 'Add ...'`)  
+4. Push to branch (`git push origin feature/NewFeature`)  
+5. Submit a Pull Request  
+
+---
+
+## Team  
+
+| Name         | Role        | Responsibilities               | Contact                  |
+| :----------- | :---------- | :----------------------------- | :----------------------- |
+| **Yoon Ji-won** | PM          | Project planning & management  | geenieeyoon@gmail.com    |
+| **Kwon Yu-jin** | Development | Full-stack, ML model support  | thinz0083@daum.net       |
+| **Kim Ji-min**  | Development | Fine-tuning, RAG implementation | onlypotato637@gmail.com |
+| **Jung Ji-eun** | Development | Model development, fine-tuning | jje49jieun@gmail.com    |
+| **Ha Ji-min**   | Development | Frontend design & implementation, API integration | tracygkwlals@gmail.com |
+
+> **APPS (App/Web Development Society)**  
+> This project is carried out as a research project by the APPS academic society of the Department of Software at Sookmyung Women’s University.  
+
+---
+
+## Contact  
+
+- Email: [APPS Society Email]  
+- GitHub: [https://github.com/APPS-sookmyung/2025-CHATTONER-Server]  
