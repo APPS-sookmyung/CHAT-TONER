@@ -125,7 +125,7 @@ npm run python       # Flask
 | **Yoon Ji-won** | PM          | Project planning & management  | geenieeyoon@gmail.com    |
 | **Kwon Yu-jin** | Development | Full-stack, ML model support  | thinz0083@daum.net       |
 | **Kim Ji-min**  | Development | Fine-tuning, RAG implementation | onlypotato637@gmail.com |
-| **Jung Ji-eun** | Development | Model development, fine-tuning | jje49jieun@gmail.com    |
+| **Jeong Ji-eun** | Development | Model development, fine-tuning | jje49jieun@gmail.com    |
 | **Ha Ji-min**   | Development | Frontend design & implementation, API integration | tracygkwlals@gmail.com |
 
 > **APPS (App/Web Development Society)**  
