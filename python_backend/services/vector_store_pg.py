@@ -1,5 +1,12 @@
 from typing import Any, Dict, List, Optional
-from services.enterprise_db_service import get_enterprise_db_service
+
+# 조건부 import로 의존성 문제 해결
+try:
+    from services.enterprise_db_service import get_enterprise_db_service
+    ENTERPRISE_DB_AVAILABLE = True
+except ImportError:
+    get_enterprise_db_service = None
+    ENTERPRISE_DB_AVAILABLE = False
 
 
 class VectorStorePG:
@@ -8,6 +15,9 @@ class VectorStorePG:
 
     @classmethod
     async def from_enterprise_db(cls):
+        if not ENTERPRISE_DB_AVAILABLE or get_enterprise_db_service is None:
+            raise RuntimeError("Enterprise DB service is not available. Please install required dependencies.")
+
         db = await get_enterprise_db_service()
         pool = getattr(db, "pool", db)
         return cls(pool)
