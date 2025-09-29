@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,6 @@ import type {
   ContextType,
 } from "@shared/schema";
 
-// 드롭다운 옵션을 상수로 정의
 const dropdownOptions = {
   target_audiences: [
     { value: "직속상사", label: "직속상사" },
@@ -38,9 +37,7 @@ const dropdownOptions = {
   ],
 };
 
-// Mock-up 데이터 생성 함수 (API 실패 시 사용)
 const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
-  // ... (이하 생략, 기존 코드와 동일)
   return {
     grammarScore: Math.random() * 10 + 85,
     formalityScore: Math.random() * 10 + 88,
@@ -48,35 +45,35 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
     protocolScore: Math.random() * 10 + 87,
     complianceScore: Math.random() * 10 + 86,
     grammarSection: {
-      score: Math.random() * 10 + 85,
+      score: 85,
       suggestions: [
         {
           id: "g1",
           category: "문법",
           original: "이부분",
           suggestion: "이 부분",
-          reason: "띄어쓰기 오류",
+          reason: "Spacing error",
           severity: "low",
         },
       ],
     },
     protocolSection: {
-      score: Math.random() * 10 + 87,
+      score: 87,
       suggestions: [
         {
           id: "p1",
           category: "프로토콜",
           original: "수고하세요",
           suggestion: "감사합니다",
-          reason: "가이드라인에 따라 '수고하세요'는 지양",
+          reason: "Avoid '수고하세요' according to guidelines",
           severity: "medium",
         },
       ],
     },
     companyAnalysis: {
       companyId: "test-company",
-      communicationStyle: "간결하고 명확함",
-      complianceLevel: Math.random() * 10 + 86,
+      communicationStyle: "Brief and clear",
+      complianceLevel: 86,
       methodUsed: "RAG + Fine-tuning (mock)",
       processingTime: 0.5,
       ragSourcesCount: 1,
@@ -84,7 +81,11 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
   };
 };
 
-export default function QualityValidator() {
+interface QualityValidatorProps {
+  companyId: string;
+}
+
+export default function QualityValidator({ companyId }: QualityValidatorProps) {
   const [inputText, setInputText] = useState("");
   const [targetAudience, setTargetAudience] =
     useState<TargetAudience>("직속상사");
@@ -93,21 +94,23 @@ export default function QualityValidator() {
     useState<CompanyQualityAnalysisResponse | null>(null);
   const { toast } = useToast();
 
-  const companyId = "test-company-id"; // 임시 ID
-  const userId = localStorage.getItem("chatToner_userId");
-
   const analyzeMutation = useMutation({
     mutationFn: async (
       text: string
     ): Promise<CompanyQualityAnalysisResponse> => {
-      if (!userId) {
+      const userId = localStorage.getItem("chatToner_userId");
+      if (!userId || !companyId) {
+        const missing = [!userId && "User ID", !companyId && "Company ID"]
+          .filter(Boolean)
+          .join(", ");
         toast({
           title: "오류",
-          description: "사용자 ID를 찾을 수 없습니다. 다시 로그인해주세요.",
+          description: `Cannot find ${missing}`,
           variant: "destructive",
         });
-        throw new Error("User ID not found");
+        throw new Error(`${missing} not found`);
       }
+
       try {
         const response = await fetch("/api/v1/quality/company/analyze", {
           method: "POST",
@@ -122,14 +125,14 @@ export default function QualityValidator() {
         });
 
         if (!response.ok) {
-          throw new Error(`API 호출 실패: ${response.status}`);
+          throw new Error(`API call failed: ${response.status}`);
         }
         return response.json();
       } catch (error) {
-        console.error("API 호출 실패:", error);
+        console.error("API call failed:", error);
         toast({
-          title: "API 호출 실패",
-          description: "Mock 데이터를 대신 표시합니다.",
+          title: "API Call Failed",
+          description: "Showing mock data instead.",
           variant: "destructive",
         });
         return generateMockAnalysis(text);
@@ -138,13 +141,14 @@ export default function QualityValidator() {
     onSuccess: (data) => {
       setAnalysis(data);
       toast({
-        title: "분석 완료",
-        description: "텍스트 품질 분석이 완료되었습니다.",
+        title: "Analysis Complete",
+        description: "Text quality analysis has been completed.",
       });
     },
     onError: (error: any) => {
+      if (error.message.includes("not found")) return; // ID not found errors are already handled by toast
       toast({
-        title: "분석 실패",
+        title: "Analysis Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -158,6 +162,8 @@ export default function QualityValidator() {
     }
     analyzeMutation.mutate(inputText.trim());
   };
+
+  const userId = localStorage.getItem("chatToner_userId");
 
   return (
     <div className="space-y-6">
@@ -223,7 +229,7 @@ export default function QualityValidator() {
         </CardContent>
       </Card>
 
-      {analysis && userId && (
+      {analysis && userId && companyId && (
         <QualityAnalysisResult
           analysisResult={analysis}
           originalText={inputText}

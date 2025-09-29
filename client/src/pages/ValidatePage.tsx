@@ -9,6 +9,9 @@ export default function ValidatePage() {
     setLocation("/");
   };
 
+  // Later, the actual company ID should be obtained from parent context or state management library.
+  const companyId = "test-company-id";
+
   return (
     <main className="max-w-6xl mx-auto p-8">
       <div className="mb-4">
@@ -20,7 +23,7 @@ export default function ValidatePage() {
           ← 모드 선택으로
         </Button>
       </div>
-      <QualityValidator />
+      <QualityValidator companyId={companyId} />
     </main>
   );
 }

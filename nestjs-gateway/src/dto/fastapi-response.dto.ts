@@ -2,12 +2,12 @@
 import { IsString, IsNumber, IsArray } from 'class-validator';
 
 export class FastApiResponseDto {
-    @IsString()
-    answer!: string;
+  @IsString()
+  answer!: string;
 
-    @IsArray()
-    sources!: string[]; // 출처 문서 URL 또는 제목
+  @IsArray()
+  sources!: string[]; // Source document URLs or titles
 
-    @IsNumber()
-    confidence!: number; // 예: 0.87 (확신 정도)
+  @IsNumber()
+  confidence!: number; // e.g., 0.87 (confidence level)
 }

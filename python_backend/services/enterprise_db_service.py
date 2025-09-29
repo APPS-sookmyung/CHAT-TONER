@@ -1,6 +1,6 @@
 """
-기업용 데이터베이스 서비스
-PostgreSQL 연결 및 기업 데이터 관리
+Enterprise Database Service
+PostgreSQL connection and corporate data management
 """
 
 import asyncio
@@ -14,10 +14,10 @@ import os
 logger = logging.getLogger('chattoner.enterprise_db')
 
 class EnterpriseDBService:
-    """기업용 데이터베이스 서비스"""
+    """Enterprise database service"""
     
     def __init__(self, database_url: str = None):
-        # .env에서 DATABASE_URL 가져오거나 기본값 사용
+        # Get DATABASE_URL from .env or use default value
         self.database_url = database_url or os.getenv(
             'DATABASE_URL', 
             'postgresql://user:password@localhost:5432/chattoner-db'
@@ -25,7 +25,7 @@ class EnterpriseDBService:
         self.pool = None
         
     async def initialize(self):
-        """DB 연결 풀 초기화"""
+        """Initialize database connection pool"""
         try:
             self.pool = await asyncpg.create_pool(
                 self.database_url,
@@ -39,14 +39,14 @@ class EnterpriseDBService:
             raise
     
     async def close(self):
-        """DB 연결 풀 종료"""
+        """Terminate database connection pool"""
         if self.pool:
             await self.pool.close()
             logger.info("DB 연결 풀 종료")
     
-    # 기업 프로필 관리
+    # Company profile management
     async def get_company_profile(self, company_id: str) -> Optional[Dict[str, Any]]:
-        """기업 프로필 조회"""
+        """Query company profile"""
         if not self.pool:
             await self.initialize()
             
@@ -80,7 +80,7 @@ class EnterpriseDBService:
                 return None
     
     async def get_company_guidelines(self, company_id: str) -> List[Dict[str, Any]]:
-        """기업 가이드라인 문서 조회"""
+        """Query company guideline documents"""
         if not self.pool:
             await self.initialize()
             
@@ -114,7 +114,7 @@ class EnterpriseDBService:
                 return []
     
     async def get_user_preferences(self, user_id: str, company_id: str) -> Optional[Dict[str, Any]]:
-        """사용자 기업별 선호도 조회"""
+        """Query user company-specific preferences"""
         if not self.pool:
             await self.initialize()
             
@@ -142,7 +142,7 @@ class EnterpriseDBService:
                 return None
     
     async def save_learning_data(self, learning_data: Dict[str, Any]) -> bool:
-        """학습 데이터 저장"""
+        """Store learning data"""
         if not self.pool:
             await self.initialize()
             
@@ -156,7 +156,7 @@ class EnterpriseDBService:
                     learning_data.get('company_id'),
                     learning_data.get('user_id'),
                     learning_data.get('input_text'),
-                    learning_data.get('output_text', ''),  # 빈 값으로 설정
+                    learning_data.get('output_text', ''),  # Set as empty value
                     json.dumps(learning_data.get('context', {})),
                     datetime.now()
                 )
@@ -169,7 +169,7 @@ class EnterpriseDBService:
                 return False
     
     async def save_user_feedback(self, feedback_data: Dict[str, Any]) -> bool:
-        """사용자 피드백 저장"""
+        """Store user feedback"""
         if not self.pool:
             await self.initialize()
             
@@ -199,15 +199,15 @@ class EnterpriseDBService:
                 logger.error(f"사용자 피드백 저장 실패: {e}")
                 return False
     
-    # 테스트 및 개발용 메서드들
+    # Test and development methods
     async def create_test_company(self, company_id: str = "test_company") -> bool:
-        """테스트용 기업 데이터 생성"""
+        """Create test company data"""
         if not self.pool:
             await self.initialize()
             
         async with self.pool.acquire() as conn:
             try:
-                # 기업 프로필 생성
+                # Create company profile
                 await conn.execute("""
                     INSERT INTO company_profiles 
                     (company_id, company_name, industry, team_size, primary_business,
@@ -226,7 +226,7 @@ class EnterpriseDBService:
                     "정중하고 전문적인 커뮤니케이션을 지향합니다. 클라이언트 대상 문서는 특히 격식을 갖추어 작성해야 합니다."
                 )
                 
-                # 가이드라인 문서 생성
+                # Create guideline documents
                 await conn.execute("""
                     INSERT INTO communication_guidelines
                     (company_id, document_type, document_name, document_content, is_active)
@@ -268,11 +268,11 @@ class EnterpriseDBService:
             logger.error(f"DB 연결 확인 실패: {e}")
             return False
 
-# 싱글톤 패턴으로 DB 서비스 관리
+# Manage DB service with singleton pattern
 _enterprise_db_service = None
 
 async def get_enterprise_db_service() -> EnterpriseDBService:
-    """전역 DB 서비스 인스턴스 반환"""
+    """Return global DB service instance"""
     global _enterprise_db_service
     
     if _enterprise_db_service is None:
@@ -281,7 +281,7 @@ async def get_enterprise_db_service() -> EnterpriseDBService:
     
     return _enterprise_db_service
 
-# 컨텍스트 매니저로 DB 서비스 사용
+# Use DB service with context manager
 class EnterpriseDBContext:
     """DB 서비스 컨텍스트 매니저"""
     
@@ -295,18 +295,18 @@ class EnterpriseDBContext:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.db_service.close()
 
-# 사용 예시 및 테스트 함수
+# Usage example and test functions
 async def test_enterprise_db():
     """DB 서비스 테스트"""
     async with EnterpriseDBContext() as db:
-        # 연결 확인
+        # Check connection
         is_connected = await db.check_connection()
         print(f"DB 연결: {is_connected}")
         
-        # 테스트 데이터 생성
+        # Create test data
         await db.create_test_company("test_company")
         
-        # 데이터 조회 테스트
+        # Data query test
         profile = await db.get_company_profile("test_company")
         print(f"기업 프로필: {profile}")
         
@@ -314,5 +314,5 @@ async def test_enterprise_db():
         print(f"가이드라인 개수: {len(guidelines)}")
 
 if __name__ == "__main__":
-    # 테스트 실행
+    # Execute test
     asyncio.run(test_enterprise_db())

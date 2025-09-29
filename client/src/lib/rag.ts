@@ -30,7 +30,7 @@ async function postJSON<T>(url: string, body: any): Promise<T> {
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
-    // 백엔드가 error/detail을 주면 그대로 노출
+    // If backend provides error/detail, expose it directly
     const msg = (data?.error || data?.detail || `HTTP ${r.status}`) as string;
     throw new Error(msg);
   }

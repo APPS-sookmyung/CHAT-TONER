@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Plus, Info } from "lucide-react";
 import type { Question } from "@/data/questions";
@@ -73,10 +72,10 @@ export default function QuestionCard({
   const hasAnswer = selectedOptions.length > 0 || localCustomInput.trim();
 
   return (
-    <Card className="shadow-sm border border-gray-200">
+    <Card className="border border-gray-200 shadow-sm">
       <CardContent className="p-8">
         <div className="mb-6">
-          <div className="flex items-center space-x-2 mb-3">
+          <div className="flex items-center mb-3 space-x-2">
             <Badge
               className={`${getCategoryColor(question.category)} font-medium`}
             >
@@ -89,16 +88,16 @@ export default function QuestionCard({
               </div>
             )}
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="mb-2 text-xl font-semibold text-gray-900">
             {question.question}
           </h3>
           <p className="text-gray-600">{question.description}</p>
         </div>
 
         {/* 답 옵션들 */}
-        <div className="space-y-3 mb-6">
+        <div className="mb-6 space-y-3">
           {question.allowMultiple ? (
-            // 중복 선택
+            // Multiple selection
             <div className="space-y-3">
               {question.options.map((option, index) => (
                 <div key={index} className="group">
@@ -116,7 +115,7 @@ export default function QuestionCard({
                       }
                       className="mr-4"
                     />
-                    <span className="text-gray-700 font-medium flex-1">
+                    <span className="flex-1 font-medium text-gray-700">
                       {option}
                     </span>
                     {selectedOptions.includes(option) && (
@@ -129,7 +128,7 @@ export default function QuestionCard({
               ))}
             </div>
           ) : (
-            // 단일 선택
+            // Single selection
             <RadioGroup
               value={selectedOptions[0] || ""}
               onValueChange={(value) => handleOptionChange(value, true)}
@@ -145,7 +144,7 @@ export default function QuestionCard({
                     }`}
                   >
                     <RadioGroupItem value={option} className="mr-4" />
-                    <span className="text-gray-700 font-medium flex-1">
+                    <span className="flex-1 font-medium text-gray-700">
                       {option}
                     </span>
                     {selectedOptions.includes(option) && (
@@ -160,10 +159,10 @@ export default function QuestionCard({
           )}
         </div>
 
-        {/* 직접 입력*/}
+        {/* Direct input */}
         {question.allowCustom && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-            <div className="flex items-center space-x-2 mb-2">
+          <div className="p-4 mb-6 bg-gray-50 rounded-xl">
+            <div className="flex items-center mb-2 space-x-2">
               <Plus className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium text-gray-700">
                 직접 입력
@@ -178,7 +177,7 @@ export default function QuestionCard({
           </div>
         )}
 
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={onPrevious}
@@ -195,7 +194,7 @@ export default function QuestionCard({
               onNext();
             }}
             disabled={false}
-            className="flex items-center space-x-2 px-8"
+            className="flex items-center px-8 space-x-2"
           >
             <span>{isLastQuestion ? "완료" : "다음"}</span>
             <ChevronRight className="w-4 h-4" />

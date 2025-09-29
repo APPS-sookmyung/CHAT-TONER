@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
-FastAPI Swagger UI 및 OpenAPI 설정
+FastAPI Swa        schema[\"tags\"] = [
+            {\"name\": \"health\", \"description\": \"Server status and connection check\"},
+            {\"name\": \"conversion\", \"description\": \"AI-based text style conversion (core feature)\"},
+            {\"name\": \"profile\", \"description\": \"User personalization profile management\"},
+            {\"name\": \"quality\", \"description\": \"Text quality analysis (grammar/readability/formality)\"},
+            {\"name\": \"enterprise\", \"description\": \"Corporate style analysis and conversion services\"},
+            {\"name\": \"rag\", \"description\": \"RAG-based document search and intelligent Q&A\"},
+        ]및 OpenAPI 설정
 """
 
 from fastapi import FastAPI
@@ -19,15 +26,15 @@ def configure_swagger(app: FastAPI) -> None:
             title="ChatToner API",
             version="1.0.0",
             description="""
-            🎯 **ChatToner** - AI 기반 한국어 텍스트 개인화 서비스
+            **ChatToner** - AI-based Korean text personalization service
             
-            ## 🚀 주요 기능
+            ## Main Features
             - **텍스트 스타일 변환**: 사용자 맞춤 톤 변환 (격식/친근/중립)
             - **품질 분석**: 문법, 가독성, 격식성 자동 점검
             - **RAG 시스템**: 문서 기반 스타일 가이드 검색
             - **개인화**: 사용자 피드백 학습 및 프로필 적응
             
-            ## 🛠 사용 흐름
+            ## Usage Flow
             1. `/api/v1/conversion/convert` - 텍스트 변환 요청
             2. `/api/v1/quality/analyze` - 품질 점수 확인  
             3. `/api/v1/feedback` - 피드백 제출
@@ -37,12 +44,12 @@ def configure_swagger(app: FastAPI) -> None:
         )
 
         schema["tags"] = [
-            {"name": "health", "description": "🔍 서버 상태 및 연결 확인"},
-            {"name": "conversion", "description": "🎯 AI 기반 텍스트 스타일 변환 (핵심 기능)"},
-            {"name": "profile", "description": "👤 사용자 개인화 프로필 관리"},
-            {"name": "quality", "description": "📊 텍스트 품질 분석 (문법/가독성/격식성)"},
-            {"name": "feedback", "description": "💭 사용자 피드백 수집 및 AI 학습"},
-            {"name": "rag", "description": "📚 RAG 기반 문서 검색 및 지능형 질의응답"},
+            {"name": "health", "description": "Server status and connection check"},
+            {"name": "conversion", "description": "AI-based text style conversion (core feature)"},
+            {"name": "profile", "description": "User personalization profile management"},
+            {"name": "quality", "description": "Text quality analysis (grammar/readability/formality)"},
+            {"name": "enterprise", "description": "Corporate style analysis and conversion services"},
+            {"name": "rag", "description": "RAG-based document search and intelligent Q&A"}
         ]
         """
         # 보안 스키마 
