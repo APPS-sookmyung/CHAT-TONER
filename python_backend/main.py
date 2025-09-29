@@ -13,7 +13,6 @@ Chat Toner FastAPI Main Application
 import logging
 logger= logging.getLogger('chattoner')
 from fastapi import FastAPI
-# configuring cors 어케 하노
 from fastapi.middleware.cors import CORSMiddleware
 from core.swagger_config import configure_swagger
 from core.swagger_config import get_swagger_ui_parameters
@@ -22,6 +21,11 @@ from core.container import Container
 from core.middleware import setup_middleware
 from core.exception_handlers import setup_exception_handlers
 from api.v1.router import api_router
+
+FRONT_ORIGINS = [
+    "https://client-184664486594.asia-northeast3.run.app",
+    "http://localhost:5173",
+]
 
 def create_app() -> FastAPI:
     """FastAPI 애플리케이션 팩토리"""
@@ -57,6 +61,13 @@ def create_app() -> FastAPI:
         **swagger_params
     )
 
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=FRONT_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     if settings.DEBUG:
         configure_swagger(app)
@@ -70,6 +81,11 @@ def create_app() -> FastAPI:
     # 예외 핸들러 설정
     setup_exception_handlers(app)
     
+    @app.get("/", tags=["Health Check"])
+    async def health_check():
+        """서비스 상태를 확인하는 기본 엔드포인트"""
+        return {"status": "ok", "message": "Welcome to Chat Toner API!"}
+
     # 라우터 포함
     app.include_router(api_router, prefix="/api/v1")
     

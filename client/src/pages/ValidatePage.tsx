@@ -3,19 +3,24 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 
 export default function ValidatePage() {
-  const [, setLoc] = useLocation();
+  const [, setLocation] = useLocation();
+
+  const handleGoHome = () => {
+    setLocation("/");
+  };
+
   return (
     <main className="max-w-6xl mx-auto p-8">
       <div className="mb-4">
         <Button
           variant="outline"
-          onClick={() => setLoc("/")}
+          onClick={handleGoHome}
           className="bg-white border-gray-200"
         >
           ← 모드 선택으로
         </Button>
       </div>
-      <QualityValidator onBack={() => setLoc("/")} />
+      <QualityValidator />
     </main>
   );
 }

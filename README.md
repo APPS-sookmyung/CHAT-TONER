@@ -1,147 +1,131 @@
-# ChatToner
+# ChatToner  
 
-**개인화 톤 변환 시스템**  
-Chat-toner는 상황과 대상에 맞는 말투 스타일을 개인화하여 변환해주는 서비스입니다.  
-사용자 피드백을 기반으로 지속적으로 코칭과 추천이 정교화됩니다.
+**A Literacy-Based Personalized Tone Conversion System**
+ChatToner is an intelligent educational tone conversion system that finds the optimal tone by considering the user's literacy level and the specific context of the conversation.
 
-👉 배포 URL: https://www.chattoner.online/
-
----
-
-## 프로젝트 개요 (Project Overview)
-
-Chat-toner는 단순한 어투 변환을 넘어, 대화 목적/상황/대상별 맞춤 스타일을 추천하고  
-사용자 고유의 말투 특성을 학습해 점진적으로 고도화되는 개인화 스타일 변환 시스템입니다.
+Deployment URL: https://client-184664486594.asia-northeast3.run.app
 
 ---
 
-## 주요 기능 (Key Features)
+## Project Overview
 
-- **상황별 톤 제안**
-  - 업무, 친구, 공식 등 다양한 상황에 맞는 톤 자동 제시
-- **대상 및 목적 기반 스타일 추천**
-- **문장 변환 & 실시간 피드백**
-  - 한 문장을 여러 스타일로 변환, 선택 옵션 제공
-  - 실시간 피드백/수정 UI 제공
-- **개인화 습관 학습**
-  - LoRA 기반 사용자 어투 모델링
-  - 사용자의 선택/피드백을 통한 지속적 개인화
+Going beyond simple tone conversion, ChatToner helps facilitate the most effective communication by diagnosing a user's **literacy level** and reflecting the specific **context of the conversation, including its purpose, situation, and audience**. The system identifies a user's language skills on a session basis and provides level-specific feedback and sophisticated conversion results, ultimately aiming to contribute to the improvement of literacy.
 
 ---
 
-## 기술 스택 (Tech Stack)
+## Key Features
 
-| 분류         | 스택/라이브러리                                 | 용도                              |
-| :----------- | :---------------------------------------------- | :-------------------------------- |
-| **Frontend** | React.js, TypeScript, Zustand                   | 인터페이스, 타입 안정성, 상태관리 |
-| **Backend**  | Flask, FastAPI, Express.js                      | ML API, 프록시, 정적 파일         |
-| **ML**       | LoRA, KoGPT, KoAlpaca, HuggingFace Transformers | 스타일 변환, 텍스트 생성          |
-| **Database** | PostgreSQL, FAISS, Redis                        | 데이터 저장, 벡터 검색, 캐싱      |
+### Literacy Level Diagnosis & Personalized Feedback
+We provide a user-optimized experience with a session-based literacy diagnosis and dynamic feedback system.
+-   **Initial Literacy Diagnosis**: Identifies the user's basic literacy level (Beginner/Intermediate/Advanced) through a simple text comprehension test.
+-   **Level-Specific Custom Feedback**: Provides differentiated feedback based on the diagnosed level:
+    -   **Beginner**: Simple, intuitive improvement suggestions focusing on basic vocabulary.
+    -   **Intermediate**: Concrete feedback focusing on grammatical accuracy and expressive power.
+    -   **Advanced**: Professional feedback on advanced vocabulary usage, stylistic completeness, and logical structure.
+-   **Dynamic Level Adjustment**: Automatically adjusts the feedback level in real-time by detecting improvements in the user's language skills during service use.
+
+### Sophisticated Tone Conversion Based on Context
+Users can directly set detailed situational information to generate sophisticated conversion results tailored to the actual situation, rather than mechanical conversions.
+-   **Detailed Context Settings**: Allows users to specify the following through dropdown menus:
+    -   **Audience**: Elementary students, university students, teachers, parents, etc.
+    -   **Communication Purpose**: Class explanations, assignment instructions, evaluation feedback, etc.
+    -   **Difficulty & Situation**: Beginner/Intermediate/Advanced, regular class/individual tutoring, etc.
+-   **Specialized Educational Tone Conversion**: Provides conversions optimized for language education and literacy improvement.
+    -   **Intelligent Vocabulary Explanation**: Automatically identifies difficult vocabulary and provides explanations with examples suited to the learner's level.
+    -   **Phased Sentence Complexity Control**: Optimizes sentence length and use of conjunctions to match the learner's level.
+    -   **Enhanced Context-Based Explanations**: Improves comprehension by using analogies and examples connected to real life.
+
+### Multi-Dimensional Quality Evaluation & Analysis
+We go beyond simple style comparisons to comprehensively analyze the quality of conversion results and suggest improvements through a multi-dimensional evaluation system.
+-   **Three Core Evaluation Axes**:
+    1.  **Learner-Fit Evaluation**: Assesses comprehension level and vocabulary suitability for the target learner.
+    2.  **Context-Fit Evaluation**: Checks logical flow and delivery in light of the educational purpose.
+    3.  **Style-Fit Evaluation**: Verifies the naturalness of the sentence and compliance with stylistic constraints (e.g., negative prompts).
+-   **Enhanced Embedding and RAG-Based Scoring**: Combines an embedding model covering the full scope of literacy education with a RAG-based analysis logic to provide objective, scored learning metrics.
 
 ---
 
-## 프로젝트 구조 (Project Structure)
+## Tech Stack
 
+| Category | Stack/Library | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React.js, TypeScript, Zustand | UI, Type Safety, State Management |
+| **Backend** | FastAPI | Unified API Server, ML Model Serving |
+| **ML** | LoRA, KoGPT, KoAlpaca, HuggingFace Transformers | Style Conversion, Text Generation, RAG |
+| **Database** | PostgreSQL, FAISS, Redis | Data Storage, Vector Search, Caching |
+
+---
+
+## Project Structure
 chattoner/
 ├── client/
-│ └── ... (React 프론트엔드)
-├── server/
-│ └── ... (Express 프록시)
+│ └── ... (React Frontend)
 ├── python_backend/
 │ ├── app/
 │ ├── ml/
 │ └── requirements.txt
 ├── docker-compose.yml
 └── README.md
-
-text
-
----
-
-## 설치 및 실행 (Installation & Setup)
-
-1. **프로젝트 클론**
-
-   ```
-   git clone https://github.com/your-username/chat-toner.git
-   cd chat-toner
-   ```
-
-2. **환경 구성**
-
-   ```
-   npm install              # Node.js
-   cd client && npm install # 클라이언트
-   cd ../python_backend && pip install -r requirements.txt
-   ```
-
-3. **DB 및 환경 변수**
-
-   ```
-   createdb chattoner
-   cp .env.example .env
-   # .env에서 DB 연결 정보 수정
-   ```
-
-4. **실행**
-   ```
-   npm run dev          # Dev 전체 실행
-   # 또는
-   npm run client       # React
-   npm run server       # Express
-   npm run python       # Flask
-   ```
+*The server architecture has been consolidated into a single FastAPI server to improve maintainability.*
 
 ---
 
-## 사용 방법 (Usage)
+## Installation & Setup
 
-- 텍스트 입력 → 상황 선택(업무/친구/공식) → 변환 옵션 선택 → 결과 피드백 제공
-
----
-
-## 개발 전략 (Development Strategy)
-
-- **MVP**: 프롬프트 기반 기본 기능 우선
-- **모델 개발**: LoRA 활용 개인화 고도화
-- **통합**: RAG, 벡터 검색 최적화
-- **성능/UX 최적화**
-
----
-
-## 평가 방법
-
-- 결과 적절성 수동 평가, 사용자 O/X 만족도 조사
-- 다양한 알고리즘(A/B) 성능 비교
-
----
-
-## 기여하기 (Contributing)
-
-1. Fork this repo
-2. Create feature branch (`git checkout -b feature/NewFeature`)
-3. Commit (`git commit -m 'Add ...'`)
-4. Push (`git push origin feature/NewFeature`)
-5. Pull Request 제출
+1.  **Clone the project**
+    ```
+    git clone [https://github.com/your-username/chat-toner.git](https://github.com/your-username/chat-toner.git)
+    cd chat-toner
+    ```
+2.  **Set up the environment**
+    ```
+    cd client && npm install # Client
+    cd ../python_backend && pip install -r requirements.txt
+    ```
+3.  **DB & Environment Variables**
+    ```
+    createdb chattoner
+    cp .env.example .env
+    # Modify DB connection info in .env
+    ```
+4.  **Run the application**
+    ```
+    docker-compose up --build
+    ```
 
 ---
 
-## 팀원 소개 (Team)
-
-| 이름       | 역할        | 담당 내용                      | 연락처                  |
-| :--------- | :---------- | :----------------------------- | :---------------------- |
-| **윤지원** | PM          | 프로젝트 기획, 총괄            | geenieeyoon@gmail.com   |
-| **권유진** | Development | 풀스택, ML 모델 개발 지원      | thinz0083@daum.net      |
-| **김지민** | Development | 파인튜닝, RAG 구현             | onlypotato637@gmail.com |
-| **정지은** | Development | 모델 개발, 파인튜닝            | jje49jieun@gmail.com    |
-| **하지민** | Development | 프론트엔드 설계·구현, API 연동 | tracygkwlals@gmail.com  |
-
-> **APPS (앱/웹 개발 학회)**  
-> 이 프로젝트는 숙명여자대학교 소프트웨어학부 학회 APPS에서 수행하는 연구 프로젝트입니다.
+## Evaluation Method
+ChatToner comprehensively evaluates conversion quality based on three key axes: **Learner-Fit Evaluation**, **Context-Fit Evaluation**, and **Style-Fit Evaluation**. It derives objective scores through enhanced embeddings and RAG, providing users with practical improvement metrics.
 
 ---
 
-## 연락처 (Contact)
+## Contributing
 
-- Email: [앱스 학회 이메일]
-- GitHub: [https://github.com/APPS-sookmyung/2025-CHATTONER-Server]
+1.  Fork this repo
+2.  Create a feature branch (`git checkout -b feature/NewFeature`)
+3.  Commit your changes (`git commit -m 'Add ...'`)
+4.  Push to the branch (`git push origin feature/NewFeature`)
+5.  Submit a Pull Request
+
+---
+
+## Team
+
+| Name | Role | Responsibilities | Contact |
+| :--- | :--- | :--- | :--- |
+| **Yoon Jiwon** | PM | Project Planning, Management | geenieeyoon@gmail.com |
+| **Kwon Yujin** | Development | Full-Stack, ML Model Support | thinz0083@daum.net |
+| **Kim Jimin** | Development | Fine-tuning, RAG Implementation | onlypotato637@gmail.com |
+| **Jeong Jieun** | Development | Model Development, Fine-tuning | jje49jieun@gmail.com |
+| **Ha Jimin** | Development | Frontend Design/Implementation, API Integration | tracygkwlals@gmail.com |
+
+> **APPS (App/Web Development Club)**
+> This project is a research project conducted by APPS, a club in the Department of Software at Sookmyung Women's University.
+
+---
+
+## Contact
+
+-   Email: [APPS Club Email]
+-   GitHub: [https://github.com/APPS-sookmyung/2025-CHATTONER-Server]
