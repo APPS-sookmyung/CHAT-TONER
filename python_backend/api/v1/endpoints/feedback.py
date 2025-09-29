@@ -24,7 +24,8 @@ class FeedbackRequest(BaseModel):
 class FeedbackResponse(BaseModel):
     status: str
     message: str
-    adjustments_made: Dict[str, Any] = {}
+    feedbackId: int
+    timestamp: str
 
 # Dependency injection
 def get_database_storage():
@@ -35,44 +36,24 @@ def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_stor
     openai_service = OpenAIService()
     return UserPreferencesService(db, openai_service)
 
-@router.post("")
+@router.post("", response_model=FeedbackResponse)
 async def submit_feedback(
     feedback: FeedbackRequest,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)
 ) -> FeedbackResponse:
     """사용자 피드백 처리 및 학습"""
     try:
-        # 피드백 기반 사용자 선호도 조정
-        adjustments = {}
-        
-        # 선택한 버전과 평점에 따른 선호도 조정 로직
-        if feedback.selectedVersion == "direct" and feedback.rating >= 4:
-            adjustments["directness_preference"] = "increased"
-        elif feedback.selectedVersion == "gentle" and feedback.rating >= 4:
-            adjustments["politeness_preference"] = "increased"
-        elif feedback.selectedVersion == "neutral" and feedback.rating >= 4:
-            adjustments["balance_preference"] = "maintained"
-        
-        # 낮은 평점의 경우 반대 방향으로 조정
-        if feedback.rating <= 2:
-            if feedback.selectedVersion == "direct":
-                adjustments["directness_preference"] = "decreased"
-            elif feedback.selectedVersion == "gentle":
-                adjustments["politeness_preference"] = "decreased"
-        
-        # 실제 학습 로직 (활성화됨)
-        user_service.process_feedback(feedback.userId, adjustments)
-        
-        # 피드백 데이터베이스 저장 (활성화됨)
-        was_saved = user_service.save_feedback(feedback)
+        # 서비스 레이어를 호출하여 피드백을 저장하고 업데이트된 기록을 받음
+        updated_record = user_service.save_feedback(feedback)
 
-        if not was_saved:
-            raise HTTPException(status_code=400, detail="Failed to save feedback.")
+        if not updated_record:
+            raise HTTPException(status_code=400, detail="피드백 저장에 실패했습니다. 해당 ID의 변환 기록을 찾을 수 없습니다.")
         
         return FeedbackResponse(
             status="success",
-            message="피드백이 성공적으로 처리되었습니다. 선호도가 업데이트되었습니다.",
-            adjustments_made=adjustments
+            message="피드백이 성공적으로 처리 및 저장되었습니다.",
+            feedbackId=updated_record['id'],
+            timestamp=updated_record['updated_at']
         )
         
     except HTTPException:

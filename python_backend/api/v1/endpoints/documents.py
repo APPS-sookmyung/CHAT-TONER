@@ -4,9 +4,10 @@ Documents Endpoints (stand-alone 회사용)
 """
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from typing import List, Optional, Annotated
+from typing import List, Optional, Annotated, Dict
 from pathlib import Path
 import shutil
+import os
 
 from .rag import get_rag_service  # 기존 RAG 서비스 싱글톤 재사용
 
@@ -20,6 +21,54 @@ def _get_documents_path() -> Path:
     path = cfg.documents_path
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+@router.get("/", response_model=List[str])
+async def list_documents(subdir: Optional[str] = None) -> List[str]:
+    """
+    업로드된 문서 목록을 조회합니다.
+    """
+    try:
+        base_dir = _get_documents_path()
+        target_dir = base_dir / subdir if subdir else base_dir
+        
+        if not target_dir.is_dir():
+            return []
+            
+        documents = []
+        for root, _, files in os.walk(target_dir):
+            for name in files:
+                # base_dir를 기준으로 한 상대 경로를 반환
+                relative_path = os.path.relpath(os.path.join(root, name), base_dir)
+                documents.append(str(relative_path))
+        
+        return documents
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"문서 목록 조회 실패: {e}")
+
+@router.delete("/{document_name:path}", response_model=Dict[str, str])
+async def delete_document(document_name: str) -> Dict[str, str]:
+    """
+    지정된 문서를 삭제합니다.
+    - document_name에 하위 디렉토리 경로를 포함할 수 있습니다. (예: subdir/doc.pdf)
+    """
+    try:
+        base_dir = _get_documents_path()
+        file_path = base_dir / document_name
+
+        if not file_path.is_file():
+            raise HTTPException(status_code=404, detail=f"문서를 찾을 수 없습니다: {document_name}")
+
+        file_path.unlink()  # 파일 삭제
+
+        # TODO: RAG 서비스에서 해당 문서의 인덱스도 삭제하는 로직 추가 필요
+        # rag_service.delete_document_from_index(str(file_path))
+
+        return {"message": f"문서가 성공적으로 삭제되었습니다: {document_name}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"문서 삭제 실패: {e}")
 
 
 @router.post("/upload")
