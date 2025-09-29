@@ -1,23 +1,22 @@
--- init.sql (PostgreSQL)
--- SQLAlchemy 모델을 기반으로 하되, 데이터 정합성과 모범 사례를 적용하여 수정함
+-- 통합된 최종 init.sql 스크립트
+-- 기본 사용자 기능과 기업용 확장 기능을 모두 포함하며, 데이터 정합성과 일관성을 보장합니다.
 
 BEGIN;
 
--- 1. 사용자 테이블
--- PK 타입을 Integer 대신 64비트 정수인 BIGINT를 사용하는 BIGSERIAL로 변경하여 확장성 확보
+-- =================================================================
+-- 1. 개인 사용자 관련 테이블 (init.sql 기반)
+-- =================================================================
+
+-- 1-1. 사용자 테이블
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS ix_users_id ON users(id);
 CREATE INDEX IF NOT EXISTS ix_users_username ON users(username);
 
-
--- 2. 사용자 프로필 테이블
--- [수정] user_id 타입을 users.id와 일치하는 BIGINT로 변경하고 외래 키 제약조건 추가
--- [추가] 사용자가 삭제되면 프로필도 함께 삭제되도록 ON DELETE CASCADE 설정
+-- 1-2. 사용자 프로필 테이블
 CREATE TABLE IF NOT EXISTS user_profiles (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -33,13 +32,9 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS ix_user_profiles_id ON user_profiles(id);
 CREATE INDEX IF NOT EXISTS ix_user_profiles_user_id ON user_profiles(user_id);
 
-
--- 3. 변환 기록 테이블
--- [수정] user_id 타입을 users.id와 일치하는 BIGINT로 변경하고 외래 키 제약조건 추가
--- [추가] 사용자가 삭제되어도 기록은 남도록 ON DELETE SET NULL 설정
+-- 1-3. 변환 기록 테이블
 CREATE TABLE IF NOT EXISTS conversion_history (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
@@ -54,12 +49,9 @@ CREATE TABLE IF NOT EXISTS conversion_history (
     model_used VARCHAR(50) DEFAULT 'gpt-4o',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS ix_conversion_history_id ON conversion_history(id);
 CREATE INDEX IF NOT EXISTS ix_conversion_history_user_id ON conversion_history(user_id);
 
-
--- 4. 네거티브 프롬프트 설정 테이블
--- [수정] user_id 타입을 users.id와 일치하는 BIGINT로 변경하고 외래 키 제약조건 추가
+-- 1-4. 네거티브 프롬프트 설정 테이블
 CREATE TABLE IF NOT EXISTS negative_preferences (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -73,69 +65,124 @@ CREATE TABLE IF NOT EXISTS negative_preferences (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS ix_negative_preferences_id ON negative_preferences(id);
 CREATE INDEX IF NOT EXISTS ix_negative_preferences_user_id ON negative_preferences(user_id);
 
+-- =================================================================
+-- 2. 기업용 확장 테이블 (database_migration.sql 기반, 수정 및 통합)
+-- =================================================================
 
--- 5. 벡터 문서 메타데이터 테이블
-CREATE TABLE IF NOT EXISTS vector_document_metadata (
-    id BIGSERIAL PRIMARY KEY,
-    document_hash VARCHAR(64) UNIQUE NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    file_path TEXT NOT NULL,
-    file_size_bytes BIGINT NOT NULL,
-    content_type VARCHAR(50) DEFAULT 'text/plain',
-    embedding_model VARCHAR(100) NOT NULL,
-    chunk_count INTEGER NOT NULL,
-    chunk_size INTEGER NOT NULL,
-    chunk_overlap INTEGER NOT NULL,
-    faiss_index_path TEXT NOT NULL,
-    vector_dimension INTEGER NOT NULL,
-    status VARCHAR(20) DEFAULT 'active',
-    last_accessed TIMESTAMPTZ DEFAULT now(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS ix_vector_document_metadata_id ON vector_document_metadata(id);
-CREATE INDEX IF NOT EXISTS ix_vector_document_metadata_document_hash ON vector_document_metadata(document_hash);
-
-
--- 6. RAG 질의 응답 기록 테이블
--- [수정] user_id 타입을 users.id와 일치하는 BIGINT로 변경하고 외래 키 제약조건 추가
-CREATE TABLE IF NOT EXISTS rag_query_history (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    query_text TEXT NOT NULL,
-    query_hash VARCHAR(64) NOT NULL,
-    context_type VARCHAR(50) DEFAULT 'general',
-    retrieved_documents JSONB DEFAULT '[]',
-    similarity_scores JSONB DEFAULT '[]',
-    total_search_time_ms INTEGER DEFAULT 0,
-    generated_answer TEXT,
-    answer_quality_score REAL,
-    model_used VARCHAR(50) DEFAULT 'gpt-4',
-    total_generation_time_ms INTEGER DEFAULT 0,
-    user_rating INTEGER,
-    user_feedback TEXT,
-    was_helpful BOOLEAN,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS ix_rag_query_history_id ON rag_query_history(id);
-CREATE INDEX IF NOT EXISTS ix_rag_query_history_user_id ON rag_query_history(user_id);
-CREATE INDEX IF NOT EXISTS ix_rag_query_history_query_hash ON rag_query_history(query_hash);
-
-
--- 7. 기업 프로필 테이블
+-- 2-1. 기업 프로필 테이블 (migration 파일의 상세한 구조를 채택)
 CREATE TABLE IF NOT EXISTS company_profiles (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255),
-    survey_data JSONB,
-    generated_profile TEXT,
+    company_name VARCHAR(255) NOT NULL,
+    industry VARCHAR(100),
+    team_size INTEGER,
+    primary_business TEXT,
+    communication_style VARCHAR(50), -- friendly, strict, formal
+    main_channels JSONB, -- ["slack", "discord", "email"]
+    target_audience JSONB, -- ["internal", "clients", "management"]
+    generated_profile TEXT, -- LLM이 생성한 커뮤니케이션 프로필
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS ix_company_profiles_id ON company_profiles(id);
-CREATE INDEX IF NOT EXISTS ix_company_profiles_name ON company_profiles(name);
+CREATE INDEX IF NOT EXISTS ix_company_profiles_company_name ON company_profiles(company_name);
+
+
+-- 2-2. 사용자-기업 연결 테이블 (역할 및 상태 관리)
+CREATE TABLE IF NOT EXISTS user_company_relations (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    company_id BIGINT NOT NULL REFERENCES company_profiles(id) ON DELETE CASCADE,
+    role VARCHAR(50) DEFAULT 'employee', -- admin, hr, employee
+    status VARCHAR(20) DEFAULT 'active', -- active, inactive, pending
+    onboarding_completed BOOLEAN DEFAULT FALSE,
+    joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(user_id, company_id)
+);
+CREATE INDEX IF NOT EXISTS ix_user_company_relations_user_id ON user_company_relations(user_id);
+CREATE INDEX IF NOT EXISTS ix_user_company_relations_company_id ON user_company_relations(company_id);
+
+
+-- 2-3. 커뮤니케이션 가이드라인 테이블
+CREATE TABLE IF NOT EXISTS communication_guidelines (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES company_profiles(id) ON DELETE CASCADE,
+    document_type VARCHAR(50) NOT NULL, -- pdf, text, manual_input
+    document_name VARCHAR(255),
+    document_content TEXT NOT NULL,
+    processed_chunks JSONB, -- 처리된 텍스트 청크
+    vector_embeddings JSONB, -- 벡터 임베딩
+    chunk_metadata JSONB, -- 청크 메타데이터
+    uploaded_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_communication_guidelines_company_id ON communication_guidelines(company_id);
+
+
+-- 2-4. 기업용 사용자 피드백 테이블
+CREATE TABLE IF NOT EXISTS company_user_feedback (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    company_id BIGINT NOT NULL REFERENCES company_profiles(id) ON DELETE CASCADE,
+    session_id VARCHAR(100),
+    original_text TEXT NOT NULL,
+    suggested_text TEXT NOT NULL,
+    feedback_type VARCHAR(20) NOT NULL, -- grammar, protocol
+    feedback_value VARCHAR(10) NOT NULL, -- good, bad
+    applied_in_final BOOLEAN DEFAULT FALSE,
+    metadata JSONB, -- 컨텍스트 정보
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_company_user_feedback_user_id ON company_user_feedback(user_id);
+CREATE INDEX IF NOT EXISTS ix_company_user_feedback_company_id ON company_user_feedback(company_id);
+
+
+-- 2-5. 기업 학습 데이터 테이블
+CREATE TABLE IF NOT EXISTS company_learning_data (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES company_profiles(id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    input_text TEXT NOT NULL,
+    output_text TEXT NOT NULL,
+    feedback VARCHAR(10), -- good, bad, neutral
+    context JSONB, -- 상황, 대상, 채널 정보
+    embedding JSONB, -- 벡터 임베딩
+    is_approved BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_company_learning_data_company_id ON company_learning_data(company_id);
+
+
+-- 2-6. 사용자별 기업 선호도 테이블
+CREATE TABLE IF NOT EXISTS user_company_preferences (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
+    personal_style JSONB, -- 개인 스타일 설정
+    negative_prompts TEXT, -- 피하고 싶은 스타일
+    preference_weights JSONB, -- 문법/프로토콜/개인 가중치
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (company_id) REFERENCES company_profiles(id) ON DELETE CASCADE,
+    UNIQUE(user_id, company_id)
+);
+CREATE INDEX IF NOT EXISTS ix_user_company_preferences_user_company ON user_company_preferences(user_id, company_id);
+
+
+-- 2-7. 설문조사 응답 테이블
+CREATE TABLE IF NOT EXISTS company_survey_responses (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES company_profiles(id) ON DELETE CASCADE,
+    respondent_name VARCHAR(255),
+    respondent_role VARCHAR(100),
+    survey_responses JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_company_survey_responses_company_id ON company_survey_responses(company_id);
 
 
 COMMIT;
