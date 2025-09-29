@@ -1,5 +1,5 @@
 import openai
-from schemas.survey import CompanySurvey
+from api.v1.schemas.survey import CompanySurvey
 
 class ProfileGeneratorService:
     def __init__(self):
