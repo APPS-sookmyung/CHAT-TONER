@@ -9,6 +9,9 @@ export default function ValidatePage() {
     setLocation("/");
   };
 
+  // 추후 실제 회사 ID는 상위 컨텍스트나 상태 관리 라이브러리에서 가져와야 합니다.
+  const companyId = "test-company-id";
+
   return (
     <main className="max-w-6xl mx-auto p-8">
       <div className="mb-4">
@@ -20,7 +23,7 @@ export default function ValidatePage() {
           ← 모드 선택으로
         </Button>
       </div>
-      <QualityValidator />
+      <QualityValidator companyId={companyId} />
     </main>
   );
 }
