@@ -89,8 +89,10 @@ const generateMockConversion = (
   ) => {
     let transformed = text;
 
+
     // Direct style - brief and clear
     if (style === "direct") {
+
       transformed = transformed
         .replace(/할 수 있을까요\?/g, "해주세요.")
         .replace(/해주시면 감사하겠습니다/g, "해주세요")
@@ -104,8 +106,10 @@ const generateMockConversion = (
         .replace(/~할 수도 있습니다/g, "~합니다");
     }
 
+
     // Gentle style - friendly and polite
     else if (style === "gentle") {
+
       transformed = transformed
         .replace(/해주세요/g, "해주시면 감사하겠습니다")
         .replace(/해주세요\./g, "해주시면 감사하겠습니다.")
@@ -117,8 +121,10 @@ const generateMockConversion = (
         .replace(/~해요/g, "~하시는 것 같아요");
     }
 
+
     // Neutral style - balanced expression
     else if (style === "neutral") {
+
       transformed = transformed
         .replace(/해주세요/g, "부탁드립니다")
         .replace(/할 수 있을까요\?/g, "해주실 수 있을까요?")
@@ -309,6 +315,7 @@ export default function NewTextConverter({
         timestamp: new Date().toISOString(),
       };
 
+
       const existingFeedback = JSON.parse(
         localStorage.getItem("chatToner_feedback") || "[]"
       );
@@ -317,6 +324,7 @@ export default function NewTextConverter({
         "chatToner_feedback",
         JSON.stringify(existingFeedback)
       );
+
 
       return { success: true };
     },
@@ -464,12 +472,14 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.rhetoricLevel}
+
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           rhetoricLevel: value,
                         })
                       }
+
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -488,12 +498,14 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.repetitionTolerance}
+
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           repetitionTolerance: value,
                         })
                       }
+
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -512,12 +524,14 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.punctuationStyle}
+
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           punctuationStyle: value,
                         })
                       }
+
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -536,12 +550,15 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.contentFocus}
+
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           contentFocus: value,
                         })
                       }
+
+
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -560,12 +577,14 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.bulletPreference}
+
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           bulletPreference: value,
                         })
                       }
+
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -584,12 +603,14 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.emoticonPolicy}
+
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           emoticonPolicy: value,
                         })
                       }
+
                     >
                       <SelectTrigger>
                         <SelectValue />

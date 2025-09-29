@@ -11,6 +11,7 @@ COPY . .
 
 # (선택) 빌드 시 API URL 주입: import.meta.env.VITE_API_URL 로 사용
 ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
 RUN if [ -n "$VITE_API_URL" ]; then echo "VITE_API_URL=$VITE_API_URL" > .env.production; fi
 
 # Build (generate dist/)
