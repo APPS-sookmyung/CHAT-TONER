@@ -1,7 +1,7 @@
 // client/src/types/rag.ts
 export type RagSource = {
   content: string;
-  source?: string;         // "business_style.txt" 등
+  source?: string; // e.g., "business_style.txt"
   metadata?: any;
 };
 

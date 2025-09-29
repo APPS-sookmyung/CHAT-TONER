@@ -13,7 +13,7 @@ interface WelcomeModalProps {
   onClose: () => void;
   hasProfile: boolean;
   onStartQuestionnaire: () => void;
-  onStartUpload: () => void; // 추가
+  onStartUpload: () => void; // Added
 }
 
 export default function WelcomeModal({
@@ -21,10 +21,10 @@ export default function WelcomeModal({
   onClose,
   hasProfile,
   onStartQuestionnaire,
-  onStartUpload, // 추가
+  onStartUpload, // Added
 }: WelcomeModalProps) {
   if (hasProfile) {
-    // 기존 사용자용 모달
+    // Modal for existing users
     return (
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-md">
@@ -45,7 +45,11 @@ export default function WelcomeModal({
             <Button onClick={onStartQuestionnaire} className="w-full">
               프로필 수정하기 (설문)
             </Button>
-            <Button variant="outline" onClick={onStartUpload} className="w-full">
+            <Button
+              variant="outline"
+              onClick={onStartUpload}
+              className="w-full"
+            >
               프로필 수정하기 (문서)
             </Button>
           </div>
@@ -54,7 +58,7 @@ export default function WelcomeModal({
     );
   }
 
-  // 신규 사용자용 모달
+  // Modal for new users
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
@@ -63,28 +67,28 @@ export default function WelcomeModal({
             <UserPlus className="w-5 h-5 text-[#00C4B7]" />
             환영합니다! 말투 프로필 만들기
           </DialogTitle>
-          <DialogDescription className="text-base pt-2">
+          <DialogDescription className="pt-2 text-base">
             기업의 정체성을 담은 말투 프로필을 만들어 보세요. 두 가지 방법 중
             하나를 선택할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+        <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
           <Button
             variant="outline"
-            className="h-auto w-full p-4 flex flex-col items-start justify-start gap-2"
+            className="flex flex-col items-start justify-start w-full h-auto gap-2 p-4"
             onClick={onStartQuestionnaire}
           >
-            <div className="font-bold text-lg">설문조사로 시작</div>
+            <div className="text-lg font-bold">설문조사로 시작</div>
             <p className="text-sm text-left text-gray-500 whitespace-normal">
               몇 가지 질문에 답변하여 기업의 톤앤매너를 정의합니다.
             </p>
           </Button>
           <Button
             variant="outline"
-            className="h-auto w-full p-4 flex flex-col items-start justify-start gap-2"
+            className="flex flex-col items-start justify-start w-full h-auto gap-2 p-4"
             onClick={onStartUpload}
           >
-            <div className="font-bold text-lg">문서 업로드로 시작</div>
+            <div className="text-lg font-bold">문서 업로드로 시작</div>
             <p className="text-sm text-left text-gray-500 whitespace-normal">
               기존 문서를 업로드하여 AI가 톤앤매너를 자동으로 학습합니다.
             </p>
