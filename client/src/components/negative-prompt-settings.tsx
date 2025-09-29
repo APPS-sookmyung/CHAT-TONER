@@ -330,7 +330,7 @@ export function NegativePromptSettings({
         {/* Emoticon policy */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">😊</Badge>
+            <Badge variant="outline">Positive</Badge>
             <Label className="text-base font-medium">이모티콘 사용 정책</Label>
           </div>
           <p className="text-sm text-muted-foreground">
