@@ -52,7 +52,7 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
           category: "문법",
           original: "이부분",
           suggestion: "이 부분",
-          reason: "띄어쓰기 오류",
+          reason: "Spacing error",
           severity: "low",
         },
       ],
@@ -65,14 +65,14 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
           category: "프로토콜",
           original: "수고하세요",
           suggestion: "감사합니다",
-          reason: "가이드라인에 따라 '수고하세요'는 지양",
+          reason: "Avoid '수고하세요' according to guidelines",
           severity: "medium",
         },
       ],
     },
     companyAnalysis: {
       companyId: "test-company",
-      communicationStyle: "간결하고 명확함",
+      communicationStyle: "Brief and clear",
       complianceLevel: 86,
       methodUsed: "RAG + Fine-tuning (mock)",
       processingTime: 0.5,
@@ -105,7 +105,7 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
           .join(", ");
         toast({
           title: "오류",
-          description: `${missing}를 찾을 수 없습니다.`,
+          description: `Cannot find ${missing}`,
           variant: "destructive",
         });
         throw new Error(`${missing} not found`);
@@ -125,14 +125,14 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
         });
 
         if (!response.ok) {
-          throw new Error(`API 호출 실패: ${response.status}`);
+          throw new Error(`API call failed: ${response.status}`);
         }
         return response.json();
       } catch (error) {
-        console.error("API 호출 실패:", error);
+        console.error("API call failed:", error);
         toast({
-          title: "API 호출 실패",
-          description: "Mock 데이터를 대신 표시합니다.",
+          title: "API Call Failed",
+          description: "Showing mock data instead.",
           variant: "destructive",
         });
         return generateMockAnalysis(text);
@@ -141,14 +141,14 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
     onSuccess: (data) => {
       setAnalysis(data);
       toast({
-        title: "분석 완료",
-        description: "텍스트 품질 분석이 완료되었습니다.",
+        title: "Analysis Complete",
+        description: "Text quality analysis has been completed.",
       });
     },
     onError: (error: any) => {
-      if (error.message.includes("not found")) return; // ID not found 오류는 이미 토스트 처리됨
+      if (error.message.includes("not found")) return; // ID not found errors are already handled by toast
       toast({
-        title: "분석 실패",
+        title: "Analysis Failed",
         description: error.message,
         variant: "destructive",
       });

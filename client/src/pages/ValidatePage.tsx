@@ -9,7 +9,7 @@ export default function ValidatePage() {
     setLocation("/");
   };
 
-  // 추후 실제 회사 ID는 상위 컨텍스트나 상태 관리 라이브러리에서 가져와야 합니다.
+  // Later, the actual company ID should be obtained from parent context or state management library.
   const companyId = "test-company-id";
 
   return (

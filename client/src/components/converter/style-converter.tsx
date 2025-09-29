@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -27,7 +27,7 @@ interface StyleAnalysis {
   softness_score: number;
   politeness_score: number;
   converted_text: string;
-  suggestions: Array<{ 
+  suggestions: Array<{
     type: "directness" | "softness" | "politeness";
     original: string;
     suggestion: string;
@@ -35,7 +35,7 @@ interface StyleAnalysis {
   }>;
 }
 
-// 임시 모의 데이터 생성 함수
+// Temporary mock data generation function
 const generateMockAnalysis = (text: string): StyleAnalysis => {
   return {
     directness_score: Math.floor(Math.random() * 50) + 50,
@@ -72,12 +72,12 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
 
   const convertMutation = useMutation({
     mutationFn: async (text: string): Promise<StyleAnalysis> => {
-      // TODO: 실제 스타일 변환 API 호출 로직으로 교체해야 합니다.
+      // TODO: Replace with actual style conversion API call logic.
       // const { rag } = await import("@/lib/rag");
       // const result = await rag.convertText({ query: text, user_profile: userProfile });
-      
-      // 현재는 2초 후 모의 데이터를 반환합니다.
-      return new Promise(resolve => {
+
+      // Currently returns mock data after 2 seconds.
+      return new Promise((resolve) => {
         setTimeout(() => {
           resolve(generateMockAnalysis(text));
         }, 2000);
@@ -179,7 +179,9 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
             </CardHeader>
             <CardContent>
               <div className="bg-sky-50 rounded-lg p-4 border border-sky-200">
-                <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{analysis.converted_text}</p>
+                <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                  {analysis.converted_text}
+                </p>
               </div>
               <div className="flex gap-2 mt-4">
                 <Button

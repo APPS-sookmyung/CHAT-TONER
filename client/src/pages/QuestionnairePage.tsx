@@ -5,7 +5,7 @@ import { questions } from "@/data/questions";
 import type { UserProfile, UserResponses } from "@shared/schema";
 import { useLocation } from "wouter";
 
-// 상수 관리
+// Constants management
 const STORAGE_KEYS = {
   USER_ID: "chatToner_userId",
   QUESTIONNAIRE_INDEX: "chatToner_q_index",
@@ -13,17 +13,18 @@ const STORAGE_KEYS = {
   USER_PROFILE: "chatToner_profile",
 };
 
-// 안정적인 UUID 생성 함수
+// Stable UUID generation function
 const generateUUID = () => {
   if (crypto && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   // fallback for non-secure contexts
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c == "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
+};
 
 const getUserId = () => {
   let id = localStorage.getItem(STORAGE_KEYS.USER_ID);
@@ -53,13 +54,20 @@ export default function QuestionnairePage() {
   }, [idx]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.QUESTIONNAIRE_RESPONSES, JSON.stringify(responses));
+    localStorage.setItem(
+      STORAGE_KEYS.QUESTIONNAIRE_RESPONSES,
+      JSON.stringify(responses)
+    );
   }, [responses]);
 
   const currentQuestion = questions[idx];
   const progress = Math.round(((idx + 1) / questions.length) * 100);
 
-  const handleAnswerChange = (qid: string, selected: string[], custom?: string) => {
+  const handleAnswerChange = (
+    qid: string,
+    selected: string[],
+    custom?: string
+  ) => {
     setResponses((prev) => ({
       ...prev,
       [qid]: selected,
@@ -68,13 +76,15 @@ export default function QuestionnairePage() {
   };
 
   const toResults = async () => {
-    // 새로운 기업용 설문 응답을 처리하는 로직 (임시)
-    // 추후 백엔드 API와 연동하여 실제 프로필을 생성해야 합니다.
+    // Logic for handling new company questionnaire responses (temporary)
+    // Later, this should be integrated with backend API to create actual profiles.
     console.log("Submitting company questionnaire responses:", responses);
 
-    const profileSummary = `주요 업무: ${responses.company_business_category?.[0] || 'N/A'}\n소통 문화: ${responses.communication_style_overall?.[0] || 'N/A'}`;
+    const profileSummary = `주요 업무: ${
+      responses.company_business_category?.[0] || "N/A"
+    }\n소통 문화: ${responses.communication_style_overall?.[0] || "N/A"}`;
 
-    // 임시로 로컬 스토리지에 저장하고 결과 페이지로 이동
+    // Temporarily save to localStorage and navigate to results page
     const tempProfile = {
       userId,
       companyProfile: responses,
@@ -82,11 +92,15 @@ export default function QuestionnairePage() {
       completedAt: new Date(),
     };
 
-    localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(tempProfile));
-    setLoc("/style-definition/results"); // 결과 페이지 경로는 추후 기업용으로 변경될 수 있음
+    localStorage.setItem(
+      STORAGE_KEYS.USER_PROFILE,
+      JSON.stringify(tempProfile)
+    );
+    setLoc("/style-definition/results"); // Results page path may be changed to enterprise version later
   };
 
-  const next = () => (idx < questions.length - 1 ? setIdx(idx + 1) : toResults());
+  const next = () =>
+    idx < questions.length - 1 ? setIdx(idx + 1) : toResults();
   const prev = () => idx > 0 && setIdx(idx - 1);
 
   useEffect(() => {

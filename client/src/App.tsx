@@ -10,7 +10,7 @@ import QuestionnairePage from "@/pages/QuestionnairePage";
 import ResultsPage from "@/pages/ResultsPage";
 import ConverterPage from "@/pages/ConverterPage";
 import ValidatePage from "@/pages/ValidatePage";
-import UploadPage from "@/pages/UploadPage"; // 추가
+import UploadPage from "@/pages/UploadPage"; // Added
 import NotFound from "@/pages/not-found";
 import Layout from "@/pages/layout";
 
