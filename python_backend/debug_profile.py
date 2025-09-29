@@ -31,17 +31,17 @@ def test_profile_save():
         print(f"저장 결과: {result}")
         
         if result:
-            print("✅ 프로필 저장 성공!")
+            print("Profile saved successfully!")
             
             # 저장된 프로필 조회해보기
             print("\n저장된 프로필 조회 중...")
             saved_profile = storage.get_user_profile(user_id)
             print(f"조회된 프로필: {saved_profile}")
         else:
-            print("❌ 프로필 저장 실패")
+            print("Failed to save profile")
             
     except Exception as e:
-        print(f"❌ 에러 발생: {e}")
+        print(f"Error occurred: {e}")
         traceback.print_exc()
 
 if __name__ == "__main__":

@@ -384,23 +384,23 @@ def get_vector_store_stats() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # 테스트 코드
-    print("🔍 FAISS 벡터 데이터베이스 테스트")
+    print("FAISS vector database test")
     
     # 문서 인덱싱
     vectorstore, docs = ingest_documents_from_folder(DOCUMENTS_PATH)
     
     if vectorstore:
-        print(f"✅ 인덱싱 완료: {len(docs)}개 문서")
+        print(f"Indexing complete: {len(docs)} documents")
         
         # 검색 테스트
         test_query = "비즈니스 메일 작성"
         results = search_similar_documents(test_query, top_k=3)
         
-        print(f"\n🔍 검색 결과 ('{test_query}'):")
+        print(f"\nSearch results ('{test_query}'):")
         for i, (doc, score) in enumerate(results, 1):
             print(f"{i}. 점수: {score:.3f}")
             print(f"   내용: {doc.page_content[:100]}...")
             print(f"   출처: {doc.metadata.get('source', 'Unknown')}")
             print()
     else:
-        print("❌ 인덱싱 실패")
+        print("Indexing failed")
