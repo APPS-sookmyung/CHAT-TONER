@@ -9,7 +9,6 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
 # 기존 imports
-from .quality_analysis_service import QualityAnalysisService, QualityAnalysisConfig
 from .rag_service import RAGService
 
 # 새로운 imports
