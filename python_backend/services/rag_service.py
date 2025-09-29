@@ -91,7 +91,7 @@ class RAGService:
                 return
             
             # 새로 생성
-            docs_path = Path("python_backend/langchain_pipeline/data/documents")
+            docs_path = Path("langchain_pipeline/data/documents")
             if create_embeddings_from_documents(docs_path) and self.simple_embedder.load():
                 logger.info("Simple Text Embedder 생성 및 로드 완료")
             else:
@@ -105,7 +105,7 @@ class RAGService:
     def _load_documents(self) -> list:
         """문서 로드 공통 함수"""
         from pathlib import Path
-        docs_path = Path("python_backend/langchain_pipeline/data/documents")
+        docs_path = Path("langchain_pipeline/data/documents")
         documents = []
         
         if not docs_path.exists():

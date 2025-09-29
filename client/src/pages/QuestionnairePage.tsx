@@ -1,17 +1,35 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/questionnaire/progress-bar";
 import QuestionCard from "@/components/questionnaire/question-card";
 import { questions } from "@/data/questions";
 import type { UserProfile, UserResponses } from "@shared/schema";
 import { useLocation } from "wouter";
 
-const USER_ID_KEY = "chatToner_userId";
+// 상수 관리
+const STORAGE_KEYS = {
+  USER_ID: "chatToner_userId",
+  QUESTIONNAIRE_INDEX: "chatToner_q_index",
+  QUESTIONNAIRE_RESPONSES: "chatToner_q_responses",
+  USER_PROFILE: "chatToner_profile",
+};
+
+// 안정적인 UUID 생성 함수
+const generateUUID = () => {
+  if (crypto && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // fallback for non-secure contexts
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 const getUserId = () => {
-  let id = localStorage.getItem(USER_ID_KEY);
+  let id = localStorage.getItem(STORAGE_KEYS.USER_ID);
   if (!id) {
-    id = crypto?.randomUUID?.() ?? `user_${Date.now()}`;
-    localStorage.setItem(USER_ID_KEY, id);
+    id = generateUUID();
+    localStorage.setItem(STORAGE_KEYS.USER_ID, id);
   }
   return id;
 };
@@ -20,30 +38,28 @@ export default function QuestionnairePage() {
   const [, setLoc] = useLocation();
   const userId = getUserId();
 
-  const [idx, setIdx] = useState<number>(() => {
-    const raw = localStorage.getItem("chatToner_q_index");
-    return raw ? JSON.parse(raw) : 0;
-  });
-  const [responses, setResponses] = useState<Record<string, any>>(() => {
-    const raw = localStorage.getItem("chatToner_q_responses");
-    return raw ? JSON.parse(raw) : {};
-  });
+  const [idx, setIdx] = useState<number>(0);
+  const [responses, setResponses] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    localStorage.setItem("chatToner_q_index", JSON.stringify(idx));
-  }, [idx]);
+    localStorage.removeItem(STORAGE_KEYS.QUESTIONNAIRE_INDEX);
+    localStorage.removeItem(STORAGE_KEYS.QUESTIONNAIRE_RESPONSES);
+    setIdx(0);
+    setResponses({});
+  }, []);
+
   useEffect(() => {
-    localStorage.setItem("chatToner_q_responses", JSON.stringify(responses));
+    localStorage.setItem(STORAGE_KEYS.QUESTIONNAIRE_INDEX, JSON.stringify(idx));
+  }, [idx]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.QUESTIONNAIRE_RESPONSES, JSON.stringify(responses));
   }, [responses]);
 
-  const current = questions[idx];
+  const currentQuestion = questions[idx];
   const progress = Math.round(((idx + 1) / questions.length) * 100);
 
-  const handleAnswerChange = (
-    qid: string,
-    selected: string[],
-    custom?: string
-  ) => {
+  const handleAnswerChange = (qid: string, selected: string[], custom?: string) => {
     setResponses((prev) => ({
       ...prev,
       [qid]: selected,
@@ -52,79 +68,30 @@ export default function QuestionnairePage() {
   };
 
   const toResults = async () => {
-    const processed: UserResponses = {
-      formality_level: parseInt(responses.formality_level?.[0] || "5"),
-      friendliness_level: parseInt(responses.friendliness_level?.[0] || "5"),
-      emotion_level: parseInt(responses.emotion_expression?.[0] || "5"),
-      directness_level: 5,
-      uses_abbreviations:
-        responses.abbreviation_usage?.[0] === "자주 사용" ||
-        responses.abbreviation_usage?.[0] === "매우 자주 사용",
-      uses_emoticons:
-        responses.emoticon_usage?.[0] === "자주 사용" ||
-        responses.emoticon_usage?.[0] === "매우 자주 사용",
-      gratitude_expressions: responses.gratitude_senior || [],
-      request_expressions: responses.request_colleague || [],
-      situation_responses: responses,
-    };
+    // 새로운 기업용 설문 응답을 처리하는 로직 (임시)
+    // 추후 백엔드 API와 연동하여 실제 프로필을 생성해야 합니다.
+    console.log("Submitting company questionnaire responses:", responses);
 
-    const profileData = {
+    const profileSummary = `주요 업무: ${responses.company_business_category?.[0] || 'N/A'}\n소통 문화: ${responses.communication_style_overall?.[0] || 'N/A'}`;
+
+    // 임시로 로컬 스토리지에 저장하고 결과 페이지로 이동
+    const tempProfile = {
       userId,
-      baseFormalityLevel: processed.formality_level,
-      baseFriendlinessLevel: processed.friendliness_level,
-      baseEmotionLevel: processed.emotion_level,
-      baseDirectnessLevel: processed.directness_level || 5,
-      responses: processed,
+      companyProfile: responses,
+      summary: profileSummary,
+      completedAt: new Date(),
     };
 
-    // 백엔드 API 없이 로컬 스토리지만 사용
-    const saved: UserProfile = {
-      id: 0,
-      ...profileData,
-      completedAt: new Date(),
-    } as UserProfile;
-    
-    localStorage.setItem("chatToner_profile", JSON.stringify(saved));
-    setLoc("/results");
+    localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(tempProfile));
+    setLoc("/style-definition/results"); // 결과 페이지 경로는 추후 기업용으로 변경될 수 있음
   };
 
-  const next = () =>
-    idx < questions.length - 1 ? setIdx(idx + 1) : toResults();
+  const next = () => (idx < questions.length - 1 ? setIdx(idx + 1) : toResults());
   const prev = () => idx > 0 && setIdx(idx - 1);
-  const skip = () => next(); // 건너뛰기도 next와 동일하게 처리
 
-  const skipAllToConverter = async () => {
-    const defaultProfileData = {
-      userId,
-      baseFormalityLevel: 5,
-      baseFriendlinessLevel: 5,
-      baseEmotionLevel: 5,
-      baseDirectnessLevel: 5,
-      responses: {
-        formality_level: 5,
-        friendliness_level: 5,
-        emotion_level: 5,
-        directness_level: 5,
-        uses_abbreviations: false,
-        uses_emoticons: false,
-        gratitude_expressions: ["감사합니다"],
-        request_expressions: ["도움 좀 받을 수 있을까요?"],
-        situation_responses: {},
-      },
-    };
-
-    // 백엔드 API 없이 로컬 스토리지만 사용
-    const saved: UserProfile = {
-      id: 0,
-      ...defaultProfileData,
-      completedAt: new Date(),
-    } as UserProfile;
-    
-    localStorage.setItem("chatToner_profile", JSON.stringify(saved));
-    setLoc("/converter");
-  };
-
-  useEffect(() => window.scrollTo({ top: 0, behavior: "auto" }), [idx]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [idx]);
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -134,21 +101,14 @@ export default function QuestionnairePage() {
         progress={progress}
       />
 
-      <div className="text-center">
-        <Button variant="outline" onClick={skipAllToConverter} className="mb-4">
-          설문 건너뛰고 바로 변환기 사용하기
-        </Button>
-      </div>
-
-      {current && (
+      {currentQuestion && (
         <QuestionCard
-          question={current}
-          selectedOptions={responses[current.id] || []}
-          customInput={responses[`${current.id}_custom`] || ""}
+          question={currentQuestion}
+          selectedOptions={responses[currentQuestion.id] || []}
+          customInput={responses[`${currentQuestion.id}_custom`] || ""}
           onAnswerChange={handleAnswerChange}
           onNext={next}
           onPrevious={prev}
-          onSkip={skip}
           canGoBack={idx > 0}
           isLastQuestion={idx === questions.length - 1}
         />

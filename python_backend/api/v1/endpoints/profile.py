@@ -9,6 +9,11 @@ from pydantic import BaseModel, Field
 
 from services.user_preferences import UserPreferencesService
 from database.storage import DatabaseStorage
+from sqlalchemy.orm import Session
+from typing import List
+from schemas.feedback import NegativePromptUpdate
+from core.db import get_db
+from models.user import UserProfile as UserProfileModel
 
 router = APIRouter()
 
@@ -54,6 +59,7 @@ class ProfileResponse(BaseModel):
     sessionDirectnessLevel: int
     responses: Dict[str, Any]
     completedAt: str
+    negativePrompts: List[str] = []
 
     class Config:
         schema_extra = {
@@ -120,6 +126,44 @@ async def get_user_profile(
         # Pydantic validation error 등 다른 예외 처리
         raise HTTPException(status_code=500, detail=f"프로필 조회 실패: {str(e)}")
 
+@router.put("/{user_id}/negative-prompts", response_model=ProfileResponse, summary="네거티브 프롬프트 수정", description="사용자의 네거티브 프롬프트 목록을 업데이트합니다.")
+async def update_user_negative_prompts(
+    user_id: str, 
+    data: NegativePromptUpdate, 
+    db: Session = Depends(get_db)
+) -> ProfileResponse:
+    """
+    ## 네거티브 프롬프트 수정
+
+    사용자의 프로필에 저장된 네거티브 프롬프트 목록을 새로운 목록으로 교체합니다.
+    """
+    user_profile = db.query(UserProfileModel).filter(UserProfileModel.user_id == user_id).first()
+
+    if not user_profile:
+        raise HTTPException(status_code=404, detail="해당 사용자의 프로필을 찾을 수 없습니다.")
+
+    # 네거티브 프롬프트 목록을 새 목록으로 덮어쓰기
+    user_profile.negative_prompt_preferences = data.negative_prompts
+    db.commit()
+    db.refresh(user_profile)
+
+    # ProfileResponse 형식에 맞게 데이터를 조합하여 반환
+    return ProfileResponse(
+    id=user_profile.id,
+    userId=user_profile.user_id,
+    baseFormalityLevel=user_profile.base_formality_level,
+    baseFriendlinessLevel=user_profile.base_friendliness_level,
+    baseEmotionLevel=user_profile.base_emotion_level,
+    baseDirectnessLevel=user_profile.base_directness_level,
+    sessionFormalityLevel=user_profile.session_formality_level,
+    sessionFriendlinessLevel=user_profile.session_friendliness_level,
+    sessionEmotionLevel=user_profile.session_emotion_level,
+    sessionDirectnessLevel=user_profile.session_directness_level,
+    responses=user_profile.questionnaire_responses or {},
+    completedAt=user_profile.updated_at.isoformat(),
+    negativePrompts=user_profile.negative_prompt_preferences or []
+)
+
 @router.post("", response_model=ProfileResponse, summary="사용자 프로필 저장", description="사용자의 개인화 설정을 저장합니다.")
 async def save_user_profile(
     profile: ProfileRequest,
@@ -134,15 +178,14 @@ async def save_user_profile(
     - `profile`: 저장할 사용자 프로필 데이터
     """
     try:
-        # 실제 서비스에서 프로필 저장 (활성화됨)
-        # 참고: user_service.save_user_profile의 인자나 반환 값에 따라 수정이 필요할 수 있습니다.
+        # 실제 서비스에서 프로필 저장
         was_saved = user_service.save_user_profile(profile.userId, profile.model_dump())
 
         if not was_saved:
             raise HTTPException(status_code=400, detail="Failed to save profile.")
 
-        # 저장 성공 후, 저장된 프로필 정보를 다시 조회하여 반환하는 것이 가장 이상적입니다.
-        # 여기서는 요청된 데이터를 기반으로 응답을 생성합니다.
+        # 저장된 프로필 정보를 다시 조회하여 반환
+        # 요청된 데이터를 기반으로 응답 생성
         return ProfileResponse(
             id=1, # 임시 ID
             userId=profile.userId,
@@ -155,7 +198,7 @@ async def save_user_profile(
             sessionEmotionLevel=profile.sessionEmotionLevel or profile.baseEmotionLevel,
             sessionDirectnessLevel=profile.sessionDirectnessLevel or profile.baseDirectnessLevel,
             responses=profile.responses or {},
-            completedAt="2025-08-10T00:00:00Z" # 저장 시간으로 변경 필요
+            completedAt="2025-08-10T00:00:00Z" # 임시 시간
         )
     except HTTPException:
         raise

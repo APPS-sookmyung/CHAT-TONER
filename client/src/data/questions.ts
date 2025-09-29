@@ -1,6 +1,6 @@
 export interface Question {
   id: string;
-  category: 'situational' | 'preferences' | 'expressions';
+  category: 'company_profile' | 'communication_style';
   categoryLabel: string;
   question: string;
   description: string;
@@ -10,187 +10,105 @@ export interface Question {
 }
 
 export const questions: Question[] = [
-  // Situational Speaking Style
+  // 1. 기업 프로필
   {
-    id: 'gratitude_senior',
-    category: 'situational',
-    categoryLabel: '상황별 말투',
-    question: '선배님께 감사인사를 드릴 때 어떻게 표현하시나요?',
-    description: '평소 자주 사용하는 표현을 모두 선택해주세요 (복수 선택 가능)',
+    id: 'company_business_category',
+    category: 'company_profile',
+    categoryLabel: '기업 프로필',
+    question: '기업(팀)의 주요 업무 분야는 무엇입니까?',
+    description: '가장 핵심적인 비즈니스 영역을 선택해주세요.',
     options: [
-      '정말 감사합니다',
-      '감사해요~',
-      '고마워요',
-      '진짜 고맙습니다',
-      '너무 감사드려요'
+      'IT/소프트웨어 개발',
+      '제조/생산',
+      '금융/보험',
+      '유통/물류',
+      '미디어/콘텐츠',
+      '교육/연구',
     ],
-    allowMultiple: true,
+    allowMultiple: false,
     allowCustom: true
   },
   {
-    id: 'request_colleague',
-    category: 'situational',
-    categoryLabel: '상황별 말투',
-    question: '동료에게 도움을 요청할 때는?',
-    description: '업무나 일상에서 동료에게 부탁할 때 주로 사용하는 표현',
+    id: 'company_size',
+    category: 'company_profile',
+    categoryLabel: '기업 프로필',
+    question: '기업(팀)의 인원 수는 몇 명입니까?',
+    description: '함께 일하는 동료들의 규모를 알려주세요.',
     options: [
-      '혹시 시간 되시면 도와주실 수 있나요?',
-      '도움 좀 받을 수 있을까요?',
-      '이거 좀 도와줄래?',
-      '바쁘시겠지만 잠깐 도와주시면 감사하겠습니다',
-      '부탁 하나 있는데 괜찮으세요?'
-    ],
-    allowMultiple: true,
-    allowCustom: true
-  },
-  {
-    id: 'report_writing',
-    category: 'situational',
-    categoryLabel: '상황별 말투',
-    question: '보고서나 공식 문서를 작성할 때?',
-    description: '업무용 문서에서 선호하는 문체 스타일',
-    options: [
-      '~입니다/~습니다 (격식체)',
-      '~해요/~예요 (반격식체)',
-      '~함/~음 (간결체)',
-      '~드립니다/~겠습니다 (높임체)',
-      '~였습니다/~했습니다 (과거 존댓말)'
-    ],
-    allowMultiple: true,
-    allowCustom: false
-  },
-  {
-    id: 'friend_conversation',
-    category: 'situational',
-    categoryLabel: '상황별 말투',
-    question: '친구들과 대화할 때는?',
-    description: '편한 사이에서 주로 사용하는 말투',
-    options: [
-      '반말 (해/야)',
-      '존댓말 (해요/이에요)',
-      '상황에 따라 섞어서',
-      '친근한 존댓말 (해요~ 식)',
-      '방언이나 사투리'
-    ],
-    allowMultiple: true,
-    allowCustom: true
-  },
-  {
-    id: 'presentation_style',
-    category: 'situational',
-    categoryLabel: '상황별 말투',
-    question: '공식적인 발표를 할 때?',
-    description: '회의나 프레젠테이션에서의 선호 스타일',
-    options: [
-      '~습니다/~입니다 (표준 격식체)',
-      '~해요/~예요 (부드러운 격식체)',
-      '~겠습니다/~드리겠습니다 (정중 격식체)',
-      '간결하고 직접적인 표현',
-      '친근하면서도 격식있는 표현'
+      '1-10명',
+      '11-50명',
+      '51-200명',
+      '201-500명',
+      '501명 이상'
     ],
     allowMultiple: false,
     allowCustom: false
   },
 
-  // Language Preferences (Scale-based)
+  // 2. 소통 스타일
   {
-    id: 'formality_level',
-    category: 'preferences',
-    categoryLabel: '언어 선호도',
-    question: '평소 말투의 정중함 정도는?',
-    description: '1-10 척도로 선택해주세요 (1: 매우 캐주얼, 10: 매우 정중)',
-    options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-    allowMultiple: false,
-    allowCustom: false
-  },
-  {
-    id: 'friendliness_level',
-    category: 'preferences',
-    categoryLabel: '언어 선호도',
-    question: '친근함 정도는 어느 정도인가요?',
-    description: '1-10 척도 (1: 매우 딱딱함, 10: 매우 친근함)',
-    options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-    allowMultiple: false,
-    allowCustom: false
-  },
-  {
-    id: 'emotion_expression',
-    category: 'preferences',
-    categoryLabel: '언어 선호도',
-    question: '감정 표현을 얼마나 자주 하시나요?',
-    description: '1-10 척도 (1: 매우 담담함, 10: 감정 풍부)',
-    options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-    allowMultiple: false,
-    allowCustom: false
-  },
-
-  // Specific Expressions
-  {
-    id: 'abbreviation_usage',
-    category: 'expressions',
-    categoryLabel: '구체적 표현',
-    question: '줄임말이나 인터넷 용어를 얼마나 사용하시나요?',
-    description: '텍스트나 메신저에서의 사용 패턴',
+    id: 'communication_style_overall',
+    category: 'communication_style',
+    categoryLabel: '소통 스타일',
+    question: '기업(팀)의 전반적인 소통 문화는 어떻습니까?',
+    description: '조직의 분위기와 가장 가까운 것을 선택해주세요.',
     options: [
-      '거의 사용하지 않음',
-      '가끔 사용',
-      '자주 사용',
-      '매우 자주 사용',
-      '상황에 따라 다름'
+      '수평적이고 자유로운',
+      '위계적이고 체계적인',
+      '친근하고 유머러스한',
+      '데이터 기반의 간결한',
+      '공식적이고 격식있는'
     ],
     allowMultiple: false,
-    allowCustom: false
-  },
-  {
-    id: 'emoticon_usage',
-    category: 'expressions',
-    categoryLabel: '구체적 표현',
-    question: '이모티콘이나 이모지를 얼마나 사용하시나요?',
-    description: '😊, ㅎㅎ, ^^ 등의 감정 표현',
-    options: [
-      '전혀 사용하지 않음',
-      '가끔 사용 (중요할 때만)',
-      '자주 사용',
-      '매우 자주 사용',
-      '문장마다 거의 사용'
-    ],
-    allowMultiple: false,
-    allowCustom: false
-  },
-  {
-    id: 'closing_expressions',
-    category: 'expressions',
-    categoryLabel: '구체적 표현',
-    question: '대화를 마무리할 때 자주 사용하는 표현은?',
-    description: '메시지나 대화의 끝맺음 표현',
-    options: [
-      '감사합니다',
-      '고생하세요',
-      '수고하세요',
-      '그럼 이만~',
-      '잘 부탁드려요',
-      '연락드릴게요'
-    ],
-    allowMultiple: true,
     allowCustom: true
   },
   {
-    id: 'agreement_expressions',
-    category: 'expressions',
-    categoryLabel: '구체적 표현',
-    question: '동의하거나 긍정할 때 주로 사용하는 표현은?',
-    description: '상대방 의견에 동의할 때의 반응',
+    id: 'main_communication_channel',
+    category: 'communication_style',
+    categoryLabel: '소통 스타일',
+    question: '주로 사용하는 내부 소통 수단은 무엇입니까?',
+    description: '가장 빈번하게 사용하는 협업 툴을 선택해주세요.',
     options: [
-      '네, 맞습니다',
-      '그렇네요',
-      '맞아요',
-      '인정!',
-      '완전 동감',
-      '좋은 생각이에요'
+      'Slack',
+      '이메일(Email)',
+      'MS Teams',
+      'Discord',
+      '사내 메신저'
     ],
-    allowMultiple: true,
+    allowMultiple: false,
     allowCustom: true
-  }
+  },
+  {
+    id: 'main_communication_target',
+    category: 'communication_style',
+    categoryLabel: '소통 스타일',
+    question: '업무상 가장 자주 소통하는 대상은 누구입니까?',
+    description: '커뮤니케이션의 주된 상대를 선택해주세요.',
+    options: [
+      '같은 팀 내부 동료',
+      '다른 팀/타 부서 담당자',
+      '경영진/임원',
+      '외부 고객사/클라이언트',
+      '외부 협력업체'
+    ],
+    allowMultiple: false,
+    allowCustom: false
+  },
+  {
+    id: 'reporting_style_preference',
+    category: 'communication_style',
+    categoryLabel: '소통 스타일',
+    question: '보고서나 회의록 작성 시 어떤 스타일을 선호하나요?',
+    description: '공식 문서의 일반적인 톤앤매너를 선택해주세요.',
+    options: [
+      '두괄식의 핵심 요약 스타일',
+      '기승전결이 뚜렷한 서사 스타일',
+      '데이터와 지표 중심의 객관적 스타일',
+      '정중하고 격식있는 문어체 스타일'
+    ],
+    allowMultiple: false,
+    allowCustom: true
+  },
 ];
 
 export const getQuestionsByCategory = (category: Question['category']) => {
