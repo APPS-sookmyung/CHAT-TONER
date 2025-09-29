@@ -39,15 +39,15 @@ def create_app() -> FastAPI:
     #container.config.from_dict(settings.dict())
     container.config.from_dict(settings.model_dump())
 
-    # 와이어링 추가
+    # 와이어링 추가 (의존성 문제 있는 모듈 제외)
     container.wire(modules=[
         "api.v1.endpoints.conversion",
         "api.v1.endpoints.finetune",
         "api.v1.endpoints.health",
-        "api.v1.endpoints.profile", 
-        "api.v1.endpoints.quality",
+        "api.v1.endpoints.profile",
         "api.v1.endpoints.feedback",
         "api.v1.endpoints.rag"
+        # quality와 company는 의존성 문제로 제외
     ])
     
     # FastAPI 앱 생성
