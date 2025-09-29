@@ -121,14 +121,14 @@ ORDER BY table_name;
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
-  2. communication_guidelines 테이블 수정
+  -- 2. communication_guidelines 테이블 수정
 
-  벡터 임베딩 관련 컬럼 추가:
+  -- 벡터 임베딩 관련 컬럼 추가:
   ALTER TABLE communication_guidelines
   ADD COLUMN vector_embeddings JSONB,
   ADD COLUMN chunk_metadata JSONB;
 
-  3. 동적 쿼리 관련 테이블 추가
+  -- 3. 동적 쿼리 관련 테이블 추가
 
   -- 쿼리 분석 결과 저장
   CREATE TABLE query_analysis_results (

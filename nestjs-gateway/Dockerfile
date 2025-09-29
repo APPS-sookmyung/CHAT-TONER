@@ -1,5 +1,6 @@
 # nestjs-gateway/Dockerfile
 
+# ---------- Build stage ----------
 FROM node:20-alpine AS builder
 WORKDIR /app
 
@@ -10,8 +11,15 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+
+ARG VITE_API_URL
+RUN if [ -n "$VITE_API_URL" ]; then \
+    echo "VITE_API_URL=$VITE_API_URL" > .env.production; \
+    fi
+
 RUN npm run build
 
+# ---------- Runtime (Nginx) ----------
 RUN npm prune --ombit=dev
 
 FROM node:20-alpine AS runner

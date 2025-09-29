@@ -124,6 +124,10 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             protocol_suggestions=[]
         )
     
+    def _get_default_config(self) -> OptimizedEnterpriseQualityConfig:
+        """기본 설정 반환"""
+        return OptimizedEnterpriseQualityConfig()
+    
     async def _load_company_data(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
         """기업 데이터 로딩 (기존과 동일)"""
         async with self._step_context("기업 데이터 로딩", state):
