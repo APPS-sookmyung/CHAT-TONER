@@ -15,8 +15,9 @@ const STORAGE_KEYS = {
 
 // Stable UUID generation function
 const generateUUID = () => {
-  if (crypto && crypto.randomUUID) {
-    return crypto.randomUUID();
+  // Safely access crypto through globalThis for SSR and non-secure contexts
+  if (globalThis?.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
   }
   // fallback for non-secure contexts
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
