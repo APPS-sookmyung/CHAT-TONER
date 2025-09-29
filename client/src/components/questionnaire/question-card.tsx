@@ -159,7 +159,7 @@ export default function QuestionCard({
           )}
         </div>
 
-        {/* 직접 입력*/}
+        {/* Direct input */}
         {question.allowCustom && (
           <div className="p-4 mb-6 bg-gray-50 rounded-xl">
             <div className="flex items-center mb-2 space-x-2">

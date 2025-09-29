@@ -70,7 +70,7 @@ export default function HomePage() {
           onStartUpload={handleStartUpload}
         />
       )}
-      {/* 히어로 섹션 */}
+      {/* Hero section */}
       <div className="py-16 text-center">
         <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
           언제, 어디서나 톤 맞춤 <br />
@@ -82,7 +82,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* 모드 선택 섹션 */}
+      {/* Mode select */}
       <div className="max-w-5xl px-4 mx-auto">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <Card className="p-2 transition-shadow hover:shadow-lg">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"; // Load saved settings on component mountact";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -52,7 +52,7 @@ export function NegativePromptSettings({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // 컴포넌트 마운트 시 저장된 설정 불러오기
+  // Load saved settings on component mount
   useEffect(() => {
     const savedPreferences = localStorage.getItem(
       `negative-preferences-${userId}`
@@ -152,7 +152,7 @@ export function NegativePromptSettings({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* 미사여구 설정 */}
+        {/* Rhetoric settings */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Label className="text-base font-medium">미사여구 제한</Label>
@@ -187,10 +187,10 @@ export function NegativePromptSettings({
 
         <Separator />
 
-        {/* 반복 표현 설정 */}
+        {/* Repetition expression settings */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">🔁</Badge>
+            <Badge variant="outline">Repeat</Badge>
             <Label className="text-base font-medium">반복 표현 제한</Label>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -223,7 +223,7 @@ export function NegativePromptSettings({
 
         <Separator />
 
-        {/* 쉼표 사용 스타일 */}
+        {/* Comma usage style */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Label className="text-base font-medium">쉼표 사용 스타일</Label>
@@ -257,7 +257,7 @@ export function NegativePromptSettings({
 
         <Separator />
 
-        {/* 내용 vs 형식 우선순위 */}
+        {/* Content vs format priority */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Label className="text-base font-medium">
@@ -293,7 +293,7 @@ export function NegativePromptSettings({
 
         <Separator />
 
-        {/* 불렛 포인트 사용 */}
+        {/* Bullet point usage */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Label className="text-base font-medium">불렛 포인트 사용</Label>
@@ -327,7 +327,7 @@ export function NegativePromptSettings({
 
         <Separator />
 
-        {/* 이모티콘 정책 */}
+        {/* Emoticon policy */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Badge variant="outline">😊</Badge>
@@ -362,7 +362,7 @@ export function NegativePromptSettings({
 
         <Separator />
 
-        {/* 저장 버튼 */}
+        {/* Save button */}
         <div className="flex justify-end gap-3">
           <Button
             onClick={handleSave}

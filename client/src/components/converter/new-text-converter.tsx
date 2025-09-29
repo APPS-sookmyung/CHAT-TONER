@@ -243,7 +243,7 @@ export default function NewTextConverter({
         convertedData = {
           conversionId: Date.now(),
           versions: {
-            direct: convertedText, // 파인튜닝 결과를 모든 버전에 적용
+            direct: convertedText,
             gentle: convertedText,
             neutral: convertedText,
           },
@@ -412,8 +412,8 @@ export default function NewTextConverter({
               </Select>
               {context === "report" && (
                 <div className="mt-1 text-xs text-blue-600">
-                  ℹ️ 보고서/공문 모드는 특화된 파인튜닝 모델을 사용하여 단일
-                  최적화 결과를 제공합니다.
+                  보고서/공문 모드는 특화된 파인튜닝 모델을 사용하여 단일 최적화
+                  결과를 제공합니다.
                 </div>
               )}
             </div>
@@ -605,8 +605,8 @@ export default function NewTextConverter({
                 </div>
 
                 <div className="text-xs text-gray-600">
-                  💡 네거티브 프롬프트는 AI가 피해야 할 스타일을 지정하여 더
-                  정확한 변환을 도와줍니다.
+                  네거티브 프롬프트는 AI가 피해야 할 스타일을 지정하여 더 정확한
+                  변환을 도와줍니다.
                 </div>
               </div>
             )}

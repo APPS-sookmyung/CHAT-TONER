@@ -10,8 +10,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 font-korean">
       <Header />
-      {/* 공통 컨테이너 */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Common container */}
+      <main className="max-w-6xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
         {children}
       </main>
     </div>
