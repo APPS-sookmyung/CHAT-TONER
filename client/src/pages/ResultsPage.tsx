@@ -15,11 +15,11 @@ export default function ResultsPage() {
   if (!profile) return null;
 
   return (
-    <main className="max-w-6xl mx-auto p-8">
+    <main className="max-w-6xl p-8 mx-auto">
       <ResultsSummary
         userProfile={profile}
         completionRate={100}
-        onStartConversion={() => setLoc("/quality-analysis")}
+        onStartConversion={() => setLoc("/validate")}
         onExportData={() => {
           const dataStr = JSON.stringify(profile, null, 2);
           const url = URL.createObjectURL(
