@@ -97,7 +97,7 @@ export default function QuestionnairePage() {
       STORAGE_KEYS.USER_PROFILE,
       JSON.stringify(tempProfile)
     );
-    setLoc("/style-definition/results"); // Results page path may be changed to enterprise version later
+    setLoc("/results"); // Results page path may be changed to enterprise version later
   };
 
   const next = () =>
@@ -109,7 +109,7 @@ export default function QuestionnairePage() {
   }, [idx]);
 
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="max-w-6xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
       <ProgressBar
         currentQuestion={idx + 1}
         totalQuestions={questions.length}

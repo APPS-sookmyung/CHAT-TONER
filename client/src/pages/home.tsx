@@ -34,12 +34,12 @@ export default function HomePage() {
 
   const handleStartQuestionnaire = () => {
     setShowModal(false);
-    setLocation("/style-definition");
+    setLocation("/questionnaire");
   };
 
   const handleStartUpload = () => {
     setShowModal(false);
-    setLocation("/upload-documents");
+    setLocation("/upload");
   };
 
   const handleCloseModal = () => {
@@ -50,12 +50,12 @@ export default function HomePage() {
     try {
       const profile = localStorage.getItem("chatToner_profile");
       // If profile exists, go to converter. Otherwise, go to questionnaire.
-      const targetUrl = profile ? "/style-conversion" : "/style-definition";
+      const targetUrl = profile ? "/converter" : "/questionnaire";
       setLocation(targetUrl);
     } catch (error) {
       console.error("Error reading localStorage:", error);
       // Fallback to questionnaire if localStorage fails
-      setLocation("/style-definition");
+      setLocation("/questionnaire");
     }
   };
 
@@ -133,7 +133,7 @@ export default function HomePage() {
                 프로필에 따라 톤을 조정합니다.
               </p>
               <Button
-                onClick={() => setLocation("/quality-analysis")}
+                onClick={() => setLocation("/validate")}
                 className="w-full py-3 text-lg"
               >
                 분석기로 이동
