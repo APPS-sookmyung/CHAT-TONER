@@ -258,6 +258,33 @@ class UserPreferencesService(BaseService):
             self.logger.error(f"사용자 {user_id} 프로필 저장 실패: {e}")
             return False
     
+    def save_feedback(self, feedback_data: Any) -> Optional[Dict[str, Any]]:
+        """피드백 저장 및 조정값 반환"""
+        try:
+            # Pydantic 모델을 dict로 변환
+            feedback_dict = feedback_data.model_dump()
+            
+            # storage의 함수를 호출하여 피드백을 DB에 저장하고 업데이트된 기록을 받음
+            updated_conversion = self.storage.update_conversion_feedback(feedback_dict)
+
+            if not updated_conversion:
+                self.logger.error(f"피드백 저장 실패: conversion ID {feedback_dict.get('conversionId')}를 찾을 수 없거나 DB 오류")
+                return None
+
+            # ConversionHistory 객체를 딕셔너리로 변환하여 반환
+            return {
+                "id": updated_conversion.id,
+                "user_id": updated_conversion.user_id,
+                "user_rating": updated_conversion.user_rating,
+                "selected_version": updated_conversion.selected_version,
+                "feedback_text": updated_conversion.feedback_text,
+                "updated_at": updated_conversion.updated_at.isoformat() if updated_conversion.updated_at else None
+            }
+
+        except Exception as e:
+            self.logger.error(f"피드백 저장 중 심각한 오류 발생: {e}", exc_info=True)
+            return None
+    
     async def get_user_negative_preferences(self, user_id: str) -> NegativePreferences:
         """사용자 네거티브 프롬프트 선호도 조회"""
         try:

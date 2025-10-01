@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Post,
   Get,
+  Param,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConversionRequestDto } from './dto/conversion-request.dto';
@@ -13,10 +14,22 @@ import { FeedbackRequestDto } from './dto/feedback-request.dto';
 import { FeedbackResponseDto } from './dto/feedback-response.dto';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
+//@JiiminHa
+// import { FinetuneRequestDto } from './dto/finetune-request.dto';
+// import { FinetuneResponseDto } from './dto/finetune-response.dto';
+import { CompanyQualityAnalysisRequestDto } from './dto/quality-analysis-request.dto';
+import { CompanyQualityAnalysisResponseDto } from './dto/quality-analysis-response.dto';
+import { RAGQueryRequestDto, RAGQueryResponseDto } from './dto/rag-query.dto';
+import { ProfileRequestDto, ProfileResponseDto } from './dto/profile.dto';
 
 @Controller('api')
 export class AppController {
-  constructor(private readonly httpService: HttpService) {}
+  private readonly fastApiBaseUrl: string;
+
+  constructor(private readonly httpService: HttpService) {
+    this.fastApiBaseUrl =
+      process.env.BACKEND_API_URL || 'http://127.0.0.1:5001';
+  }
 
   @Get()
   getRoot(): string {
@@ -28,7 +41,7 @@ export class AppController {
     @Body() body: ConversionRequestDto,
   ): Promise<ConversionResponseDto> {
     try {
-      const fastApiUrl = 'http://127.0.0.1:5001/api/v1/conversion/convert';
+      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/conversion/convert`;
       const response = await firstValueFrom(
         this.httpService.post(fastApiUrl, body),
       );
@@ -42,6 +55,117 @@ export class AppController {
       }
       throw new HttpException(
         '텍스트 변환 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // @Post('finetune/convert')
+  // async finetuneConvert(
+  //   @Body() body: FinetuneRequestDto,
+  // ): Promise<FinetuneResponseDto> {
+  //   try {
+  //     const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/finetune/convert`;
+  //     const response = await firstValueFrom(
+  //       this.httpService.post(fastApiUrl, body),
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     if (error instanceof AxiosError && error.response) {
+  //       throw new HttpException(
+  //         error.response.data,
+  //         error.response.status,
+  //       );
+  //     }
+  //     throw new HttpException(
+  //       '파인튜닝 변환 중 오류 발생',
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // }
+
+  @Post('quality/company/analyze')
+  async analyzeCompanyTextQuality(
+    @Body() body: CompanyQualityAnalysisRequestDto,
+  ): Promise<CompanyQualityAnalysisResponseDto> {
+    try {
+      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/analyze`;
+      const response = await firstValueFrom(
+        this.httpService.post<CompanyQualityAnalysisResponseDto>(
+          fastApiUrl,
+          body,
+        ),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw new HttpException(
+        '기업용 품질 분석 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('rag/ask')
+  async askRagQuestion(
+    @Body() body: RAGQueryRequestDto,
+  ): Promise<RAGQueryResponseDto> {
+    try {
+      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/ask`;
+      const response = await firstValueFrom(
+        this.httpService.post<RAGQueryResponseDto>(fastApiUrl, body),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw new HttpException(
+        'RAG 질의응답 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('profile/:user_id')
+  async getUserProfile(
+    @Param('user_id') userId: string,
+  ): Promise<ProfileResponseDto> {
+    try {
+      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/profile/${userId}`;
+      const response = await firstValueFrom(
+        this.httpService.get<ProfileResponseDto>(fastApiUrl),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw new HttpException(
+        '사용자 프로필 조회 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('profile')
+  async saveUserProfile(
+    @Body() body: ProfileRequestDto,
+  ): Promise<ProfileResponseDto> {
+    try {
+      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/profile`;
+      const response = await firstValueFrom(
+        this.httpService.post<ProfileResponseDto>(fastApiUrl, body),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw new HttpException(
+        '사용자 프로필 저장 중 오류 발생',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

@@ -11,9 +11,9 @@ from services.user_preferences import UserPreferencesService
 from database.storage import DatabaseStorage
 from sqlalchemy.orm import Session
 from typing import List
-from schemas.feedback import NegativePromptUpdate
-from core.db import get_db
-from models.user import UserProfile as UserProfileModel
+# from schemas.feedback import NegativePromptUpdate  # 스키마 파일이 존재하지 않음
+# from core.db import get_db  # 모듈이 존재하지 않음
+# from models.user import UserProfile as UserProfileModel  # 모듈이 존재하지 않음
 
 router = APIRouter()
 
@@ -126,43 +126,7 @@ async def get_user_profile(
         # Pydantic validation error 등 다른 예외 처리
         raise HTTPException(status_code=500, detail=f"프로필 조회 실패: {str(e)}")
 
-@router.put("/{user_id}/negative-prompts", response_model=ProfileResponse, summary="네거티브 프롬프트 수정", description="사용자의 네거티브 프롬프트 목록을 업데이트합니다.")
-async def update_user_negative_prompts(
-    user_id: str, 
-    data: NegativePromptUpdate, 
-    db: Session = Depends(get_db)
-) -> ProfileResponse:
-    """
-    ## 네거티브 프롬프트 수정
-
-    사용자의 프로필에 저장된 네거티브 프롬프트 목록을 새로운 목록으로 교체합니다.
-    """
-    user_profile = db.query(UserProfileModel).filter(UserProfileModel.user_id == user_id).first()
-
-    if not user_profile:
-        raise HTTPException(status_code=404, detail="해당 사용자의 프로필을 찾을 수 없습니다.")
-
-    # 네거티브 프롬프트 목록을 새 목록으로 덮어쓰기
-    user_profile.negative_prompt_preferences = data.negative_prompts
-    db.commit()
-    db.refresh(user_profile)
-
-    # ProfileResponse 형식에 맞게 데이터를 조합하여 반환
-    return ProfileResponse(
-    id=user_profile.id,
-    userId=user_profile.user_id,
-    baseFormalityLevel=user_profile.base_formality_level,
-    baseFriendlinessLevel=user_profile.base_friendliness_level,
-    baseEmotionLevel=user_profile.base_emotion_level,
-    baseDirectnessLevel=user_profile.base_directness_level,
-    sessionFormalityLevel=user_profile.session_formality_level,
-    sessionFriendlinessLevel=user_profile.session_friendliness_level,
-    sessionEmotionLevel=user_profile.session_emotion_level,
-    sessionDirectnessLevel=user_profile.session_directness_level,
-    responses=user_profile.questionnaire_responses or {},
-    completedAt=user_profile.updated_at.isoformat(),
-    negativePrompts=user_profile.negative_prompt_preferences or []
-)
+# 네거티브 프롬프트 업데이트 엔드포인트는 의존성 문제로 비활성화
 
 @router.post("", response_model=ProfileResponse, summary="사용자 프로필 저장", description="사용자의 개인화 설정을 저장합니다.")
 async def save_user_profile(

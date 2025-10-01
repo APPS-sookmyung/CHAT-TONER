@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from schemas.survey import CompanySurvey
+from api.v1.schemas.survey import CompanySurvey
 from services.profile_generator import ProfileGeneratorService
-from core.db import get_db
-from models.company import CompanyProfile
+from database.db import get_db
+from database.models import CompanyProfile
 
 router = APIRouter(
     prefix="/surveys",

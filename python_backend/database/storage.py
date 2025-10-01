@@ -93,7 +93,7 @@ class DatabaseStorage:
                 print(f"사용자 프로필 저장 오류: {e}")
                 return False
 
-    def save_conversion(self, user_id: str, conversion_data: Dict[str, Any]) -> bool:
+    def save_conversion(self, user_id: str, conversion_data: Dict[str, Any]) -> Optional[ConversionHistory]:
         """변환 기록 저장"""
         with self.session_factory() as db:
             try:
@@ -112,12 +112,39 @@ class DatabaseStorage:
                 
                 db.add(conversion)
                 db.commit()
-                return True
+                db.refresh(conversion)
+                return conversion
                 
             except Exception as e:
                 db.rollback()
                 print(f"변환 기록 저장 오류: {e}")
-                return False
+                return None
+
+    def update_conversion_feedback(self, feedback_data: Dict[str, Any]) -> Optional[ConversionHistory]:
+        """변환 기록에 피드백 업데이트"""
+        with self.session_factory() as db:
+            try:
+                conversion_id = feedback_data.get('conversionId')
+                if not conversion_id:
+                    return None
+
+                conversion = db.query(ConversionHistory).filter(ConversionHistory.id == conversion_id).first()
+                
+                if not conversion:
+                    return None
+
+                conversion.user_rating = feedback_data.get('rating')
+                conversion.selected_version = feedback_data.get('selectedVersion')
+                conversion.feedback_text = feedback_data.get('feedback_text')
+                
+                db.commit()
+                db.refresh(conversion)
+                return conversion
+
+            except Exception as e:
+                db.rollback()
+                print(f"피드백 업데이트 오류: {e}")
+                return None
 
     def get_conversion_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
         """사용자 변환 기록 조회"""

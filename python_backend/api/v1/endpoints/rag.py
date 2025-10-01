@@ -43,21 +43,11 @@ class RAGStatusResponse(BaseModel):
     documents_path: str
     index_path: str
 
-# RAG Service 싱글톤
-_rag_service_instance = None
-
 def get_rag_service():
-    """RAG 서비스 싱글톤 인스턴스"""
-    global _rag_service_instance
-    if _rag_service_instance is None:
-        try:
-            from services.rag_service import RAGService
-            _rag_service_instance = RAGService()
-        except ImportError as e:
-            raise HTTPException(status_code=503, detail=f"RAG 서비스를 사용할 수 없습니다: {str(e)}") from e
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"RAG 서비스 초기화 실패: {str(e)}") from e
-    return _rag_service_instance
+    """컨테이너에서 RAG 서비스 싱글톤 인스턴스 반환 (성능 최적화)"""
+    from core.container import Container
+    container = Container()
+    return container.rag_service()
 
 @router.post("/ingest", response_model=DocumentIngestResponse)
 async def ingest_documents(

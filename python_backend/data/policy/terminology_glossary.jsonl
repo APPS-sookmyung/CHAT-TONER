@@ -1,0 +1,2 @@
+{"preferred": "보고서", "discouraged": ["레포트", "리포트"], "context": {"channel": ["email", "docs_reports"]}}
+{"preferred": "검토해 주시기 바랍니다", "discouraged": ["검토해 주세요", "부탁드립니다"], "context": {"channel": ["email"], "audience": ["executives", "clients_vendors"]}}

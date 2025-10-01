@@ -83,10 +83,12 @@ class BaseAgent(ABC):
         pass
     
     def initialize(self):
-        """Agent 초기화 (그래프 구성)"""
+        """Agent 초기화 (그래프 구성) - 성능 최적화: 한번만 빌드"""
         if self.graph is None:
             self.graph = self._build_graph()
             self.logger.info(f"{self.config.name} 워크플로우 구성 완료")
+        else:
+            self.logger.debug(f"{self.config.name} 워크플로우 재사용 (성능 최적화)")
     
     async def execute(self, **kwargs) -> BaseAgentResult:
         """Agent 실행 (공통 실행 패턴)"""

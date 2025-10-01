@@ -11,7 +11,7 @@ from typing import Annotated, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 
-from api.v1.dependencies import get_document_service
+from api.v1.dependencies import get_document_service  # 문서 서비스 의존성
 from services.document_service import DocumentService
 
 logger = logging.getLogger('chattoner')
