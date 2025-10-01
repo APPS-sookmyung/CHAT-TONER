@@ -113,9 +113,9 @@ def _analyze_korean_endings(text: str, expected_level: str) -> Dict[str, Any]:
     for i, s in enumerate(sents):
         level = cls(s)
         levels[level] = levels.get(level, 0) + 1
-        ok = (expected_level == "formal" and level in ["합쇼체", "의문형"]) or 
-             (expected_level == "polite" and level in ["해요체", "의문형"]) or 
-             (expected_level == "casual" and level in ["해요체", "평서/반말"])  # type: ignore
+        ok = ((expected_level == "formal" and level in ["합쇼체", "의문형"]) or
+              (expected_level == "polite" and level in ["해요체", "의문형"]) or
+              (expected_level == "casual" and level in ["해요체", "평서/반말"]))  # type: ignore
         endings.append({"sent_idx": i, "ending": s[-6:], "type": level, "ok": bool(ok)})
     speech = max(levels, key=levels.get) if levels else "기타"
     return {"speech_level": speech, "ending_ok": all(e["ok"] for e in endings) if endings else True, "endings": endings}

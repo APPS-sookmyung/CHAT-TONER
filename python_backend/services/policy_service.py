@@ -9,6 +9,12 @@ POLICY_PATH = os.getenv("POLICY_FILE", os.path.join("data", "policy", "policy.js
 
 @lru_cache(maxsize=1)
 def load_policy() -> Dict[str, Any]:
+    """
+    정책 파일을 로드하고 캐시하는 함수
+
+    Returns:
+        정책 설정이 담긴 딕셔너리
+    """
     try:
         with open(POLICY_PATH, "r", encoding="utf-8") as f:
             return json.load(f)

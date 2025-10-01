@@ -62,17 +62,28 @@ class VectorStorePG:
         top_k: int = 5,
         channel: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        where = ["tenant_id = $1"]
+        # Clamp top_k to prevent abuse
+        clamped_top_k = max(1, min(top_k, 100))
+
+        where_clauses = ["tenant_id = $1"]
         params: List[Any] = [tenant_id, query_embedding]
+
+        param_idx = 3
         if channel:
-            where.append("(traits->>'primary_channel') = $3")
+            where_clauses.append(f"(traits->>'primary_channel') = ${param_idx}")
             params.append(channel)
+            param_idx += 1
+
+        # Use parameterized query for LIMIT to prevent SQL injection
+        params.append(clamped_top_k)
+        limit_param = f"${param_idx}"
+
         sql = f"""
           SELECT user_id, text, features, traits, 1 - (embedding <=> $2) AS score
           FROM style_profile_index
-          WHERE {' AND '.join(where)}
+          WHERE {' AND '.join(where_clauses)}
           ORDER BY embedding <=> $2
-          LIMIT {int(top_k)}
+          LIMIT {limit_param}
         """
         rows: List[Dict[str, Any]] = []
         async with self.pool.acquire() as conn:
