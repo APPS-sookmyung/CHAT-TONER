@@ -27,6 +27,7 @@ export class AppController {
   private readonly fastApiBaseUrl: string;
 
   constructor(private readonly httpService: HttpService) {
+    // @@ 환경변수 BACKEND_API_URL 설정 필수 (production에서)
     this.fastApiBaseUrl =
       process.env.BACKEND_API_URL || 'http://127.0.0.1:5001';
   }
@@ -59,6 +60,8 @@ export class AppController {
       );
     }
   }
+
+  // @@ 파인튜닝 로직 아예 정리 부탁
 
   // @Post('finetune/convert')
   // async finetuneConvert(
@@ -174,6 +177,7 @@ export class AppController {
   @Post('feedback')
   submitFeedback(@Body() body: FeedbackRequestDto): FeedbackResponseDto {
     try {
+      // @@ TODO: 피드백 저장소 연결 및 실제 피드백 처리 로직 구현 필요
       // Feedback storage or transmission logic connection planned
       return {
         success: true,

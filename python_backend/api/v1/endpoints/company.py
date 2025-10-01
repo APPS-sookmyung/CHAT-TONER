@@ -53,6 +53,7 @@ async def upload_company_document(
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="PDF 파일만 업로드할 수 있습니다.")
 
+    
     # 파일을 안전하게 처리하기 위해 임시 디렉터리 사용
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_file_path = Path(temp_dir) / file.filename

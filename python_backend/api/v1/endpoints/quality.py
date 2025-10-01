@@ -103,11 +103,12 @@ async def analyze_company_text_quality(
         if result.get('error'):
             logger.warning(f"기업용 분석 중 경고: {result['error']}")
         
+        # @@ 하드코딩된 기본값 60.0: 더 적절한 기본값 및 계산 로직 필요
         # Agent 결과를 API 응답 형식으로 변환
         response = CompanyQualityAnalysisResponse(
             # 기본 점수들
             grammarScore=result.get('grammar_score', 60.0),
-            formalityScore=result.get('formality_score', 60.0), 
+            formalityScore=result.get('formality_score', 60.0),
             readabilityScore=result.get('readability_score', 60.0),
             protocolScore=result.get('protocol_score', 60.0),
             complianceScore=result.get('compliance_score', 60.0),
