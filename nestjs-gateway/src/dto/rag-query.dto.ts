@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsObject, IsArray, ValidateNested, IsNotEmpty } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsObject, IsArray, ValidateNested, IsNotEmpty, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 // Based on python_backend/api/v1/schemas/conversion.py UserProfile
