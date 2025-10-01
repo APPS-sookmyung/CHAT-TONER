@@ -9,7 +9,7 @@ from services.conversion_service import ConversionService
 from services.prompt_engineering import PromptEngineer
 from services.openai_services import OpenAIService
 from services.user_preferences import UserPreferencesService
-from services.finetune_service import FinetuneService
+from services.document_service import DocumentService
 # from services.document_service import DocumentService  # pypdf 의존성 문제로 주석 처리
 from services.rag_service import RAGService
 
@@ -54,19 +54,13 @@ class Container(containers.DeclarativeContainer):
         openai_service=openai_service
     )
 
-    # 파인튜닝 서비스
-    finetune_service = providers.Singleton(
-        FinetuneService,
-        prompt_engineer=prompt_engineer,
-        openai_service=openai_service,
-        user_preferences_service=user_preferences_service
-    )
+    # 파인튜닝 서비스 제거됨 (finetune_service 미사용)
 
-    # 문서 처리 서비스 (pypdf 의존성 문제로 주석 처리)
-    # document_service = providers.Singleton(
-    #     DocumentService,
-    #     openai_api_key=config.OPENAI_API_KEY
-    # )
+    # 문서 처리 서비스 (의존성 해결됨)
+    document_service = providers.Singleton(
+        DocumentService,
+        openai_api_key=config.OPENAI_API_KEY
+    )
 
     # RAG 서비스 (싱글톤으로 한번만 초기화)
     rag_service = providers.Singleton(RAGService)
