@@ -19,6 +19,7 @@ try:
     from services.enterprise_db_service import EnterpriseDBService
     ENTERPRISE_FEATURES_AVAILABLE = True
 except ImportError as e:
+    # @@ langgraph 의존성 설치 필요: pip install langgraph
     ENTERPRISE_FEATURES_AVAILABLE = False
     print(f"Enterprise features unavailable: {e}")
 from database.storage import DatabaseStorage

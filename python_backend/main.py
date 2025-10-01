@@ -41,6 +41,7 @@ def create_app() -> FastAPI:
     #container.config.from_dict(settings.dict())
     container.config.from_dict(settings.model_dump())
 
+    # @@ 주의: 전체 모듈 와이어링 시 순환 참조 및 의존성 오류 발생 가능
     # 와이어링 추가 (의존성 문제 있는 모듈 제외)
     container.wire(modules=[
         "api.v1.endpoints.conversion",
@@ -48,7 +49,7 @@ def create_app() -> FastAPI:
         "api.v1.endpoints.profile",
         "api.v1.endpoints.feedback",
         "api.v1.endpoints.rag"
-        # @@ quality와 company는 의존성 문제로 제외
+        # @@ quality와 company는 langgraph/enterprise 의존성 문제로 제외됨. 추가 필요!!!
     ])
     
     # FastAPI 앱 생성

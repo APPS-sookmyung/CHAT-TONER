@@ -16,7 +16,7 @@ async def get_current_user_optional(
     # 실제 사용자 검증 로직
     return {"user_id": x_user_id}
 
-# @@ 
+# @@ TODO: 실제 사용자 인증 로직 구현 필요 (JWT 토큰 검증 등)
 def get_conversion_service() -> ConversionService:
     """ConversionService 인스턴스를 제공합니다."""
     return Container.conversion_service()

@@ -157,6 +157,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
     async def _comprehensive_analysis(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
         """통합 분석 (단일 API 호출)"""
         async with self._step_context("통합 분석", state):
+            # @@ 클로드가 프롬프트 길이 최적화 필요하대요: 현재 228줄의 긴 프롬프트는 토큰 낭비 및 성능 저하 원인
             # 기업 맥락 정보 구성
             company_style = state["company_profile"].get("communication_style", "formal")
             main_channels = state["company_profile"].get("main_channels", [])
@@ -234,12 +235,13 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             
             if result:
                 try:
+                    # @@ JSON 파싱 실패 처리 부족: fallback 로직 없어서 전체 분석 실패 가능성
                     analysis_data = self._extract_json_from_text(result["answer"])
                     state["comprehensive_analysis"] = analysis_data
                     state["rag_sources"].extend(result.get("sources", []))
-                    
+
                     self.logger.info("통합 분석 완료")
-                    
+
                 except Exception as e:
                     self.logger.warning(f"통합 분석 결과 파싱 실패: {e}")
                     state["error_message"] = f"통합 분석 결과 처리 실패: {str(e)}"
@@ -342,14 +344,15 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
     def _apply_company_adjustments(self, state: OptimizedEnterpriseQualityState):
         """기업 맥락 반영한 점수 조정"""
         company_style = state["company_profile"].get("communication_style", "formal")
-        
+
+        # @@ 점수 조정 로직 부족: 단순 곱셈만으로는 기업별 특성 반영 한계
         # 기업 스타일별 조정
         style_multipliers = {
-            "strict": 0.9,    
-            "formal": 1.0,    
-            "friendly": 1.05  
+            "strict": 0.9,
+            "formal": 1.0,
+            "friendly": 1.05
         }
-        
+
         multiplier = style_multipliers.get(company_style, 1.0)
         
         # RAG 신뢰도 반영

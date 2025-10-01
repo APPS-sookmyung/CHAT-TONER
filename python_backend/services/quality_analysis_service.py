@@ -49,13 +49,14 @@ class OptimizedEnterpriseQualityService:
     """기업용 품질분석 서비스"""
     
     def __init__(
-        self, 
+        self,
         rag_service: RAGService,
         config: Optional[OptimizedEnterpriseQualityServiceConfig] = None
     ):
         self.rag_service = rag_service
         self.config = config or OptimizedEnterpriseQualityServiceConfig()
-        
+
+        # @@ import 누락: QualityAnalysisService 정의되지 않아서 (이유는 모르겠음) 런타임 에러 발생
         # 기존 품질분석 서비스 (fallback용)
         self.basic_service = QualityAnalysisService(rag_service)
         
@@ -432,6 +433,7 @@ class OptimizedEnterpriseQualityService:
                 if fb.get('id') in user_selections.get('protocol', [])
             ]
             
+            # @@ 프롬프트 품질 부족: 너무 단순한 요구사항으로 정확한 수정 어려움
             # 통합 프롬프트 구성
             integration_prompt = f"""다음 원본 텍스트에 사용자가 선택한 개선사항들을 적용하여 최종 버전을 생성해주세요.
 
