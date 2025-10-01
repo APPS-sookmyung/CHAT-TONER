@@ -1,4 +1,12 @@
-import { Body, Controller, HttpException, HttpStatus, Post, Get, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpException,
+  HttpStatus,
+  Post,
+  Get,
+  Param,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConversionRequestDto } from './dto/conversion-request.dto';
 import { ConversionResponseDto } from './dto/conversion-response.dto';
@@ -6,8 +14,9 @@ import { FeedbackRequestDto } from './dto/feedback-request.dto';
 import { FeedbackResponseDto } from './dto/feedback-response.dto';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
-import { FinetuneRequestDto } from './dto/finetune-request.dto';
-import { FinetuneResponseDto } from './dto/finetune-response.dto';
+//@JiiminHa
+// import { FinetuneRequestDto } from './dto/finetune-request.dto';
+// import { FinetuneResponseDto } from './dto/finetune-response.dto';
 import { CompanyQualityAnalysisRequestDto } from './dto/quality-analysis-request.dto';
 import { CompanyQualityAnalysisResponseDto } from './dto/quality-analysis-response.dto';
 import { RAGQueryRequestDto, RAGQueryResponseDto } from './dto/rag-query.dto';
@@ -18,7 +27,8 @@ export class AppController {
   private readonly fastApiBaseUrl: string;
 
   constructor(private readonly httpService: HttpService) {
-    this.fastApiBaseUrl = process.env.BACKEND_API_URL || 'http://127.0.0.1:5001';
+    this.fastApiBaseUrl =
+      process.env.BACKEND_API_URL || 'http://127.0.0.1:5001';
   }
 
   @Get()
@@ -50,29 +60,29 @@ export class AppController {
     }
   }
 
-  @Post('finetune/convert')
-  async finetuneConvert(
-    @Body() body: FinetuneRequestDto,
-  ): Promise<FinetuneResponseDto> {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/finetune/convert`;
-      const response = await firstValueFrom(
-        this.httpService.post(fastApiUrl, body),
-      );
-      return response.data;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(
-          error.response.data,
-          error.response.status,
-        );
-      }
-      throw new HttpException(
-        '파인튜닝 변환 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
+  // @Post('finetune/convert')
+  // async finetuneConvert(
+  //   @Body() body: FinetuneRequestDto,
+  // ): Promise<FinetuneResponseDto> {
+  //   try {
+  //     const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/finetune/convert`;
+  //     const response = await firstValueFrom(
+  //       this.httpService.post(fastApiUrl, body),
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     if (error instanceof AxiosError && error.response) {
+  //       throw new HttpException(
+  //         error.response.data,
+  //         error.response.status,
+  //       );
+  //     }
+  //     throw new HttpException(
+  //       '파인튜닝 변환 중 오류 발생',
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // }
 
   @Post('quality/company/analyze')
   async analyzeCompanyTextQuality(
@@ -81,15 +91,15 @@ export class AppController {
     try {
       const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/analyze`;
       const response = await firstValueFrom(
-        this.httpService.post<CompanyQualityAnalysisResponseDto>(fastApiUrl, body),
+        this.httpService.post<CompanyQualityAnalysisResponseDto>(
+          fastApiUrl,
+          body,
+        ),
       );
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError && error.response) {
-        throw new HttpException(
-          error.response.data,
-          error.response.status,
-        );
+        throw new HttpException(error.response.data, error.response.status);
       }
       throw new HttpException(
         '기업용 품질 분석 중 오류 발생',
