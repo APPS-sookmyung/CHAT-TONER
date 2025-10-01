@@ -35,11 +35,11 @@ export class AppController {
       const response = await firstValueFrom(
         this.httpService.post(fastApiUrl, body),
       );
-      return response.data;
+      return response.data as ConversionResponseDto;
     } catch (error) {
       if (error instanceof AxiosError && error.response) {
         throw new HttpException(
-          error.response.data,
+          error.response.data as string | Record<string, any>,
           error.response.status,
         );
       }
@@ -162,11 +162,9 @@ export class AppController {
   }
 
   @Post('feedback')
-  async submitFeedback(
-    @Body() body: FeedbackRequestDto,
-  ): Promise<FeedbackResponseDto> {
+  submitFeedback(@Body() body: FeedbackRequestDto): FeedbackResponseDto {
     try {
-      // 💡 여기에 피드백 저장 또는 전송 로직 연결 예정
+      // Feedback storage or transmission logic connection planned
       return {
         success: true,
         message: '피드백이 반영되었습니다.',
@@ -174,7 +172,7 @@ export class AppController {
           received_feedback: body.feedback_text,
         },
       };
-    } catch (e) {
+    } catch {
       throw new HttpException(
         '피드백 처리 중 오류 발생',
         HttpStatus.INTERNAL_SERVER_ERROR,

@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import type { UserProfile as BaseUserProfile } from "@shared/schema";
 
 type Profile = BaseUserProfile & {
-  // 세션 값은 있을 수도/없을 수도 있으니 옵션으로
+  // Session values may or may not exist, so make them optional
   sessionFormalityLevel?: number | string;
   sessionFriendlinessLevel?: number | string;
   sessionEmotionLevel?: number | string; // ← Emotional(X), Emotion(O)
@@ -12,12 +12,12 @@ type Profile = BaseUserProfile & {
 };
 
 function toNum10(x: unknown, fallback = 5) {
-  // 문자열로 올 수도 있으니 안전 변환 + 클램프
+  // Safe conversion as it might come as string + clamp
   const n = Number(x);
   if (Number.isFinite(n)) return Math.min(10, Math.max(0, n));
   return fallback;
 }
-const toPct = (v10: number) => v10 * 10; // 10점 만점을 100%로
+const toPct = (v10: number) => v10 * 10; // Convert 10-point scale to 100%
 
 export default function ProfileSummary({
   userProfile,

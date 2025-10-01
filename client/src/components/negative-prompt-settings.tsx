@@ -1,7 +1,19 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -9,12 +21,12 @@ import { Settings, Filter, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserNegativePreferences {
-  rhetoricLevel: 'strict' | 'moderate' | 'lenient';
-  repetitionTolerance: 'strict' | 'moderate' | 'lenient';
-  punctuationStyle: 'minimal' | 'standard' | 'verbose';
-  contentFocus: 'content' | 'balanced' | 'format';
-  bulletPreference: 'avoid' | 'minimal' | 'prefer';
-  emoticonPolicy: 'none' | 'minimal' | 'contextual' | 'frequent';
+  rhetoricLevel: "strict" | "moderate" | "lenient";
+  repetitionTolerance: "strict" | "moderate" | "lenient";
+  punctuationStyle: "minimal" | "standard" | "verbose";
+  contentFocus: "content" | "balanced" | "format";
+  bulletPreference: "avoid" | "minimal" | "prefer";
+  emoticonPolicy: "none" | "minimal" | "contextual" | "frequent";
 }
 
 interface NegativePromptSettingsProps {
@@ -23,81 +35,90 @@ interface NegativePromptSettingsProps {
 }
 
 const defaultPreferences: UserNegativePreferences = {
-  rhetoricLevel: 'moderate',
-  repetitionTolerance: 'moderate',
-  punctuationStyle: 'standard',
-  contentFocus: 'balanced',
-  bulletPreference: 'minimal',
-  emoticonPolicy: 'contextual'
+  rhetoricLevel: "moderate",
+  repetitionTolerance: "moderate",
+  punctuationStyle: "standard",
+  contentFocus: "balanced",
+  bulletPreference: "minimal",
+  emoticonPolicy: "contextual",
 };
 
-export function NegativePromptSettings({ userId, onSave }: NegativePromptSettingsProps) {
-  const [preferences, setPreferences] = useState<UserNegativePreferences>(defaultPreferences);
+export function NegativePromptSettings({
+  userId,
+  onSave,
+}: NegativePromptSettingsProps) {
+  const [preferences, setPreferences] =
+    useState<UserNegativePreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // 컴포넌트 마운트 시 저장된 설정 불러오기
+  // Load saved settings on component mount
   useEffect(() => {
-    const savedPreferences = localStorage.getItem(`negative-preferences-${userId}`);
+    const savedPreferences = localStorage.getItem(
+      `negative-preferences-${userId}`
+    );
     if (savedPreferences) {
       try {
         const parsed = JSON.parse(savedPreferences);
         setPreferences({ ...defaultPreferences, ...parsed });
       } catch (error) {
-        console.error('설정 불러오기 실패:', error);
+        console.error("설정 불러오기 실패:", error);
       }
     }
   }, [userId]);
-  
+
   const rhetoricOptions = [
-    { value: 'strict', label: '엄격', description: '모든 과장 표현 금지' },
-    { value: 'moderate', label: '보통', description: '적당한 수준의 표현' },
-    { value: 'lenient', label: '관대', description: '자연스러운 표현 허용' }
+    { value: "strict", label: "엄격", description: "모든 과장 표현 금지" },
+    { value: "moderate", label: "보통", description: "적당한 수준의 표현" },
+    { value: "lenient", label: "관대", description: "자연스러운 표현 허용" },
   ];
 
   const repetitionOptions = [
-    { value: 'strict', label: '엄격', description: '반복 표현 완전 금지' },
-    { value: 'moderate', label: '보통', description: '필요시에만 허용' },
-    { value: 'lenient', label: '관대', description: '자연스러운 반복 허용' }
+    { value: "strict", label: "엄격", description: "반복 표현 완전 금지" },
+    { value: "moderate", label: "보통", description: "필요시에만 허용" },
+    { value: "lenient", label: "관대", description: "자연스러운 반복 허용" },
   ];
 
   const punctuationOptions = [
-    { value: 'minimal', label: '최소', description: '꼭 필요한 쉼표만' },
-    { value: 'standard', label: '표준', description: '일반적인 사용' },
-    { value: 'verbose', label: '상세', description: '풍부한 쉼표 사용' }
+    { value: "minimal", label: "최소", description: "꼭 필요한 쉼표만" },
+    { value: "standard", label: "표준", description: "일반적인 사용" },
+    { value: "verbose", label: "상세", description: "풍부한 쉼표 사용" },
   ];
 
   const contentFocusOptions = [
-    { value: 'content', label: '내용 중심', description: '핵심 내용 우선' },
-    { value: 'balanced', label: '균형', description: '내용과 형식 조화' },
-    { value: 'format', label: '형식 중심', description: '체계적 구성 우선' }
+    { value: "content", label: "내용 중심", description: "핵심 내용 우선" },
+    { value: "balanced", label: "균형", description: "내용과 형식 조화" },
+    { value: "format", label: "형식 중심", description: "체계적 구성 우선" },
   ];
 
   const bulletOptions = [
-    { value: 'avoid', label: '회피', description: '불렛 포인트 사용 안함' },
-    { value: 'minimal', label: '최소', description: '필요시에만 사용' },
-    { value: 'prefer', label: '선호', description: '적극적 사용' }
+    { value: "avoid", label: "회피", description: "불렛 포인트 사용 안함" },
+    { value: "minimal", label: "최소", description: "필요시에만 사용" },
+    { value: "prefer", label: "선호", description: "적극적 사용" },
   ];
 
   const emoticonOptions = [
-    { value: 'none', label: '없음', description: '이모티콘 완전 금지' },
-    { value: 'minimal', label: '최소', description: '기본적인 것만' },
-    { value: 'contextual', label: '상황적', description: '맥락에 맞게' },
-    { value: 'frequent', label: '빈번', description: '자주 사용' }
+    { value: "none", label: "없음", description: "이모티콘 완전 금지" },
+    { value: "minimal", label: "최소", description: "기본적인 것만" },
+    { value: "contextual", label: "상황적", description: "맥락에 맞게" },
+    { value: "frequent", label: "빈번", description: "자주 사용" },
   ];
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // 로컬 스토리지에 저장
-      localStorage.setItem(`negative-preferences-${userId}`, JSON.stringify(preferences));
-      
-      // 성공 토스트 표시
+      // Save to localStorage
+      localStorage.setItem(
+        `negative-preferences-${userId}`,
+        JSON.stringify(preferences)
+      );
+
+      // Show success toast
       toast({
         title: "설정 저장 완료",
         description: "네거티브 프롬프트 선호도가 저장되었습니다.",
       });
-      
+
       onSave?.(preferences);
     } catch (error) {
       toast({
@@ -114,36 +135,36 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
     key: K,
     value: UserNegativePreferences[K]
   ) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
+    setPreferences((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5" />
+          <Filter className="w-5 h-5" />
           <CardTitle>네거티브 프롬프트 설정</CardTitle>
         </div>
         <CardDescription>
-          텍스트 변환 시 제외하고 싶은 표현들을 맞춤 설정하세요. 
-          이 설정은 모든 텍스트 변환에 적용됩니다.
+          텍스트 변환 시 제외하고 싶은 표현들을 맞춤 설정하세요. 이 설정은 모든
+          텍스트 변환에 적용됩니다.
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
-        {/* 미사여구 설정 */}
+        {/* Rhetoric settings */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">🎭</Badge>
             <Label className="text-base font-medium">미사여구 제한</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            "놀라운", "대단한", "훌륭한" 같은 과장된 수식어 사용을 어느 정도까지 허용할지 설정합니다.
+            "놀라운", "대단한", "훌륭한" 같은 과장된 수식어 사용을 어느 정도까지
+            허용할지 설정합니다.
           </p>
           <Select
             value={preferences.rhetoricLevel}
-            onValueChange={(value: 'strict' | 'moderate' | 'lenient') => 
-              updatePreference('rhetoricLevel', value)
+            onValueChange={(value: "strict" | "moderate" | "lenient") =>
+              updatePreference("rhetoricLevel", value)
             }
           >
             <SelectTrigger>
@@ -154,7 +175,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
                 <SelectItem key={option.value} value={option.value}>
                   <div className="flex flex-col">
                     <span>{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -164,19 +187,20 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
 
         <Separator />
 
-        {/* 반복 표현 설정 */}
+        {/* Repetition expression settings */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">🔁</Badge>
+            <Badge variant="outline">Repeat</Badge>
             <Label className="text-base font-medium">반복 표현 제한</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            "그리고 또한", "~에 대해서도" 같은 비슷한 단어들의 반복 사용을 제한합니다.
+            "그리고 또한", "~에 대해서도" 같은 비슷한 단어들의 반복 사용을
+            제한합니다.
           </p>
           <Select
             value={preferences.repetitionTolerance}
-            onValueChange={(value: 'strict' | 'moderate' | 'lenient') => 
-              updatePreference('repetitionTolerance', value)
+            onValueChange={(value: "strict" | "moderate" | "lenient") =>
+              updatePreference("repetitionTolerance", value)
             }
           >
             <SelectTrigger>
@@ -187,7 +211,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
                 <SelectItem key={option.value} value={option.value}>
                   <div className="flex flex-col">
                     <span>{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -197,10 +223,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
 
         <Separator />
 
-        {/* 쉼표 사용 스타일 */}
+        {/* Comma usage style */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">✏️</Badge>
             <Label className="text-base font-medium">쉼표 사용 스타일</Label>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -208,8 +233,8 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
           </p>
           <Select
             value={preferences.punctuationStyle}
-            onValueChange={(value: 'minimal' | 'standard' | 'verbose') => 
-              updatePreference('punctuationStyle', value)
+            onValueChange={(value: "minimal" | "standard" | "verbose") =>
+              updatePreference("punctuationStyle", value)
             }
           >
             <SelectTrigger>
@@ -220,7 +245,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
                 <SelectItem key={option.value} value={option.value}>
                   <div className="flex flex-col">
                     <span>{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -230,19 +257,20 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
 
         <Separator />
 
-        {/* 내용 vs 형식 우선순위 */}
+        {/* Content vs format priority */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">📝</Badge>
-            <Label className="text-base font-medium">내용 vs 형식 우선순위</Label>
+            <Label className="text-base font-medium">
+              내용 vs 형식 우선순위
+            </Label>
           </div>
           <p className="text-sm text-muted-foreground">
             텍스트 변환 시 내용을 우선할지, 형식을 우선할지 설정합니다.
           </p>
           <Select
             value={preferences.contentFocus}
-            onValueChange={(value: 'content' | 'balanced' | 'format') => 
-              updatePreference('contentFocus', value)
+            onValueChange={(value: "content" | "balanced" | "format") =>
+              updatePreference("contentFocus", value)
             }
           >
             <SelectTrigger>
@@ -253,7 +281,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
                 <SelectItem key={option.value} value={option.value}>
                   <div className="flex flex-col">
                     <span>{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -263,10 +293,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
 
         <Separator />
 
-        {/* 불렛 포인트 사용 */}
+        {/* Bullet point usage */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">📋</Badge>
             <Label className="text-base font-medium">불렛 포인트 사용</Label>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -274,8 +303,8 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
           </p>
           <Select
             value={preferences.bulletPreference}
-            onValueChange={(value: 'avoid' | 'minimal' | 'prefer') => 
-              updatePreference('bulletPreference', value)
+            onValueChange={(value: "avoid" | "minimal" | "prefer") =>
+              updatePreference("bulletPreference", value)
             }
           >
             <SelectTrigger>
@@ -286,7 +315,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
                 <SelectItem key={option.value} value={option.value}>
                   <div className="flex flex-col">
                     <span>{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -296,10 +327,10 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
 
         <Separator />
 
-        {/* 이모티콘 정책 */}
+        {/* Emoticon policy */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">😊</Badge>
+            <Badge variant="outline">Positive</Badge>
             <Label className="text-base font-medium">이모티콘 사용 정책</Label>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -307,9 +338,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
           </p>
           <Select
             value={preferences.emoticonPolicy}
-            onValueChange={(value: 'none' | 'minimal' | 'contextual' | 'frequent') => 
-              updatePreference('emoticonPolicy', value)
-            }
+            onValueChange={(
+              value: "none" | "minimal" | "contextual" | "frequent"
+            ) => updatePreference("emoticonPolicy", value)}
           >
             <SelectTrigger>
               <SelectValue />
@@ -319,7 +350,9 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
                 <SelectItem key={option.value} value={option.value}>
                   <div className="flex flex-col">
                     <span>{option.label}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -329,14 +362,14 @@ export function NegativePromptSettings({ userId, onSave }: NegativePromptSetting
 
         <Separator />
 
-        {/* 저장 버튼 */}
+        {/* Save button */}
         <div className="flex justify-end gap-3">
           <Button
             onClick={handleSave}
             disabled={isLoading}
             className="flex items-center gap-2"
           >
-            <Zap className="h-4 w-4" />
+            <Zap className="w-4 h-4" />
             {isLoading ? "저장 중..." : "설정 저장"}
           </Button>
         </div>

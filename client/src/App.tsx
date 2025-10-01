@@ -10,7 +10,7 @@ import QuestionnairePage from "@/pages/QuestionnairePage";
 import ResultsPage from "@/pages/ResultsPage";
 import ConverterPage from "@/pages/ConverterPage";
 import ValidatePage from "@/pages/ValidatePage";
-import UploadPage from "@/pages/UploadPage"; // 추가
+import UploadPage from "@/pages/UploadPage"; // Added
 import NotFound from "@/pages/not-found";
 import Layout from "@/pages/layout";
 
@@ -18,23 +18,24 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        {/* 홈페이지 (모드 선택) */}
+        {/* Homepage (mode selection) */}
         <Route path="/" component={HomePage} />
 
-        {/* 스타일 정의 (설문 페이지) */}
-        <Route path="/style-definition" component={QuestionnairePage} />
+        {/* Style definition (questionnaire page) */}
+        <Route path="/questionnaire" component={QuestionnairePage} />
 
-        {/* 스타일 정의 (문서 업로드) */}
-        <Route path="/upload-documents" component={UploadPage} />
+        {/* Style definition (document upload) */}
+        <Route path="/upload" component={UploadPage} />
 
         {/* 스타일 분석 결과 */}
-        <Route path="/style-definition/results" component={ResultsPage} />
+        {/* Style analysis results */}
+        <Route path="/results" component={ResultsPage} />
 
-        {/* 스타일 변환기 */}
-        <Route path="/style-conversion" component={ConverterPage} />
+        {/* Style converter */}
+        <Route path="/converter" component={ConverterPage} />
 
-        {/* 품질 분석기 */}
-        <Route path="/quality-analysis" component={ValidatePage} />
+        {/* Quality analyzer */}
+        <Route path="/validate" component={ValidatePage} />
 
         {/* 404 Not Found */}
         <Route component={NotFound} />

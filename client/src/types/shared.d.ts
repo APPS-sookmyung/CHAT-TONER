@@ -1,6 +1,6 @@
 declare module "@shared/schema" {
   // =======================================
-  // 기존 타입들
+  // Existing Types
   // =======================================
   export type UserProfile = {
     id?: number;
@@ -46,12 +46,23 @@ declare module "@shared/schema" {
   };
 
   // =======================================
-  // 기업용 분석 추가 타입들
+  // Additional Types for Enterprise Analysis
   // =======================================
 
   // Enums
-  export type TargetAudience = "직속상사" | "팀동료" | "타부서담당자" | "클라이언트" | "외부협력업체" | "후배신입";
-  export type ContextType = "보고서" | "회의록" | "이메일" | "공지사항" | "메시지";
+  export type TargetAudience =
+    | "직속상사"
+    | "팀동료"
+    | "타부서담당자"
+    | "클라이언트"
+    | "외부협력업체"
+    | "후배신입";
+  export type ContextType =
+    | "보고서"
+    | "회의록"
+    | "이메일"
+    | "공지사항"
+    | "메시지";
   export type FeedbackType = "grammar" | "protocol";
   export type FeedbackValue = "good" | "bad";
   export type SeverityLevel = "high" | "medium" | "low";
@@ -132,7 +143,7 @@ declare module "@shared/schema" {
   }
 
   export interface DropdownOptions {
-    target_audiences: { value: string; label: string; }[];
-    contexts: { value: string; label: string; }[];
+    target_audiences: { value: string; label: string }[];
+    contexts: { value: string; label: string }[];
   }
 }

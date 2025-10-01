@@ -20,7 +20,7 @@ class OpenAIService:
         
         # API 키가 없거나 placeholder인 경우 Mock 모드로 동작
         if not self.api_key or self.api_key == "your-openai-api-key-here":
-            print("⚠️  OpenAI API 키가 없습니다. Mock 모드로 동작합니다.")
+            print("WARNING: OpenAI API key not found. Running in mock mode.")
             self.client = None
             self.mock_mode = True
         else:
@@ -28,7 +28,7 @@ class OpenAIService:
                 self.client = OpenAI(api_key=self.api_key)
                 self.mock_mode = False
             except Exception as e:
-                print(f"⚠️  OpenAI 클라이언트 초기화 실패: {e}. Mock 모드로 동작합니다.")
+                print(f"WARNING: OpenAI client initialization failed: {e}. Running in mock mode.")
                 self.client = None
                 self.mock_mode = True
     #3가지 스타일(direct, gentle, neutral)을 변환하는 메인 함수.

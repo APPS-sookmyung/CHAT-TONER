@@ -19,10 +19,10 @@ export default function Header() {
     };
 
     checkProfile();
-    // 프로필 변경을 감지하기 위해 storage 이벤트 리스너 추가
+    // Add storage event listener to detect profile changes
     window.addEventListener("storage", checkProfile);
 
-    // 프로필 변경을 더 확실하게 감지하기 위해 interval 추가 (5초마다, 디버깅용)
+    // Add interval for more reliable profile change detection (every 5 seconds, for debugging)
     const interval = setInterval(checkProfile, 5000);
 
     return () => {
@@ -31,13 +31,13 @@ export default function Header() {
     };
   }, []);
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-6xl px-4 mx-auto sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Left: Logo / Title */}
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-[#00C4B7] rounded-xl flex items-center justify-center">
-              <MessageSquare className="text-white w-5 h-5" />
+              <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
               <Link href="/" className="text-xl font-bold text-gray-900">

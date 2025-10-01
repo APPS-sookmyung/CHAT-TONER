@@ -281,7 +281,7 @@ if __name__ == "__main__":
         embedder = SimpleTextEmbedder()
         if embedder.load():
             results = embedder.search("비즈니스 표현", top_k=3)
-            print("\n🔍 검색 결과:")
+            print("\nSearch results:")
             for doc, score in results:
                 print(f"점수: {score:.3f} | 문서: {doc[:50]}...")
     else:
