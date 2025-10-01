@@ -38,6 +38,7 @@ class ConversionService:
             변환 결과와 메타데이터
         """
         try:
+            # @@ 기업 컨텍스트 누락: 회사 규정, 내부 프로토콜 등 기업 특화 정보 미반영
             # 1. 프롬프트 생성
             prompts = self.prompt_engineer.generate_conversion_prompts(
                 user_profile=user_profile,

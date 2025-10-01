@@ -38,12 +38,13 @@ class RAGService:
     
     def _initialize_simple_embedder(self):
         """GPT 및 Simple Text Embedder 초기화 (개선된 버전)"""
+        # @@ [윤지원] 기업 특화 임베딩 부족: 기업별 지식베이스, 가이드라인 문서 처리 로직 없음
         embedder_initialized = False
-        
+
         # GPT Embedder 우선 시도
         if self._try_gpt_embedder():
             embedder_initialized = True
-        
+
         # 실패 시 Simple Embedder 백업
         if not embedder_initialized:
             self._try_simple_embedder()
