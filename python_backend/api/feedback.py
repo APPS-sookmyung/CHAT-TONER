@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, status
-from schemas.feedback import UserFeedback
+from api.v1.schemas.quality import UserFeedbackRequest as UserFeedback
 from typing import Dict
 
 router = APIRouter(
