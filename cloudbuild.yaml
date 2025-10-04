@@ -34,8 +34,8 @@ images:
 timeout: '1200s'
 
 options:
-  # Use a larger machine type if needed
-  machineType: 'N1_HIGHCPU_8'
+  # Use E2 machine type (N1 not supported in some regions)
+  machineType: 'E2_HIGHCPU_8'
   # Disk size in GB
   diskSizeGb: 100
   # Enable logging
