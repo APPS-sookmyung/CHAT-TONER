@@ -25,6 +25,22 @@ steps:
       - 'gcr.io/$PROJECT_ID/chattoner-client:$COMMIT_SHA'
     id: 'push-commit-sha'
 
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'client'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/chattoner-client:latest'
+      - '--region'
+      - 'asia-northeast3'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+    id: 'deploy-cloud-run'
+
 # Images to be pushed to Container Registry
 images:
   - 'gcr.io/$PROJECT_ID/chattoner-client:latest'
