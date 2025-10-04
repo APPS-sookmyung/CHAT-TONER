@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     CORS_METHODS: list = ["*"]
     CORS_HEADERS: list = ["*"]
     
+    # 피드백 보안키 설정
+    SECRET_KEY: str = "default-secret-key-for-dev"
+
     class Config:
         env_file = Path(__file__).resolve().parent.parent / ".env"  # 프로젝트 루트의 .env 파일 참조
         case_sensitive = True

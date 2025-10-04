@@ -21,6 +21,8 @@ from core.container import Container
 from core.middleware import setup_middleware
 from core.exception_handlers import setup_exception_handlers
 from api.v1.router import api_router
+from starlette.middleware.session import SessionMiddleware
+from api import feedback
 
 FRONT_ORIGINS = [
     "https://client-184664486594.asia-northeast3.run.app",
@@ -77,7 +79,10 @@ def create_app() -> FastAPI:
     
     # 미들웨어 설정
     setup_middleware(app, settings)
-    
+
+    # 세션 미들웨어 추가 - secret_key .env 설정 파일에서 관리
+    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+
     # 예외 핸들러 설정
     setup_exception_handlers(app)
     
@@ -85,9 +90,8 @@ def create_app() -> FastAPI:
     async def health_check():
         """서비스 상태를 확인하는 기본 엔드포인트"""
         return {"status": "ok", "message": "Welcome to Chat Toner API!"}
-
-    # 라우터 포함
     app.include_router(api_router, prefix="/api/v1")
+    app.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
     
     return app
 

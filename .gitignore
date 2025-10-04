@@ -44,3 +44,4 @@ python_backend/core/config.py
 # Documentation and issue tracking (local only)
 CLAUDE.md
 API_MISMATCH_ISSUES.md
+
