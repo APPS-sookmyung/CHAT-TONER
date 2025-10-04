@@ -1,0 +1,79 @@
+# Python FastAPI Backend - Cloud Build Configuration
+# Trigger path: python_backend/**
+
+steps:
+  # Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+    dir: 'python_backend'
+    id: 'build-backend-image'
+
+  # Push latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
+    id: 'push-backend-latest'
+
+  # Push commit SHA tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA'
+    id: 'push-backend-sha'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'chattoner-back'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
+      - '--region'
+      - 'asia-northeast3'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--timeout'
+      - '300'
+      - '--concurrency'
+      - '80'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'ENVIRONMENT=production,PORT=8080'
+      - '--update-secrets'
+      - 'DATABASE_URL=DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest'
+    id: 'deploy-backend-cloudrun'
+
+# Images to be stored in Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
+  - 'gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA'
+
+# Build timeout
+timeout: '1200s'
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
