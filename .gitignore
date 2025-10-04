@@ -41,4 +41,7 @@ python_backend/.venv/
 
 python_backend/core/config.py
 
-setting.env
+# Documentation and issue tracking (local only)
+CLAUDE.md
+API_MISMATCH_ISSUES.md
+
