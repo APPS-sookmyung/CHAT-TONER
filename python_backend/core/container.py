@@ -16,7 +16,8 @@ from services.rag_service import RAGService
 # 선택적 import (의존성이 있을 때만)
 try:
     from agents.quality_analysis_agent import OptimizedEnterpriseQualityAgent
-    from services.enterprise_db_service import EnterpriseDBService
+    from services.enterprise_db_service import EnterpriseDBService, get_enterprise_db_service
+    from services.quality_analysis_service import OptimizedEnterpriseQualityService
     ENTERPRISE_FEATURES_AVAILABLE = True
 except ImportError as e:
     # @@ langgraph 의존성 설치 필요: pip install langgraph
@@ -76,4 +77,10 @@ class Container(containers.DeclarativeContainer):
             OptimizedEnterpriseQualityAgent,
             rag_service=rag_service,
             db_service=enterprise_db_service
+        )
+
+        # 기업용 품질분석 서비스
+        enterprise_quality_service = providers.Factory(
+            OptimizedEnterpriseQualityService,
+            rag_service=rag_service
         )
