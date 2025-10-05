@@ -1,6 +1,7 @@
 """
 최적화된 기업용 Quality Analysis Agent
 단일 API 호출로 문법 + 프로토콜 통합 분석
+Agent 내부 fallback 포함
 """
 
 from typing import TypedDict, Dict, Any, List, Optional
@@ -15,7 +16,7 @@ from .base_agent import (
 )
 
 class OptimizedEnterpriseQualityState(BaseAgentState):
-    """ 기업용 Quality Analysis Agent 전용 상태"""
+    """기업용 Quality Analysis Agent 전용 상태"""
     # 기본 입력
     text: str
     target_audience: str
@@ -48,10 +49,10 @@ class OptimizedEnterpriseQualityState(BaseAgentState):
 
 @dataclass
 class OptimizedEnterpriseQualityConfig(BaseAgentConfig):
-    """ 기업용 Quality Agent 설정"""
+    """기업용 Quality Agent 설정"""
     name: str = "optimized_enterprise_quality"
     version: str = "1.1.0"
-    timeout: float = 35.0  # 단일 호출로 시간 단축
+    timeout: float = 35.0
     max_suggestions: int = 4
     max_protocol_suggestions: int = 4
     confidence_threshold: float = 0.6
@@ -65,14 +66,14 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         self.db_service = db_service
     
     def _build_graph(self) -> StateGraph:
-        """워크플로우 """
+        """워크플로우"""
         workflow = StateGraph(OptimizedEnterpriseQualityState)
         
         # 노드 정의 
         workflow.add_node("initialize", CommonAgentNodes.initialize_step)
         workflow.add_node("load_company_data", self._load_company_data)
-        workflow.add_node("comprehensive_analysis", self._comprehensive_analysis)  # 통합 분석
-        workflow.add_node("process_results", self._process_analysis_results)      # 결과 처리
+        workflow.add_node("comprehensive_analysis", self._comprehensive_analysis)
+        workflow.add_node("process_results", self._process_analysis_results)
         workflow.add_node("finalize", CommonAgentNodes.finalize_step)
         
         # 워크플로우 연결 
@@ -91,7 +92,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             # 기본 입력
             text=kwargs.get('text', ''),
             target_audience=kwargs.get('target_audience', '팀동료'),
-            context=kwargs.get('context', '이메일'),
+            context=kwargs.get('context', '메시지'),
             company_id=kwargs.get('company_id', ''),
             user_id=kwargs.get('user_id', ''),
             
@@ -129,7 +130,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         return OptimizedEnterpriseQualityConfig()
     
     async def _load_company_data(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
-        """기업 데이터 로딩 (기존과 동일)"""
+        """기업 데이터 로딩"""
         async with self._step_context("기업 데이터 로딩", state):
             try:
                 # 기업 프로필 로딩
@@ -155,7 +156,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         return state
     
     async def _comprehensive_analysis(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
-        """통합 분석 (단일 API 호출)"""
+        """통합 분석 with 내부 fallback"""
         async with self._step_context("통합 분석", state):
             # @@ 클로드가 프롬프트 길이 최적화 필요하대요: 현재 228줄의 긴 프롬프트는 토큰 낭비 및 성능 저하 원인
             # 기업 맥락 정보 구성
@@ -235,20 +236,149 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             
             if result:
                 try:
-                    # @@ JSON 파싱 실패 처리 부족: fallback 로직 없어서 전체 분석 실패 가능성
+                    # JSON 파싱 (BaseAgent 메서드 사용)
                     analysis_data = self._extract_json_from_text(result["answer"])
                     state["comprehensive_analysis"] = analysis_data
                     state["rag_sources"].extend(result.get("sources", []))
-
-                    self.logger.info("통합 분석 완료")
-
-                except Exception as e:
-                    self.logger.warning(f"통합 분석 결과 파싱 실패: {e}")
-                    state["error_message"] = f"통합 분석 결과 처리 실패: {str(e)}"
-            else:
-                state["error_message"] = "통합 분석 RAG 호출 실패"
+                    state["processing_metadata"]["analysis_method"] = "rag_comprehensive"
+                    
+                    self.logger.info("RAG 통합 분석 완료")
+                    return state
+                    
+                except (ValueError, json.JSONDecodeError) as e:
+                    # JSON 파싱 실패 → Agent 내부 fallback
+                    self.logger.warning(f"JSON 파싱 실패: {e}")
+                    return await self._agent_fallback_to_rule_based(state, f"JSON 파싱 실패: {e}")
+            
+            # RAG 호출 실패 → Agent 내부 fallback
+            self.logger.warning("RAG 호출 실패")
+            return await self._agent_fallback_to_rule_based(state, "RAG 호출 실패")
         
         return state
+    
+    async def _agent_fallback_to_rule_based(
+        self, 
+        state: OptimizedEnterpriseQualityState,
+        reason: str
+    ) -> OptimizedEnterpriseQualityState:
+        """Agent 내부 규칙 기반 fallback"""
+        from services.rewrite_service import rewrite_text
+        
+        try:
+            self.logger.info(f"Agent 내부 규칙 기반 분석 시작 (이유: {reason})")
+            
+            # rewrite_text 실행
+            rewrite_result = rewrite_text(
+                text=state["text"],
+                traits={},
+                context={
+                    "audience": self._map_audience(state["target_audience"]),
+                    "channel": self._map_channel(state["context"])
+                },
+                options={"strict_policy": False}
+            )
+            
+            # 결과 변환
+            state["comprehensive_analysis"] = self._convert_rewrite_to_analysis(rewrite_result)
+            state["processing_metadata"]["analysis_method"] = "agent_rule_based_fallback"
+            state["processing_metadata"]["fallback_reason"] = reason
+            
+            self.logger.info("Agent 규칙 기반 분석 완료")
+            return state
+            
+        except Exception as e:
+            # Agent 내부 fallback도 실패 → 최소값
+            self.logger.error(f"Agent 규칙 기반도 실패: {e}")
+            state["comprehensive_analysis"] = self._minimal_analysis()
+            state["processing_metadata"]["analysis_method"] = "agent_minimal_fallback"
+            state["error_message"] = f"Agent 분석 실패: {reason}, Fallback 실패: {e}"
+            return state
+    
+    def _map_audience(self, target: str) -> list:
+        """대상 매핑"""
+        mapping = {
+            "직속상사": ["executives"],
+            "팀동료": ["team"],
+            "타부서담당자": ["team"],
+            "클라이언트": ["clients_vendors"],
+            "외부협력업체": ["clients_vendors"],
+            "후배신입": ["team"]
+        }
+        return mapping.get(target, ["team"])
+    
+    def _map_channel(self, context: str) -> str:
+        """채널 매핑"""
+        mapping = {
+            "보고서": "report",
+            "회의록": "meeting_minutes",
+            "이메일": "email",
+            "공지사항": "email",
+            "메시지": "chat"
+        }
+        return mapping.get(context, "email")
+    
+    def _convert_rewrite_to_analysis(self, rewrite_result: dict) -> dict:
+        """rewrite 결과 → Agent 분석 형식 변환"""
+        grammar = rewrite_result.get("grammar", {})
+        protocol = rewrite_result.get("protocol", {})
+        
+        grammar_score = grammar.get("metrics", {}).get("grammar_score", 70.0)
+        korean_endings = grammar.get("korean_endings", {})
+        formality_score = 85.0 if korean_endings.get("ending_ok") else 70.0
+        
+        avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 30)
+        readability_score = 90.0 if avg_len < 20 else (75.0 if avg_len < 50 else 60.0)
+        
+        protocol_score = protocol.get("metrics", {}).get("policy_score", 0.7) * 100
+        
+        return {
+            "grammar_analysis": {
+                "grammar_score": grammar_score,
+                "formality_score": formality_score,
+                "readability_score": readability_score,
+                "grammar_issues": []
+            },
+            "protocol_analysis": {
+                "protocol_score": protocol_score,
+                "compliance_issues": [],
+                "tone_assessment": {
+                    "matches_company_tone": True,
+                    "appropriateness": "appropriate",
+                    "suggestions": []
+                },
+                "format_compliance": {
+                    "meets_format": True,
+                    "required_elements": []
+                }
+            },
+            "overall_assessment": {
+                "enterprise_readiness": (grammar_score + formality_score + protocol_score) / 3,
+                "primary_concerns": ["규칙 기반 분석 결과"],
+                "strengths": []
+            }
+        }
+    
+    def _minimal_analysis(self) -> dict:
+        """최소 기본값"""
+        return {
+            "grammar_analysis": {
+                "grammar_score": 60.0,
+                "formality_score": 60.0,
+                "readability_score": 60.0,
+                "grammar_issues": []
+            },
+            "protocol_analysis": {
+                "protocol_score": 60.0,
+                "compliance_issues": [],
+                "tone_assessment": {},
+                "format_compliance": {}
+            },
+            "overall_assessment": {
+                "enterprise_readiness": 60.0,
+                "primary_concerns": ["Agent 분석 실패"],
+                "strengths": []
+            }
+        }
     
     async def _process_analysis_results(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
         """분석 결과 처리 및 점수 계산"""
@@ -348,11 +478,11 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         # @@ 점수 조정 로직 부족: 단순 곱셈만으로는 기업별 특성 반영 한계
         # 기업 스타일별 조정
         style_multipliers = {
-            "strict": 0.9,
-            "formal": 1.0,
-            "friendly": 1.05
+            "strict": 0.9,    
+            "formal": 1.0,    
+            "friendly": 1.05  
         }
-
+        
         multiplier = style_multipliers.get(company_style, 1.0)
         
         # RAG 신뢰도 반영
@@ -402,8 +532,8 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             
             # 최적화 정보
             "optimization_info": {
-                "api_calls_used": 1,  # 단일 호출
-                "analysis_method": "comprehensive"
+                "api_calls_used": 1 if final_state["processing_metadata"].get("analysis_method") == "rag_comprehensive" else 0,
+                "analysis_method": final_state["processing_metadata"].get("analysis_method", "unknown")
             }
         }
         
