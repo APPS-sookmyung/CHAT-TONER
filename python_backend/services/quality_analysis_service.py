@@ -1,22 +1,17 @@
 """
-기업용 품질분석 서비스 - DB 연동 버전
-rewrite_text 기반 fallback 적용 (하드코딩 완전 제거)
+기업용 품질분석 서비스 - Service Layer
+Agent 우선 실행, 실패 시 Emergency Fallback
 """
 
 import asyncio
 import logging
+import time
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
-
-# 기존 imports
 from .rag_service import RAGService
 from services.rewrite_service import rewrite_text
 
-# 새로운 imports
-from agents.quality_analysis_agent import OptimizedEnterpriseQualityAgent, OptimizedEnterpriseQualityConfig 
-from .enterprise_db_service import EnterpriseDBService, get_enterprise_db_service
-
-logger = logging.getLogger('chattoner.enterprise_quality_service')
+logger = logging.getLogger('chattoner.quality_analysis_service')
 
 # 정의한 대상/상황 매핑
 ENTERPRISE_TARGETS = {
@@ -44,10 +39,11 @@ class OptimizedEnterpriseQualityServiceConfig:
     protocol_weight: float = 0.4
     grammar_weight: float = 0.6
     fallback_to_rule_based: bool = True
+    enable_llm_in_emergency: bool = True
     db_timeout: float = 30.0
 
 class OptimizedEnterpriseQualityService:
-    """기업용 품질분석 서비스"""
+    """기업용 품질분석 서비스 (Agent Orchestrator)"""
     
     def __init__(
         self,
@@ -57,23 +53,39 @@ class OptimizedEnterpriseQualityService:
         self.rag_service = rag_service
         self.config = config or OptimizedEnterpriseQualityServiceConfig()
         
-        # DB 서비스 (lazy 초기화)
+        # Lazy 초기화
         self.db_service = None
         self.enterprise_agent = None
         
         logger.info("기업용 품질분석 서비스 초기화 완료")
     
     async def _ensure_initialized(self):
-        """DB 서비스 및 Agent 초기화"""
+        """DB 서비스 및 Agent 초기화 (실패해도 계속)"""
+        if self.enterprise_agent is not None:
+            return  # 이미 초기화됨
+
+        # DB 서비스 초기화
         if self.db_service is None:
             try:
+                from services.enterprise_db_service import get_enterprise_db_service
                 self.db_service = await get_enterprise_db_service()
+                logger.info("DB 서비스 초기화 완료")
+            except Exception as e:
+                logger.warning(f"DB 서비스 초기화 실패: {e}")
+                # DB가 없으면 Agent도 초기화할 수 없으므로 여기서 중단
+                return
+
+        # Agent 초기화 (DB 서비스가 성공적으로 초기화된 경우)
+        if self.enterprise_agent is None:
+            try:
+                from agents.quality_analysis_agent import (
+                    OptimizedEnterpriseQualityAgent,
+                    OptimizedEnterpriseQualityConfig
+                )
                 
-                # Agent 설정
+                # 유효한 파라미터만 사용하여 Agent 설정 객체 생성
                 agent_config = OptimizedEnterpriseQualityConfig(
-                    enable_protocol_analysis=self.config.enable_protocol_analysis,
-                    protocol_weight=self.config.protocol_weight,
-                    grammar_weight=self.config.grammar_weight
+                    enable_llm_fallback=self.config.enable_llm_in_emergency
                 )
                 
                 self.enterprise_agent = OptimizedEnterpriseQualityAgent(
@@ -85,9 +97,8 @@ class OptimizedEnterpriseQualityService:
                 logger.info("기업용 Agent 초기화 완료")
                 
             except Exception as e:
-                logger.error(f"기업용 서비스 초기화 실패: {e}")
-                if not self.config.fallback_to_rule_based:
-                    raise
+                logger.warning(f"Agent 초기화 실패: {e}")
+                # Agent 초기화에 실패해도 서비스는 계속 동작해야 함
     
     async def analyze_enterprise_text(
         self,
@@ -98,9 +109,9 @@ class OptimizedEnterpriseQualityService:
         user_id: str,
         detailed: bool = False
     ) -> Dict[str, Any]:
-        """기업용 텍스트 품질 분석"""
+        """기업용 텍스트 품질 분석 (Agent 우선, Emergency fallback)"""
         
-        start_time = asyncio.get_event_loop().time()
+        start_time = time.time()
         
         try:
             # 대상/상황 유효성 검사
@@ -110,92 +121,320 @@ class OptimizedEnterpriseQualityService:
             if context not in ENTERPRISE_CONTEXTS:
                 raise ValueError(f"지원하지 않는 상황: {context}")
             
-            # 기업용 Agent 초기화
+            # 초기화 시도 (실패해도 계속)
             await self._ensure_initialized()
             
-            if self.enterprise_agent is None:
-                raise Exception("기업용 Agent 초기화 실패")
+            # Agent 있으면 Agent 사용
+            if self.enterprise_agent is not None:
+                try:
+                    logger.info("Agent로 기업용 분석 시작")
+                    result = await self.enterprise_agent.analyze_enterprise_quality(
+                        text=text,
+                        target_audience=target_audience,
+                        context=context,
+                        company_id=company_id,
+                        user_id=user_id
+                    )
+                    
+                    # Agent 성공
+                    if not result.get('error'):
+                        result['processing_time'] = time.time() - start_time
+                        result['method_used'] = result.get('optimization_info', {}).get('analysis_method', 'agent')
+                        
+                        if detailed:
+                            result.update(await self._add_enterprise_detailed_analysis(
+                                result, text, target_audience, context
+                            ))
+                        
+                        logger.info(f"Agent 분석 완료 - 방법: {result['method_used']}")
+                        return result
+                    
+                    # Agent가 에러 반환 → Emergency로
+                    logger.warning(f"Agent 분석 실패: {result.get('error')} - Emergency 모드로 전환")
+                    
+                except Exception as e:
+                    # Agent 실행 중 예외 → Emergency로
+                    logger.error(f"Agent 실행 중 예외: {e} - Emergency 모드로 전환")
             
-            # 기업용 분석 실행
-            result = await self.enterprise_agent.analyze_enterprise_quality(
-                text=text,
-                target_audience=target_audience,
-                context=context,
-                company_id=company_id,
-                user_id=user_id
+            else:
+                # Agent 없음 → Emergency로
+                logger.warning("Agent 초기화 실패 - Emergency 분석 실행")
+            
+            # Emergency Analysis 실행
+            return await self._emergency_analysis(
+                text, target_audience, context, company_id, start_time
             )
             
-            # 처리 시간 추가
-            processing_time = asyncio.get_event_loop().time() - start_time
-            result['processing_time'] = processing_time
-            result['method_used'] = result.get('optimization_info', {}).get('analysis_method', 'enterprise_agent')
-            
-            # 상세 분석 추가
-            if detailed:
-                result.update(await self._add_enterprise_detailed_analysis(result, text, target_audience, context))
-            
-            logger.info(f"기업용 분석 완료 - 소요시간: {processing_time:.2f}초")
-            return result
-            
+        except ValueError as e:
+            # 유효성 검사 실패
+            logger.error(f"입력 유효성 검사 실패: {e}")
+            return self._create_error_response(
+                text, target_audience, context, str(e), start_time
+            )
+        
         except Exception as e:
-            logger.error(f"기업용 분석 실패: {e}")
+            # 예외 발생
+            logger.error(f"분석 중 예외 발생: {e}")
             
-            # Fallback to rule-based analysis
             if self.config.fallback_to_rule_based:
-                return await self._fallback_analysis(
-                    text, target_audience, context, start_time, str(e)
+                return await self._emergency_analysis(
+                    text, target_audience, context, company_id, start_time,
+                    error_msg=str(e)
                 )
             else:
-                return self._create_error_response(text, target_audience, context, str(e), start_time)
+                return self._create_error_response(
+                    text, target_audience, context, str(e), start_time
+                )
     
-    async def _fallback_analysis(
+    async def _emergency_analysis(
         self,
         text: str,
         target_audience: str,
         context: str,
+        company_id: str,
         start_time: float,
-        error_msg: str
+        error_msg: str = "Agent 비활성화"
     ) -> Dict[str, Any]:
-        """규칙 기반 fallback (rewrite_text 활용) - 하드코딩 없음"""
+        """Emergency 분석: 규칙 기반 + 경량 LLM 제안"""
         
-        logger.warning(f"규칙 기반 분석으로 전환: {error_msg}")
+        logger.warning(f"Emergency 분석 시작 (이유: {error_msg})")
         
-        # 대상/상황을 rewrite_text 형식으로 매핑
-        audience_list = self._map_target_to_audience(target_audience)
-        channel = self._map_context_to_channel(context)
-        
-        # rewrite_text로 규칙 기반 분석 실행 (analysis_only=True)
-        rewrite_result = rewrite_text(
+        # 1단계: rewrite_text로 분석
+        result = rewrite_text(
             text=text,
             traits={},
             context={
-                "audience": audience_list,
-                "channel": channel,
-                "situation": channel
+                "audience": self._map_target_to_audience(target_audience),
+                "channel": self._map_context_to_channel(context)
             },
-            options={"analysis_only": True}  # 수정 없이 분석만
+            options={"analysis_only": True}
         )
         
-        # rewrite 결과를 기업용 형식으로 변환
-        enterprise_result = self._convert_rewrite_to_enterprise_format(
-            rewrite_result, 
-            target_audience, 
-            context
-        )
+        # 2단계: 기본 점수 계산
+        scores = self._calculate_basic_scores(result)
         
-        processing_time = asyncio.get_event_loop().time() - start_time
-        enterprise_result.update({
-            'processing_time': processing_time,
-            'method_used': 'rule_based_fallback',
-            'fallback_reason': error_msg,
-            'fallback_source': 'rewrite_service'
-        })
+        # 3단계: LLM으로 제안 생성 (설정 활성화 시)
+        if self.config.enable_llm_in_emergency:
+            suggestions = await self._generate_emergency_suggestions_with_llm(
+                text, result, target_audience, context
+            )
+        else:
+            suggestions = self._create_basic_suggestions(result)
         
-        logger.info(f"규칙 기반 fallback 완료: {processing_time:.2f}초")
-        return enterprise_result
+        processing_time = time.time() - start_time
+        
+        return {
+            **scores,
+            "compliance_score": (scores["protocol_score"] + scores["formality_score"]) / 2,
+            "suggestions": suggestions["grammar"],
+            "protocol_suggestions": suggestions["protocol"],
+            "grammar_section": {
+                "score": scores["grammar_score"],
+                "suggestions": suggestions["grammar"]
+            },
+            "protocol_section": {
+                "score": scores["protocol_score"],
+                "suggestions": suggestions["protocol"]
+            },
+            "company_analysis": {
+                "company_id": company_id,
+                "communication_style": "unknown",
+                "compliance_level": scores["protocol_score"]
+            },
+            "processing_time": processing_time,
+            "method_used": "emergency_with_llm" if self.config.enable_llm_in_emergency else "emergency_basic",
+            "warnings": [f"Emergency 분석 모드: {error_msg}"]
+        }
+    
+    def _calculate_basic_scores(self, rewrite_result: dict, company_profile: dict = None) -> dict:
+        """기본 점수 계산 (company_profile 있으면 Agent와 동일한 조정 적용)"""
+        
+        grammar = rewrite_result.get("grammar", {})
+        protocol = rewrite_result.get("protocol", {})
+        
+        # 1) 절대 평가 점수 계산
+        base_grammar = grammar.get("metrics", {}).get("grammar_score", 70.0)
+        base_formality = self._extract_formality_score(grammar)
+        base_readability = self._extract_readability_score(grammar)
+        base_protocol = protocol.get("metrics", {}).get("policy_score", 0.7) * 100
+        
+        # 2) company_profile이 없으면 절대 평가만 반환
+        if not company_profile:
+            return {
+                "grammar_score": base_grammar,
+                "formality_score": base_formality,
+                "readability_score": base_readability,
+                "protocol_score": base_protocol
+            }
+        
+        # 3) company_profile이 있으면 Agent와 동일한 Expectation-Gap 적용
+        company_style = company_profile.get("communication_style", "formal")
+        expectations = {
+            "strict": {"formality": 90, "protocol": 85},
+            "formal": {"formality": 80, "protocol": 75},
+            "friendly": {"formality": 70, "protocol": 65}
+        }
+        expected = expectations.get(company_style, expectations["formal"])
+        
+        # Gap 계산 및 페널티 적용 (Agent와 동일)
+        formality_gap = max(0, expected["formality"] - base_formality)
+        protocol_gap = max(0, expected["protocol"] - base_protocol)
+        
+        formality_penalty = formality_gap * 0.2
+        protocol_penalty = protocol_gap * 0.3
+        
+        adjusted_formality = max(0, base_formality - formality_penalty)
+        adjusted_protocol = max(0, base_protocol - protocol_penalty)
+        
+        return {
+            "grammar_score": base_grammar,
+            "formality_score": adjusted_formality,  # 조정됨
+            "readability_score": base_readability,
+            "protocol_score": adjusted_protocol     # 조정됨
+        }
+    
+    def _extract_formality_score(self, grammar: dict) -> float:
+        """격식도 점수 추출"""
+        korean_endings = grammar.get("korean_endings", {})
+        if korean_endings.get("ending_ok"):
+            return 85.0
+        
+        speech_map = {
+            "합쇼체": 80.0,
+            "해요체": 75.0,
+            "의문형": 78.0,
+            "평서/반말": 60.0
+        }
+        return speech_map.get(korean_endings.get("speech_level"), 65.0)
+    
+    def _extract_readability_score(self, grammar: dict) -> float:
+        """가독성 점수 추출"""
+        avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 30)
+        if avg_len < 20: return 90.0
+        if avg_len < 30: return 85.0
+        if avg_len < 50: return 75.0
+        if avg_len < 80: return 65.0
+        return 55.0
+    
+    async def _generate_emergency_suggestions_with_llm(
+        self,
+        text: str,
+        analysis_result: dict,
+        target_audience: str,
+        context: str
+    ) -> dict:
+        """Emergency 상황에서 경량 LLM으로 제안 생성"""
+        
+        grammar = analysis_result.get("grammar", {})
+        protocol = analysis_result.get("protocol", {})
+        
+        # 문제점 요약
+        issues = []
+        korean_endings = grammar.get("korean_endings", {})
+        if not korean_endings.get("ending_ok"):
+            issues.append(f"- 어미: {korean_endings.get('speech_level', '부적절')}")
+        
+        banned = protocol.get("flags", {}).get("banned_terms", [])
+        if banned:
+            issues.append(f"- 금칙어: {', '.join(banned[:2])}")
+        
+        missing = protocol.get("details", {}).get("missing_sections", [])
+        if missing:
+            issues.append(f"- 누락: {', '.join(missing[:2])}")
+        
+        issues_summary = "\n".join(issues) if issues else "주요 문제 없음"
+        
+        # 초경량 프롬프트
+        prompt = f"""텍스트 개선 제안을 생성하세요.
+
+원문: {text[:200]}...
+대상: {target_audience}
+상황: {context}
+
+문제점:
+{issues_summary}
+
+JSON 형식:
+{{
+    "grammar": [{{"original": "문제 표현", "suggestion": "개선", "reason": "이유"}}],
+    "protocol": [{{"violation": "위반", "correction": "수정", "severity": "medium"}}]
+}}
+
+최대 3개씩만."""
+        
+        try:
+            result = await self.rag_service.ask_generative_question(
+                query=prompt,
+                context="Emergency 제안 생성"
+            )
+            
+            if result and result.get("success"):
+                import json
+                suggestions = json.loads(result["answer"])
+                
+                return {
+                    "grammar": [
+                        {
+                            "category": "문법",
+                            "original":
+                            s.get("original", ""),
+                            "suggestion": s.get("suggestion", ""),
+                            "reason": s.get("reason", "")
+                        }
+                        for s in suggestions.get("grammar", [])[:3]
+                    ],
+                    "protocol": [
+                        {
+                            "category": "프로토콜",
+                            "rule": "프로토콜",
+                            "violation": s.get("violation", ""),
+                            "correction": s.get("correction", ""),
+                            "severity": s.get("severity", "medium")
+                        }
+                        for s in suggestions.get("protocol", [])[:3]
+                    ]
+                }
+        except Exception as e:
+            logger.error(f"Emergency LLM 제안 실패: {e}")
+        
+        # LLM 실패 시 기본 제안
+        return self._create_basic_suggestions(analysis_result)
+    
+    def _create_basic_suggestions(self, analysis_result: dict) -> dict:
+        """기본 제안 (LLM 없이)"""
+        protocol = analysis_result.get("protocol", {})
+        
+        suggestions = {
+            "grammar": [],
+            "protocol": []
+        }
+        
+        # 금칙어만 구체적
+        banned = protocol.get("flags", {}).get("banned_terms", [])
+        for term in banned[:2]:
+            suggestions["protocol"].append({
+                "category": "프로토콜",
+                "rule": "금칙어",
+                "violation": term,
+                "correction": "대체 표현 사용",
+                "severity": "high"
+            })
+        
+        # 섹션 누락
+        missing = protocol.get("details", {}).get("missing_sections", [])
+        for section in missing[:1]:
+            suggestions["protocol"].append({
+                "category": "프로토콜",
+                "rule": "필수 섹션",
+                "violation": f"{section} 누락",
+                "correction": f"{section} 추가 권장",
+                "severity": "medium"
+            })
+        
+        return suggestions
     
     def _map_target_to_audience(self, target_audience: str) -> List[str]:
-        """기업용 대상을 rewrite_text audience로 매핑"""
+        """대상 매핑"""
         mapping = {
             "직속상사": ["executives"],
             "팀동료": ["team"],
@@ -207,7 +446,7 @@ class OptimizedEnterpriseQualityService:
         return mapping.get(target_audience, ["team"])
     
     def _map_context_to_channel(self, context: str) -> str:
-        """기업용 상황을 rewrite_text channel로 매핑"""
+        """상황 매핑"""
         mapping = {
             "보고서": "report",
             "회의록": "meeting_minutes",
@@ -217,137 +456,6 @@ class OptimizedEnterpriseQualityService:
         }
         return mapping.get(context, "email")
     
-    def _convert_rewrite_to_enterprise_format(
-        self, 
-        rewrite_result: Dict[str, Any],
-        target_audience: str,
-        context: str
-    ) -> Dict[str, Any]:
-        """rewrite_text 결과를 기업용 형식으로 변환 (텍스트 기반 점수)"""
-        
-        grammar = rewrite_result.get("grammar", {})
-        protocol = rewrite_result.get("protocol", {})
-        
-        # 문법 점수 - rewrite_service 계산값 사용
-        grammar_score = grammar.get("metrics", {}).get("grammar_score", 70.0)
-        
-        # 격식도 - 어미 분석 기반
-        korean_endings = grammar.get("korean_endings", {})
-        if korean_endings.get("ending_ok"):
-            formality_score = 85.0
-        else:
-            speech_level = korean_endings.get("speech_level", "기타")
-            formality_map = {
-                "합쇼체": 80.0,
-                "해요체": 75.0,
-                "의문형": 78.0,
-                "평서/반말": 60.0,
-                "기타": 65.0
-            }
-            formality_score = formality_map.get(speech_level, 65.0)
-        
-        # 가독성 - 평균 문장 길이 기반
-        avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 30)
-        if avg_len < 20:
-            readability_score = 90.0
-        elif avg_len < 30:
-            readability_score = 85.0
-        elif avg_len < 50:
-            readability_score = 75.0
-        elif avg_len < 80:
-            readability_score = 65.0
-        else:
-            readability_score = 55.0
-        
-        # 프로토콜 점수
-        protocol_score = protocol.get("metrics", {}).get("policy_score", 0.7) * 100
-        
-        # 제안사항 구성 (change_log에서 추출)
-        change_log = rewrite_result.get("change_log", {})
-        applied_fixes = change_log.get("applied_fixes", [])
-        
-        grammar_suggestions = []
-        protocol_suggestions = []
-        
-        for fix in applied_fixes[:4]:
-            if fix.get("rule") in ["grammar", "clarity"]:
-                grammar_suggestions.append({
-                    "category": "문법",
-                    "original": fix.get("before", ""),
-                    "suggestion": fix.get("after", ""),
-                    "reason": f"{fix.get('rule')} 개선"
-                })
-            elif fix.get("rule") == "term":
-                grammar_suggestions.append({
-                    "category": "용어",
-                    "original": fix.get("before", ""),
-                    "suggestion": fix.get("after", ""),
-                    "reason": fix.get("reason", "용어 표준화")
-                })
-        
-        # 프로토콜 이슈를 제안으로 변환
-        protocol_flags = protocol.get("flags", {})
-        if protocol_flags.get("banned_terms"):
-            for term in protocol_flags["banned_terms"][:2]:
-                protocol_suggestions.append({
-                    "category": "프로토콜",
-                    "rule": "금칙어 사용",
-                    "violation": term,
-                    "correction": "대체 표현 사용",
-                    "severity": "high"
-                })
-        
-        if not protocol_flags.get("format_ok"):
-            missing = protocol.get("details", {}).get("missing_sections", [])
-            for section in missing[:2]:
-                protocol_suggestions.append({
-                    "category": "프로토콜",
-                    "rule": "필수 섹션",
-                    "violation": f"{section} 누락",
-                    "correction": f"{section} 섹션 추가",
-                    "severity": "medium"
-                })
-        
-        return {
-            # 기본 점수 (모두 텍스트 기반 계산)
-            "grammar_score": grammar_score,
-            "formality_score": formality_score,
-            "readability_score": readability_score,
-            "protocol_score": protocol_score,
-            "compliance_score": (protocol_score + formality_score) / 2,
-            
-            # 제안사항
-            "suggestions": grammar_suggestions,
-            "protocol_suggestions": protocol_suggestions,
-            
-            # 섹션별 결과
-            "grammar_section": {
-                "score": grammar_score,
-                "feedback": grammar,
-                "suggestions": grammar_suggestions
-            },
-            "protocol_section": {
-                "score": protocol_score,
-                "feedback": protocol,
-                "suggestions": protocol_suggestions
-            },
-            
-            # 메타데이터
-            "company_analysis": {
-                "company_id": "fallback",
-                "communication_style": self._infer_style_from_target(target_audience),
-                "compliance_level": protocol_score
-            }
-        }
-    
-    def _infer_style_from_target(self, target_audience: str) -> str:
-        """대상으로부터 스타일 추론"""
-        if target_audience in ["직속상사", "클라이언트", "외부협력업체"]:
-            return "formal"
-        elif target_audience in ["후배신입"]:
-            return "friendly"
-        return "formal"
-    
     def _create_error_response(
         self, 
         text: str, 
@@ -356,48 +464,9 @@ class OptimizedEnterpriseQualityService:
         error_msg: str, 
         start_time: float
     ) -> Dict[str, Any]:
-        """오류 응답 생성 - 하드코딩 제거, 텍스트가 있으면 최소 분석"""
-        processing_time = asyncio.get_event_loop().time() - start_time
+        """완전 실패 시 에러 응답"""
+        processing_time = time.time() - start_time
         
-        # 텍스트가 있으면 최소한의 분석 시도
-        if text and len(text.strip()) >= 5:
-            try:
-                logger.info("오류 상황에서 최소 분석 시도")
-                
-                # rewrite_service로 최소 분석
-                audience_list = self._map_target_to_audience(target_audience)
-                channel = self._map_context_to_channel(context)
-                
-                rewrite_result = rewrite_text(
-                    text=text,
-                    traits={},
-                    context={
-                        "audience": audience_list,
-                        "channel": channel
-                    },
-                    options={"analysis_only": True}
-                )
-                
-                # 변환
-                result = self._convert_rewrite_to_enterprise_format(
-                    rewrite_result,
-                    target_audience,
-                    context
-                )
-                
-                result.update({
-                    "processing_time": processing_time,
-                    "method_used": "error_minimal_analysis",
-                    "error": error_msg,
-                    "warnings": ["시스템 오류로 최소 분석만 수행됨"]
-                })
-                
-                return result
-                
-            except Exception as minimal_error:
-                logger.error(f"최소 분석도 실패: {minimal_error}")
-        
-        # 텍스트가 없거나 최소 분석도 실패하면 0점 + 명확한 에러
         return {
             "grammar_score": 0.0,
             "formality_score": 0.0,
@@ -406,14 +475,8 @@ class OptimizedEnterpriseQualityService:
             "compliance_score": 0.0,
             "suggestions": [],
             "protocol_suggestions": [],
-            "grammar_section": {
-                "score": 0.0,
-                "suggestions": []
-            },
-            "protocol_section": {
-                "score": 0.0,
-                "suggestions": []
-            },
+            "grammar_section": {"score": 0.0, "suggestions": []},
+            "protocol_section": {"score": 0.0, "suggestions": []},
             "company_analysis": {
                 "company_id": "error",
                 "communication_style": "unknown",
@@ -432,7 +495,7 @@ class OptimizedEnterpriseQualityService:
         target_audience: str,
         context: str
     ) -> Dict[str, Any]:
-        """기업용 상세 분석 정보 추가"""
+        """상세 분석 정보 추가"""
         
         target_info = ENTERPRISE_TARGETS.get(target_audience, {})
         context_info = ENTERPRISE_CONTEXTS.get(context, {})
@@ -447,80 +510,25 @@ class OptimizedEnterpriseQualityService:
                     'overall_enterprise_readiness': base_result.get('compliance_score', 0) >= 75
                 },
                 'improvement_priority': self._determine_enterprise_improvement_priority(base_result)
-            },
-            'usage_recommendations': {
-                'suitable_channels': self._recommend_channels(base_result, context),
-                'target_adjustments': self._recommend_target_adjustments(base_result, target_audience),
-                'context_optimizations': self._recommend_context_optimizations(base_result, context)
             }
         }
         
         return detailed_info
     
     def _determine_enterprise_improvement_priority(self, result: Dict[str, Any]) -> List[str]:
-        """기업용 개선 우선순위 결정"""
+        """개선 우선순위 결정"""
         priorities = []
         
         if result.get('protocol_score', 70) < 70:
             priorities.append("기업 프로토콜 준수")
-        
         if result.get('formality_score', 70) < 70:
             priorities.append("격식도 조정")
-        
         if result.get('grammar_score', 70) < 70:
             priorities.append("문법 개선")
-        
         if result.get('readability_score', 70) < 70:
             priorities.append("가독성 향상")
         
         return priorities or ["전반적 품질 향상"]
-    
-    def _recommend_channels(self, result: Dict[str, Any], context: str) -> List[str]:
-        """적합한 채널 추천"""
-        score = result.get('compliance_score', 70)
-        
-        channel_recommendations = {
-            "보고서": ["email", "formal_document"] if score >= 80 else ["internal_review"],
-            "회의록": ["shared_drive", "team_channel"] if score >= 75 else ["draft_review"],
-            "이메일": ["email"] if score >= 70 else ["draft_mode"],
-            "공지사항": ["announcement_channel"] if score >= 80 else ["team_review"],
-            "메시지": ["instant_message", "chat"] if score >= 65 else ["formal_email"]
-        }
-        
-        return channel_recommendations.get(context, ["review_first"])
-    
-    def _recommend_target_adjustments(self, result: Dict[str, Any], target_audience: str) -> List[str]:
-        """대상별 조정 추천"""
-        formality_score = result.get('formality_score', 70)
-        target_info = ENTERPRISE_TARGETS.get(target_audience, {})
-        required_level = target_info.get('formality_level', 'medium')
-        
-        if required_level == 'very-high' and formality_score < 85:
-            return ["격식도를 매우 높여주세요", "공식적 표현 사용"]
-        elif required_level == 'high' and formality_score < 80:
-            return ["격식도를 높여주세요", "존댓말 사용"]
-        elif required_level == 'medium' and formality_score < 70:
-            return ["적절한 격식도 유지", "친근하되 예의바른 표현"]
-        
-        return ["현재 수준 적절"]
-    
-    def _recommend_context_optimizations(self, result: Dict[str, Any], context: str) -> List[str]:
-        """상황별 최적화 추천"""
-        protocol_score = result.get('protocol_score', 70)
-        context_info = ENTERPRISE_CONTEXTS.get(context, {})
-        required_elements = context_info.get('format_requirements', [])
-        
-        recommendations = []
-        
-        if protocol_score < 70:
-            recommendations.append(f"{context} 형식 요구사항 준수 필요")
-            recommendations.extend([f"포함 필요: {elem}" for elem in required_elements[:2]])
-        elif protocol_score < 80:
-            recommendations.append(f"{context}에 적합한 구조로 정리")
-        else:
-            recommendations.append("현재 형식 적절")
-        
-        return recommendations
     
     # 사용자 피드백 처리
     async def save_user_feedback(
@@ -538,7 +546,6 @@ class OptimizedEnterpriseQualityService:
                 logger.warning("DB 서비스 초기화 실패로 피드백 저장 불가")
                 return False
             
-            # 피드백 데이터 구성
             feedback_record = {
                 'user_id': user_id,
                 'company_id': company_id,
@@ -561,96 +568,6 @@ class OptimizedEnterpriseQualityService:
             logger.error(f"사용자 피드백 저장 실패: {e}")
             return False
     
-    async def generate_final_integrated_text(
-        self,
-        original_text: str,
-        grammar_feedbacks: List[Dict[str, Any]],
-        protocol_feedbacks: List[Dict[str, Any]],
-        user_selections: Dict[str, List[str]]
-    ) -> Dict[str, Any]:
-        """사용자 피드백 기반 최종 통합본 생성"""
-        
-        try:
-            await self._ensure_initialized()
-            
-            # 선택된 피드백만 필터링
-            selected_grammar = [
-                fb for fb in grammar_feedbacks 
-                if fb.get('id') in user_selections.get('grammar', [])
-            ]
-            selected_protocol = [
-                fb for fb in protocol_feedbacks 
-                if fb.get('id') in user_selections.get('protocol', [])
-            ]
-            
-            # 통합 프롬프트 구성
-            integration_prompt = f"""다음 원본 텍스트에 사용자가 선택한 개선사항들을 적용하여 최종 버전을 생성해주세요.
-
-원본 텍스트:
-{original_text}
-
-문법 개선사항 (사용자 승인):
-{self._format_selected_suggestions(selected_grammar)}
-
-프로토콜 개선사항 (사용자 승인):
-{self._format_selected_suggestions(selected_protocol)}
-
-요구사항:
-1. 원본의 의도와 핵심 내용을 유지하세요
-2. 선택된 개선사항만 적용하세요
-3. 자연스럽고 일관성 있는 텍스트로 완성하세요
-
-최종 텍스트:"""
-            
-            # RAG 서비스로 통합본 생성
-            result = await self.rag_service.ask_generative_question(
-                query=integration_prompt,
-                context="텍스트 통합 최종본 생성"
-            )
-            
-            if result and result.get("success"):
-                final_text = result["answer"].strip()
-                
-                return {
-                    "success": True,
-                    "final_text": final_text,
-                    "applied_suggestions": {
-                        "grammar_count": len(selected_grammar),
-                        "protocol_count": len(selected_protocol),
-                        "total_applied": len(selected_grammar) + len(selected_protocol)
-                    },
-                    "original_length": len(original_text),
-                    "final_length": len(final_text)
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": "통합본 생성 실패",
-                    "final_text": original_text
-                }
-                
-        except Exception as e:
-            logger.error(f"최종 통합본 생성 실패: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "final_text": original_text
-            }
-    
-    def _format_selected_suggestions(self, suggestions: List[Dict[str, Any]]) -> str:
-        """선택된 제안사항 포맷팅"""
-        if not suggestions:
-            return "선택된 개선사항 없음"
-        
-        formatted = []
-        for i, suggestion in enumerate(suggestions, 1):
-            formatted.append(
-                f"{i}. {suggestion.get('original', '')} → {suggestion.get('suggestion', '')}"
-                f" (이유: {suggestion.get('reason', '')})"
-            )
-        
-        return "\n".join(formatted)
-    
     # 기업 데이터 관리
     async def get_company_status(self, company_id: str) -> Dict[str, Any]:
         """기업 설정 상태 확인"""
@@ -660,7 +577,6 @@ class OptimizedEnterpriseQualityService:
             if self.db_service is None:
                 return {"status": "db_unavailable"}
             
-            # 기업 프로필 확인
             profile = await self.db_service.get_company_profile(company_id)
             guidelines = await self.db_service.get_company_guidelines(company_id)
             

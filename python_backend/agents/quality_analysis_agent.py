@@ -1,7 +1,7 @@
 """
 최적화된 기업용 Quality Analysis Agent
 단일 API 호출로 문법 + 프로토콜 통합 분석
-Agent 내부 fallback 포함 (하드코딩 제거)
+Agent 내부 fallback: 규칙 기반 분석 + 경량 LLM 제안
 """
 
 from typing import TypedDict, Dict, Any, List, Optional
@@ -32,12 +32,10 @@ class OptimizedEnterpriseQualityState(BaseAgentState):
     # 통합 분석 결과
     comprehensive_analysis: Dict[str, Any]  
     
-    # 분석 결과 (기존)
+    # 분석 결과
     grammar_score: float
     formality_score: float
     readability_score: float
-    
-    # 새로운 분석 결과 (기업용)
     protocol_score: float
     compliance_score: float
     
@@ -51,12 +49,13 @@ class OptimizedEnterpriseQualityState(BaseAgentState):
 class OptimizedEnterpriseQualityConfig(BaseAgentConfig):
     """기업용 Quality Agent 설정"""
     name: str = "optimized_enterprise_quality"
-    version: str = "1.1.0"
+    version: str = "1.2.0"
     timeout: float = 35.0
     max_suggestions: int = 4
     max_protocol_suggestions: int = 4
     confidence_threshold: float = 0.6
     enable_comprehensive_analysis: bool = True
+    enable_llm_fallback: bool = True  # LLM fallback 사용 여부
 
 class OptimizedEnterpriseQualityAgent(BaseAgent):
     """기업용 품질분석 Agent"""
@@ -111,7 +110,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             # 통합 분석 결과
             comprehensive_analysis={},
             
-            # 점수 초기화 (0으로 시작, 분석 후 설정됨)
+            # 점수 초기화
             grammar_score=0.0,
             formality_score=0.0,
             readability_score=0.0,
@@ -158,12 +157,11 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
     async def _comprehensive_analysis(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
         """통합 분석 with 내부 fallback"""
         async with self._step_context("통합 분석", state):
-            # @@ 클로드가 프롬프트 길이 최적화 필요하대요: 현재 228줄의 긴 프롬프트는 토큰 낭비 및 성능 저하 원인
             # 기업 맥락 정보 구성
             company_style = state["company_profile"].get("communication_style", "formal")
             main_channels = state["company_profile"].get("main_channels", [])
             
-            # 가이드라인 텍스트 구성
+            # 가이드라인 텍스트 구성 (상위 3개만)
             guidelines_text = "기본 비즈니스 커뮤니케이션 규칙"
             if state["company_guidelines"]:
                 guidelines_text = "\n".join([
@@ -236,7 +234,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             
             if result:
                 try:
-                    # JSON 파싱 (BaseAgent 메서드 사용)
+                    # JSON 파싱
                     analysis_data = self._extract_json_from_text(result["answer"])
                     state["comprehensive_analysis"] = analysis_data
                     state["rag_sources"].extend(result.get("sources", []))
@@ -261,12 +259,12 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         state: OptimizedEnterpriseQualityState,
         reason: str
     ) -> OptimizedEnterpriseQualityState:
-        """Agent 내부 규칙 기반 fallback - 하드코딩 제거, rewrite_service 활용"""
+        """Agent 내부 규칙 기반 fallback: 분석 + 경량 LLM 제안"""
         from services.rewrite_service import rewrite_text
         
-        self.logger.info(f"규칙 기반 분석 시작 (이유: {reason})")
+        self.logger.info(f"규칙 기반 분석 + LLM 제안 시작 (이유: {reason})")
         
-        # rewrite_text로 원본 분석 (analysis_only=True)
+        # 1단계: rewrite_text로 분석만 수행
         rewrite_result = rewrite_text(
             text=state["text"],
             traits={},
@@ -274,16 +272,310 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
                 "audience": self._map_audience(state["target_audience"]),
                 "channel": self._map_channel(state["context"])
             },
-            options={"analysis_only": True}  # 수정 없이 분석만
+            options={"analysis_only": True}  # 재작성 없이 분석만
         )
         
-        # 결과 변환
-        state["comprehensive_analysis"] = self._convert_rewrite_to_analysis(rewrite_result)
-        state["processing_metadata"]["analysis_method"] = "rule_based_analysis"
+        # 2단계: 점수 계산 (기업 맥락 반영)
+        scores = self._calculate_scores_from_analysis(rewrite_result, state["company_profile"])
+        
+        # 3단계: LLM으로 구체적 제안 생성
+        if self.config.enable_llm_fallback:
+            suggestions = await self._generate_suggestions_with_llm(
+                text=state["text"],
+                analysis_result=rewrite_result,
+                target_audience=state["target_audience"],
+                context=state["context"],
+                company_profile=state["company_profile"]
+            )
+        else:
+            # LLM 비활성화 시 기본 제안
+            suggestions = self._create_basic_suggestions(rewrite_result)
+        
+        # 4단계: comprehensive_analysis 구성
+        state["comprehensive_analysis"] = {
+            "grammar_analysis": {
+                "grammar_score": scores["grammar_score"],
+                "formality_score": scores["formality_score"],
+                "readability_score": scores["readability_score"],
+                "grammar_issues": suggestions["grammar"]
+            },
+            "protocol_analysis": {
+                "protocol_score": scores["protocol_score"],
+                "compliance_issues": suggestions["protocol"],
+                "tone_assessment": {
+                    "matches_company_tone": rewrite_result.get("protocol", {}).get("flags", {}).get("tone_consistent", True),
+                    "appropriateness": "appropriate",
+                    "suggestions": []
+                },
+                "format_compliance": {
+                    "meets_format": rewrite_result.get("protocol", {}).get("flags", {}).get("format_ok", True),
+                    "required_elements": rewrite_result.get("protocol", {}).get("details", {}).get("missing_sections", [])
+                }
+            },
+            "overall_assessment": {
+                "enterprise_readiness": (scores["grammar_score"] + scores["protocol_score"]) / 2,
+                "primary_concerns": self._identify_concerns(scores),
+                "strengths": []
+            }
+        }
+        
+        state["processing_metadata"]["analysis_method"] = "rule_based_with_llm_suggestions"
         state["processing_metadata"]["fallback_reason"] = reason
         
         self.logger.info("규칙 기반 분석 완료")
         return state
+    
+    def _calculate_scores_from_analysis(
+        self,
+        rewrite_result: dict,
+        company_profile: dict
+    ) -> dict:
+        """rewrite 분석 결과 → 점수 계산 (기업 맥락 반영, Expectation-Gap 모델)"""
+        
+        grammar = rewrite_result.get("grammar", {})
+        protocol = rewrite_result.get("protocol", {})
+        
+        # 1) 기본 점수 추출 (텍스트 절대 평가)
+        base_grammar = grammar.get("metrics", {}).get("grammar_score", 70.0)
+        base_formality = self._extract_formality_score(grammar)
+        base_readability = self._extract_readability_score(grammar)
+        base_protocol = protocol.get("metrics", {}).get("policy_score", 0.7) * 100
+        
+        # 2) 기업 기대치 정의
+        company_style = company_profile.get("communication_style", "formal")
+        expectations = {
+            "strict": {"formality": 90, "protocol": 85},
+            "formal": {"formality": 80, "protocol": 75},
+            "friendly": {"formality": 70, "protocol": 65}
+        }
+        expected = expectations.get(company_style, expectations["formal"])
+        
+        # 3) Expectation-Gap 기반 조정
+        # Gap이 클수록 페널티 증가 (낮은 점수일수록 더 큰 페널티)
+        formality_gap = max(0, expected["formality"] - base_formality)
+        protocol_gap = max(0, expected["protocol"] - base_protocol)
+        
+        adjusted_formality = base_formality - (formality_gap * 0.2)  # 30% 조정
+        adjusted_protocol = base_protocol - (protocol_gap * 0.3)     
+        
+        adjusted_formality = max(0, min(100, adjusted_formality))
+        adjusted_protocol = max(0, min(100, adjusted_protocol))
+        
+        return {
+            "grammar_score": base_grammar,  # 문법은 절대 평가
+            "formality_score": adjusted_formality,
+            "readability_score": base_readability,  # 가독성도 절대 평가
+            "protocol_score": adjusted_protocol
+        }
+    
+    def _extract_formality_score(self, grammar: dict) -> float:
+        """격식도 점수 추출"""
+        korean_endings = grammar.get("korean_endings", {})
+        if korean_endings.get("ending_ok"):
+            return 85.0
+        
+        speech_level = korean_endings.get("speech_level", "기타")
+        speech_map = {
+            "합쇼체": 80.0,
+            "해요체": 75.0,
+            "의문형": 78.0,
+            "평서/반말": 60.0,
+            "기타": 65.0
+        }
+        return speech_map.get(speech_level, 65.0)
+    
+    def _extract_readability_score(self, grammar: dict) -> float:
+        """가독성 점수 추출 (평균 문장 길이 기반)"""
+        avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 30)
+        if avg_len < 20: return 90.0
+        if avg_len < 30: return 85.0
+        if avg_len < 50: return 75.0
+        if avg_len < 80: return 65.0
+        return 55.0
+    
+    async def _generate_suggestions_with_llm(
+        self,
+        text: str,
+        analysis_result: dict,
+        target_audience: str,
+        context: str,
+        company_profile: dict
+    ) -> dict:
+        """경량 LLM으로 구체적 제안 생성"""
+        
+        grammar = analysis_result.get("grammar", {})
+        protocol = analysis_result.get("protocol", {})
+        
+        # 문제점 요약 (짧게)
+        issues_summary = self._summarize_issues(grammar, protocol)
+        
+        # 경량 프롬프트 (300-500 토큰)
+        prompt = f"""다음 텍스트의 문제점을 기반으로 구체적인 수정 제안을 생성해주세요.
+
+원문:
+{text}
+
+대상: {target_audience}
+상황: {context}
+기업 스타일: {company_profile.get("communication_style", "formal")}
+
+감지된 문제:
+{issues_summary}
+
+다음 JSON 형식으로만 응답:
+{{
+    "grammar_suggestions": [
+        {{
+            "original": "원문에서 문제 있는 구체적 표현",
+            "suggestion": "수정된 표현",
+            "reason": "수정 이유"
+        }}
+    ],
+    "protocol_suggestions": [
+        {{
+            "violation": "위반 내용",
+            "correction": "수정 방안",
+            "severity": "high|medium|low"
+        }}
+    ]
+}}
+
+최대 5개씩만 제안하세요."""
+        
+        # LLM 호출
+        result = await self._call_rag_with_retry(
+            prompt=prompt,
+            context="제안사항 생성",
+            max_retries=1  # fallback이니까 1회만 시도
+        )
+        
+        if result:
+            try:
+                suggestions_data = self._extract_json_from_text(result["answer"])
+                
+                return {
+                    "grammar": [
+                        {
+                            "category": "문법",
+                            "original": s.get("original", ""),
+                            "issue": "문법/명료성",
+                            "suggestion": s.get("suggestion", ""),
+                            "reason": s.get("reason", "")
+                        }
+                        for s in suggestions_data.get("grammar_suggestions", [])[:self.config.max_suggestions]
+                    ],
+                    "protocol": [
+                        {
+                            "category": "프로토콜",
+                            "rule": "프로토콜 위반",
+                            "violation": s.get("violation", ""),
+                            "correction": s.get("correction", ""),
+                            "severity": s.get("severity", "medium")
+                        }
+                        for s in suggestions_data.get("protocol_suggestions", [])[:self.config.max_protocol_suggestions]
+                    ]
+                }
+            except Exception as e:
+                self.logger.error(f"LLM 제안 파싱 실패: {e}")
+                # LLM 실패 시 기본 제안
+                return self._create_basic_suggestions(analysis_result)
+        
+        # LLM 완전 실패
+        return self._create_basic_suggestions(analysis_result)
+    
+    def _summarize_issues(self, grammar: dict, protocol: dict) -> str:
+        """분석 결과를 LLM이 이해할 수 있게 요약"""
+        issues = []
+        
+        # 점수 기반 체크 추가
+        grammar_score = grammar.get("metrics", {}).get("grammar_score", 70)
+        if grammar_score < 70:
+            issues.append(f"- 전반적 문법 점수 낮음 ({grammar_score:.0f}점)")
+
+        # 어미 문제
+        korean_endings = grammar.get("korean_endings", {})
+        if not korean_endings.get("ending_ok"):
+            issues.append(f"- 어미 격식: {korean_endings.get('speech_level', '부적절')}")
+        
+        # 금칙어
+        banned = protocol.get("flags", {}).get("banned_terms", [])
+        if banned:
+            issues.append(f"- 금칙어 사용: {', '.join(banned[:3])}")
+        
+        # 섹션 누락
+        missing = protocol.get("details", {}).get("missing_sections", [])
+        if missing:
+            issues.append(f"- 필수 섹션 누락: {', '.join(missing[:2])}")
+        
+        # 문장 길이
+        avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 0)
+        if avg_len > 50:
+            issues.append(f"- 문장이 너무 김 (평균 {avg_len}자)")
+        
+        # 이모지
+        emoji_count = grammar.get("word_flags", {}).get("emoji_used", 0)
+        if emoji_count > 0:
+            issues.append(f"- 이모지 사용 ({emoji_count}개)")
+        
+        return "\n".join(issues) if issues else "주요 문제점 없음"
+    
+    def _create_basic_suggestions(self, analysis_result: dict) -> dict:
+        """LLM 실패 시 기본 제안 (금칙어와 섹션만)"""
+        protocol = analysis_result.get("protocol", {})
+        
+        suggestions = {
+            "grammar": [],
+            "protocol": []
+        }
+        
+        # 금칙어 (구체적)
+        banned = protocol.get("flags", {}).get("banned_terms", [])
+        for i, term in enumerate(banned[:3]):
+            suggestions["protocol"].append({
+                "category": "프로토콜",
+                "rule": "금칙어",
+                "violation": term,
+                "correction": "대체 표현 사용 필요",
+                "severity": "high"
+            })
+        
+        # 섹션 누락
+        missing = protocol.get("details", {}).get("missing_sections", [])
+        for i, section in enumerate(missing[:2]):
+            suggestions["protocol"].append({
+                "category": "프로토콜",
+                "rule": "필수 섹션",
+                "violation": f"{section} 누락",
+                "correction": f"{section} 섹션 추가 권장",
+                "severity": "medium"
+            })
+        
+        # 문법 제안은 일반적으로만
+        if not protocol.get("flags", {}).get("tone_consistent", True):
+            suggestions["grammar"].append({
+                "category": "톤",
+                "original": "[전체 텍스트]",
+                "issue": "톤 일관성",
+                "suggestion": "격식 있는 표현으로 통일",
+                "reason": "비즈니스 커뮤니케이션 톤 유지"
+            })
+        
+        return suggestions
+    
+    def _identify_concerns(self, scores: dict) -> list:
+        """주요 개선점 식별"""
+        concerns = []
+        
+        if scores["protocol_score"] < 70:
+            concerns.append("프로토콜 준수")
+        if scores["formality_score"] < 70:
+            concerns.append("격식도 조정")
+        if scores["grammar_score"] < 70:
+            concerns.append("문법 개선")
+        if scores["readability_score"] < 70:
+            concerns.append("가독성 향상")
+        
+        return concerns or ["전반적 품질 향상"]
     
     def _map_audience(self, target: str) -> list:
         """대상 매핑"""
@@ -308,83 +600,15 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         }
         return mapping.get(context, "email")
     
-    def _convert_rewrite_to_analysis(self, rewrite_result: dict) -> dict:
-        """rewrite 결과 → Agent 분석 형식 변환 (텍스트 기반 점수, 하드코딩 없음)"""
-        grammar = rewrite_result.get("grammar", {})
-        protocol = rewrite_result.get("protocol", {})
-        
-        # 문법 점수 - rewrite_service 계산값 그대로 사용
-        grammar_score = grammar.get("metrics", {}).get("grammar_score", 70.0)
-        
-        # 격식도 점수 - 어미 분석 결과 기반
-        korean_endings = grammar.get("korean_endings", {})
-        if korean_endings.get("ending_ok"):
-            formality_score = 85.0
-        else:
-            # 어미 타입별 점수
-            speech_level = korean_endings.get("speech_level", "기타")
-            formality_map = {
-                "합쇼체": 80.0,
-                "해요체": 75.0,
-                "의문형": 78.0,
-                "평서/반말": 60.0,
-                "기타": 65.0
-            }
-            formality_score = formality_map.get(speech_level, 65.0)
-        
-        # 가독성 점수 - 평균 문장 길이 기반
-        avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 30)
-        if avg_len < 20:
-            readability_score = 90.0
-        elif avg_len < 30:
-            readability_score = 85.0
-        elif avg_len < 50:
-            readability_score = 75.0
-        elif avg_len < 80:
-            readability_score = 65.0
-        else:
-            readability_score = 55.0
-        
-        # 프로토콜 점수 - policy_score 변환
-        protocol_score = protocol.get("metrics", {}).get("policy_score", 0.7) * 100
-        
-        return {
-            "grammar_analysis": {
-                "grammar_score": grammar_score,
-                "formality_score": formality_score,
-                "readability_score": readability_score,
-                "grammar_issues": []
-            },
-            "protocol_analysis": {
-                "protocol_score": protocol_score,
-                "compliance_issues": [],
-                "tone_assessment": {
-                    "matches_company_tone": protocol.get("flags", {}).get("tone_consistent", True),
-                    "appropriateness": "appropriate",
-                    "suggestions": []
-                },
-                "format_compliance": {
-                    "meets_format": protocol.get("flags", {}).get("format_ok", True),
-                    "required_elements": protocol.get("details", {}).get("missing_sections", [])
-                }
-            },
-            "overall_assessment": {
-                "enterprise_readiness": (grammar_score + formality_score + protocol_score) / 3,
-                "primary_concerns": ["규칙 기반 분석"],
-                "strengths": []
-            }
-        }
-    
     async def _process_analysis_results(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
-        """분석 결과 처리 및 점수 계산 """
+        """분석 결과 처리 및 점수 계산"""
         async with self._step_context("결과 처리", state):
             analysis = state["comprehensive_analysis"]
             
-            # 분석 결과가 없으면 에러 상태로 설정
+            # 분석 결과가 없으면 에러
             if not analysis:
                 self.logger.error("분석 결과가 비어있음")
                 state["error_message"] = "분석 실패: 결과 없음"
-                # 점수는 0으로 남김 (초기값 유지)
                 return state
             
             # 문법 분석 결과 추출
@@ -416,21 +640,19 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             # 제안사항 생성
             self._generate_suggestions_from_analysis(state)
             
-            # 기업 맥락 반영한 점수 조정
-            self._apply_company_adjustments(state)
-            
             self.logger.info("분석 결과 처리 완료")
         
         return state
     
     def _generate_suggestions_from_analysis(self, state: OptimizedEnterpriseQualityState):
-        """분석 결과에서 제안사항 생성"""
+        """분석 결과에서 제안사항 생성 (RAG 형식과 통일)"""
         # 문법 제안
         grammar_issues = state["grammar_feedback"].get("grammar_issues", [])
         state["suggestions"] = [
             {
-                "category": "문법",
+                "category": issue.get("category", "문법"),
                 "original": issue.get("original", ""),
+                "issue": issue.get("issue", ""),  # RAG 형식 통일
                 "suggestion": issue.get("suggestion", ""),
                 "reason": issue.get("reason", "")
             }
@@ -439,9 +661,9 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         
         # 프로토콜 제안
         compliance_issues = state["protocol_feedback"].get("compliance_issues", [])
-        protocol_suggestions = [
+        state["protocol_suggestions"] = [
             {
-                "category": "프로토콜",
+                "category": issue.get("category", "프로토콜"),
                 "rule": issue.get("rule", ""),
                 "violation": issue.get("violation", ""),
                 "correction": issue.get("correction", ""),
@@ -449,44 +671,6 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             }
             for issue in compliance_issues[:self.config.max_protocol_suggestions]
         ]
-        
-        # 톤 제안 추가
-        tone_assessment = state["protocol_feedback"].get("tone_assessment", {})
-        tone_suggestions = tone_assessment.get("suggestions", [])
-        for suggestion in tone_suggestions[:2]:
-            protocol_suggestions.append({
-                "category": "톤앤매너",
-                "rule": "기업 커뮤니케이션 스타일",
-                "violation": "톤 일관성",
-                "correction": suggestion,
-                "severity": "medium"
-            })
-        
-        state["protocol_suggestions"] = protocol_suggestions
-    
-    def _apply_company_adjustments(self, state: OptimizedEnterpriseQualityState):
-        """기업 맥락 반영한 점수 조정"""
-        company_style = state["company_profile"].get("communication_style", "formal")
-
-        # @@ 점수 조정 로직 부족: 단순 곱셈만으로는 기업별 특성 반영 한계
-        # 기업 스타일별 조정
-        style_multipliers = {
-            "strict": 0.9,    
-            "formal": 1.0,    
-            "friendly": 1.05  
-        }
-        
-        multiplier = style_multipliers.get(company_style, 1.0)
-        
-        # RAG 신뢰도 반영
-        rag_confidence = self._calculate_rag_confidence(state["rag_sources"])
-        
-        # 최종 조정
-        state["grammar_score"] = min(100.0, state["grammar_score"] * multiplier)
-        state["formality_score"] = min(100.0, state["formality_score"] * multiplier)
-        state["readability_score"] = min(100.0, state["readability_score"] * multiplier)
-        state["protocol_score"] = min(100.0, state["protocol_score"] * multiplier * rag_confidence)
-        state["compliance_score"] = min(100.0, state["compliance_score"] * multiplier * rag_confidence)
     
     async def _process_final_result(self, final_state: OptimizedEnterpriseQualityState) -> BaseAgentResult:
         """최종 결과 처리"""
@@ -547,20 +731,18 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         if state.get("error_message"):
             return "낮음"
         
-        # 통합 분석의 완성도 평가
-        analysis_completeness = bool(state["comprehensive_analysis"])
-        company_data_availability = bool(state["company_profile"]) and bool(state["company_guidelines"])
-        rag_source_quality = len(state["rag_sources"]) >= 2
+        analysis_method = state["processing_metadata"].get("analysis_method", "")
         
-        confidence_factors = [analysis_completeness, company_data_availability, rag_source_quality]
-        score = sum(confidence_factors)
-        
-        if score >= 3:
+        # RAG 성공 시 높은 신뢰도
+        if analysis_method == "rag_comprehensive":
             return "높음"
-        elif score >= 2:
+        
+        # LLM 제안 있으면 보통
+        if analysis_method == "rule_based_with_llm_suggestions":
             return "보통"
-        else:
-            return "낮음"
+        
+        # 기본 제안만 있으면 낮음
+        return "낮음"
     
     # 외부 인터페이스
     async def analyze_enterprise_quality(
