@@ -1,6 +1,6 @@
 """
 기업용 품질분석 서비스 - DB 연동 버전
-rewrite_text 기반 fallback 적용
+rewrite_text 기반 fallback 적용 (하드코딩 완전 제거)
 """
 
 import asyncio
@@ -128,7 +128,7 @@ class OptimizedEnterpriseQualityService:
             # 처리 시간 추가
             processing_time = asyncio.get_event_loop().time() - start_time
             result['processing_time'] = processing_time
-            result['method_used'] = 'enterprise_agent'
+            result['method_used'] = result.get('optimization_info', {}).get('analysis_method', 'enterprise_agent')
             
             # 상세 분석 추가
             if detailed:
@@ -146,7 +146,7 @@ class OptimizedEnterpriseQualityService:
                     text, target_audience, context, start_time, str(e)
                 )
             else:
-                return self._create_error_response(text, str(e), start_time)
+                return self._create_error_response(text, target_audience, context, str(e), start_time)
     
     async def _fallback_analysis(
         self,
@@ -156,52 +156,43 @@ class OptimizedEnterpriseQualityService:
         start_time: float,
         error_msg: str
     ) -> Dict[str, Any]:
-        """규칙 기반 fallback (rewrite_text 활용)"""
+        """규칙 기반 fallback (rewrite_text 활용) - 하드코딩 없음"""
         
         logger.warning(f"규칙 기반 분석으로 전환: {error_msg}")
         
-        try:
-            # 대상/상황을 rewrite_text 형식으로 매핑
-            audience_list = self._map_target_to_audience(target_audience)
-            channel = self._map_context_to_channel(context)
-            
-            # rewrite_text로 규칙 기반 분석 실행
-            rewrite_result = rewrite_text(
-                text=text,
-                traits={},  # 기본 traits 사용
-                context={
-                    "audience": audience_list,
-                    "channel": channel,
-                    "situation": channel
-                },
-                options={"strict_policy": False}  # fallback이므로 엄격하지 않게
-            )
-            
-            # rewrite 결과를 기업용 형식으로 변환
-            enterprise_result = self._convert_rewrite_to_enterprise_format(
-                rewrite_result, 
-                target_audience, 
-                context
-            )
-            
-            processing_time = asyncio.get_event_loop().time() - start_time
-            enterprise_result.update({
-                'processing_time': processing_time,
-                'method_used': 'rule_based_fallback',
-                'fallback_reason': error_msg,
-                'fallback_source': 'rewrite_service'
-            })
-            
-            logger.info(f"규칙 기반 fallback 완료: {processing_time:.2f}초")
-            return enterprise_result
-            
-        except Exception as fallback_error:
-            logger.error(f"Fallback 분석도 실패: {fallback_error}")
-            return self._create_error_response(
-                text, 
-                f"기업용 실패: {error_msg}, Fallback 실패: {str(fallback_error)}", 
-                start_time
-            )
+        # 대상/상황을 rewrite_text 형식으로 매핑
+        audience_list = self._map_target_to_audience(target_audience)
+        channel = self._map_context_to_channel(context)
+        
+        # rewrite_text로 규칙 기반 분석 실행 (analysis_only=True)
+        rewrite_result = rewrite_text(
+            text=text,
+            traits={},
+            context={
+                "audience": audience_list,
+                "channel": channel,
+                "situation": channel
+            },
+            options={"analysis_only": True}  # 수정 없이 분석만
+        )
+        
+        # rewrite 결과를 기업용 형식으로 변환
+        enterprise_result = self._convert_rewrite_to_enterprise_format(
+            rewrite_result, 
+            target_audience, 
+            context
+        )
+        
+        processing_time = asyncio.get_event_loop().time() - start_time
+        enterprise_result.update({
+            'processing_time': processing_time,
+            'method_used': 'rule_based_fallback',
+            'fallback_reason': error_msg,
+            'fallback_source': 'rewrite_service'
+        })
+        
+        logger.info(f"규칙 기반 fallback 완료: {processing_time:.2f}초")
+        return enterprise_result
     
     def _map_target_to_audience(self, target_audience: str) -> List[str]:
         """기업용 대상을 rewrite_text audience로 매핑"""
@@ -232,26 +223,41 @@ class OptimizedEnterpriseQualityService:
         target_audience: str,
         context: str
     ) -> Dict[str, Any]:
-        """rewrite_text 결과를 기업용 형식으로 변환"""
+        """rewrite_text 결과를 기업용 형식으로 변환 (텍스트 기반 점수)"""
         
         grammar = rewrite_result.get("grammar", {})
         protocol = rewrite_result.get("protocol", {})
         
-        # 점수 추출 (rewrite_text의 metrics에서)
+        # 문법 점수 - rewrite_service 계산값 사용
         grammar_score = grammar.get("metrics", {}).get("grammar_score", 70.0)
         
-        # 어미 분석으로 격식도 계산
+        # 격식도 - 어미 분석 기반
         korean_endings = grammar.get("korean_endings", {})
-        formality_score = 85.0 if korean_endings.get("ending_ok") else 70.0
+        if korean_endings.get("ending_ok"):
+            formality_score = 85.0
+        else:
+            speech_level = korean_endings.get("speech_level", "기타")
+            formality_map = {
+                "합쇼체": 80.0,
+                "해요체": 75.0,
+                "의문형": 78.0,
+                "평서/반말": 60.0,
+                "기타": 65.0
+            }
+            formality_score = formality_map.get(speech_level, 65.0)
         
-        # 가독성 점수 (평균 문장 길이 기반)
+        # 가독성 - 평균 문장 길이 기반
         avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 30)
         if avg_len < 20:
             readability_score = 90.0
+        elif avg_len < 30:
+            readability_score = 85.0
         elif avg_len < 50:
             readability_score = 75.0
+        elif avg_len < 80:
+            readability_score = 65.0
         else:
-            readability_score = 60.0
+            readability_score = 55.0
         
         # 프로토콜 점수
         protocol_score = protocol.get("metrics", {}).get("policy_score", 0.7) * 100
@@ -263,7 +269,7 @@ class OptimizedEnterpriseQualityService:
         grammar_suggestions = []
         protocol_suggestions = []
         
-        for fix in applied_fixes[:4]:  # 최대 4개
+        for fix in applied_fixes[:4]:
             if fix.get("rule") in ["grammar", "clarity"]:
                 grammar_suggestions.append({
                     "category": "문법",
@@ -303,7 +309,7 @@ class OptimizedEnterpriseQualityService:
                 })
         
         return {
-            # 기본 점수
+            # 기본 점수 (모두 텍스트 기반 계산)
             "grammar_score": grammar_score,
             "formality_score": formality_score,
             "readability_score": readability_score,
@@ -342,34 +348,81 @@ class OptimizedEnterpriseQualityService:
             return "friendly"
         return "formal"
     
-    def _create_error_response(self, text: str, error_msg: str, start_time: float) -> Dict[str, Any]:
-        """오류 응답 생성"""
+    def _create_error_response(
+        self, 
+        text: str, 
+        target_audience: str,
+        context: str,
+        error_msg: str, 
+        start_time: float
+    ) -> Dict[str, Any]:
+        """오류 응답 생성 - 하드코딩 제거, 텍스트가 있으면 최소 분석"""
         processing_time = asyncio.get_event_loop().time() - start_time
         
+        # 텍스트가 있으면 최소한의 분석 시도
+        if text and len(text.strip()) >= 5:
+            try:
+                logger.info("오류 상황에서 최소 분석 시도")
+                
+                # rewrite_service로 최소 분석
+                audience_list = self._map_target_to_audience(target_audience)
+                channel = self._map_context_to_channel(context)
+                
+                rewrite_result = rewrite_text(
+                    text=text,
+                    traits={},
+                    context={
+                        "audience": audience_list,
+                        "channel": channel
+                    },
+                    options={"analysis_only": True}
+                )
+                
+                # 변환
+                result = self._convert_rewrite_to_enterprise_format(
+                    rewrite_result,
+                    target_audience,
+                    context
+                )
+                
+                result.update({
+                    "processing_time": processing_time,
+                    "method_used": "error_minimal_analysis",
+                    "error": error_msg,
+                    "warnings": ["시스템 오류로 최소 분석만 수행됨"]
+                })
+                
+                return result
+                
+            except Exception as minimal_error:
+                logger.error(f"최소 분석도 실패: {minimal_error}")
+        
+        # 텍스트가 없거나 최소 분석도 실패하면 0점 + 명확한 에러
         return {
-            "grammar_score": 60.0,
-            "formality_score": 60.0,
-            "readability_score": 60.0,
-            "protocol_score": 60.0,
-            "compliance_score": 60.0,
+            "grammar_score": 0.0,
+            "formality_score": 0.0,
+            "readability_score": 0.0,
+            "protocol_score": 0.0,
+            "compliance_score": 0.0,
             "suggestions": [],
             "protocol_suggestions": [],
             "grammar_section": {
-                "score": 60.0,
+                "score": 0.0,
                 "suggestions": []
             },
             "protocol_section": {
-                "score": 60.0,
+                "score": 0.0,
                 "suggestions": []
             },
             "company_analysis": {
                 "company_id": "error",
                 "communication_style": "unknown",
-                "compliance_level": 60.0
+                "compliance_level": 0.0
             },
             "processing_time": processing_time,
-            "method_used": "error",
-            "error": error_msg
+            "method_used": "system_error",
+            "error": error_msg,
+            "warnings": ["분석 불가능: 시스템 오류"]
         }
     
     async def _add_enterprise_detailed_analysis(
@@ -492,8 +545,8 @@ class OptimizedEnterpriseQualityService:
                 'session_id': session_id,
                 'original_text': feedback_data.get('original_text'),
                 'suggested_text': feedback_data.get('suggested_text'),
-                'feedback_type': feedback_data.get('feedback_type'),  # 'grammar' or 'protocol'
-                'feedback_value': feedback_data.get('feedback_value'), # 'good' or 'bad'
+                'feedback_type': feedback_data.get('feedback_type'),
+                'feedback_value': feedback_data.get('feedback_value'),
                 'metadata': {
                     'target_audience': feedback_data.get('target_audience'),
                     'context': feedback_data.get('context'),
@@ -513,7 +566,7 @@ class OptimizedEnterpriseQualityService:
         original_text: str,
         grammar_feedbacks: List[Dict[str, Any]],
         protocol_feedbacks: List[Dict[str, Any]],
-        user_selections: Dict[str, List[str]]  # {'grammar': ['good_id1', 'good_id2'], 'protocol': ['good_id1']}
+        user_selections: Dict[str, List[str]]
     ) -> Dict[str, Any]:
         """사용자 피드백 기반 최종 통합본 생성"""
         
@@ -573,7 +626,7 @@ class OptimizedEnterpriseQualityService:
                 return {
                     "success": False,
                     "error": "통합본 생성 실패",
-                    "final_text": original_text  # 원본 반환
+                    "final_text": original_text
                 }
                 
         except Exception as e:
@@ -646,57 +699,3 @@ class OptimizedEnterpriseQualityService:
         except Exception as e:
             logger.error(f"테스트 설정 생성 실패: {e}")
             return {"success": False, "error": str(e)}
-
-# 편의 함수들
-async def create_enterprise_quality_service(
-    rag_service: RAGService,
-    enable_protocol_analysis: bool = True
-) -> OptimizedEnterpriseQualityService:
-    """기업용 품질분석 서비스 생성"""
-    
-    config = OptimizedEnterpriseQualityServiceConfig(
-        enable_enterprise_mode=True,
-        enable_protocol_analysis=enable_protocol_analysis,
-        fallback_to_rule_based=True
-    )
-    
-    service = OptimizedEnterpriseQualityService(rag_service, config)
-    
-    # 초기화 확인
-    try:
-        await service._ensure_initialized()
-        logger.info("기업용 품질분석 서비스 생성 완료")
-    except Exception as e:
-        logger.warning(f"기업용 서비스 초기화 실패, fallback 모드로 동작: {e}")
-    
-    return service
-
-# 사용 예시
-async def example_usage():
-    """사용 예시"""
-    from services.rag_service import RAGService 
-    
-    # RAG 서비스 초기화 
-    rag_service = RAGService()  
-    
-    # 기업용 서비스 생성
-    enterprise_service = await create_enterprise_quality_service(rag_service)
-    
-    # 테스트 기업 설정
-    test_setup = await enterprise_service.create_test_setup("test_company")
-    print(f"테스트 설정: {test_setup}")
-    
-    # 텍스트 분석
-    result = await enterprise_service.analyze_enterprise_text(
-        text="팀장님께 보고드립니다. 프로젝트가 순조롭게 진행되고 있습니다.",
-        target_audience="직속상사",
-        context="보고서",
-        company_id="test_company",
-        user_id="test_user",
-        detailed=True
-    )
-    
-    print(f"분석 결과: {result}")
-
-if __name__ == "__main__":
-    asyncio.run(example_usage())

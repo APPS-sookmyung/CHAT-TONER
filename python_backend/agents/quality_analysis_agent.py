@@ -1,7 +1,7 @@
 """
 최적화된 기업용 Quality Analysis Agent
 단일 API 호출로 문법 + 프로토콜 통합 분석
-Agent 내부 fallback 포함
+Agent 내부 fallback 포함 (하드코딩 제거)
 """
 
 from typing import TypedDict, Dict, Any, List, Optional
@@ -111,7 +111,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             # 통합 분석 결과
             comprehensive_analysis={},
             
-            # 점수 초기화
+            # 점수 초기화 (0으로 시작, 분석 후 설정됨)
             grammar_score=0.0,
             formality_score=0.0,
             readability_score=0.0,
@@ -261,38 +261,29 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         state: OptimizedEnterpriseQualityState,
         reason: str
     ) -> OptimizedEnterpriseQualityState:
-        """Agent 내부 규칙 기반 fallback"""
+        """Agent 내부 규칙 기반 fallback - 하드코딩 제거, rewrite_service 활용"""
         from services.rewrite_service import rewrite_text
         
-        try:
-            self.logger.info(f"Agent 내부 규칙 기반 분석 시작 (이유: {reason})")
-            
-            # rewrite_text 실행
-            rewrite_result = rewrite_text(
-                text=state["text"],
-                traits={},
-                context={
-                    "audience": self._map_audience(state["target_audience"]),
-                    "channel": self._map_channel(state["context"])
-                },
-                options={"strict_policy": False}
-            )
-            
-            # 결과 변환
-            state["comprehensive_analysis"] = self._convert_rewrite_to_analysis(rewrite_result)
-            state["processing_metadata"]["analysis_method"] = "agent_rule_based_fallback"
-            state["processing_metadata"]["fallback_reason"] = reason
-            
-            self.logger.info("Agent 규칙 기반 분석 완료")
-            return state
-            
-        except Exception as e:
-            # Agent 내부 fallback도 실패 → 최소값
-            self.logger.error(f"Agent 규칙 기반도 실패: {e}")
-            state["comprehensive_analysis"] = self._minimal_analysis()
-            state["processing_metadata"]["analysis_method"] = "agent_minimal_fallback"
-            state["error_message"] = f"Agent 분석 실패: {reason}, Fallback 실패: {e}"
-            return state
+        self.logger.info(f"규칙 기반 분석 시작 (이유: {reason})")
+        
+        # rewrite_text로 원본 분석 (analysis_only=True)
+        rewrite_result = rewrite_text(
+            text=state["text"],
+            traits={},
+            context={
+                "audience": self._map_audience(state["target_audience"]),
+                "channel": self._map_channel(state["context"])
+            },
+            options={"analysis_only": True}  # 수정 없이 분석만
+        )
+        
+        # 결과 변환
+        state["comprehensive_analysis"] = self._convert_rewrite_to_analysis(rewrite_result)
+        state["processing_metadata"]["analysis_method"] = "rule_based_analysis"
+        state["processing_metadata"]["fallback_reason"] = reason
+        
+        self.logger.info("규칙 기반 분석 완료")
+        return state
     
     def _map_audience(self, target: str) -> list:
         """대상 매핑"""
@@ -318,17 +309,43 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         return mapping.get(context, "email")
     
     def _convert_rewrite_to_analysis(self, rewrite_result: dict) -> dict:
-        """rewrite 결과 → Agent 분석 형식 변환"""
+        """rewrite 결과 → Agent 분석 형식 변환 (텍스트 기반 점수, 하드코딩 없음)"""
         grammar = rewrite_result.get("grammar", {})
         protocol = rewrite_result.get("protocol", {})
         
+        # 문법 점수 - rewrite_service 계산값 그대로 사용
         grammar_score = grammar.get("metrics", {}).get("grammar_score", 70.0)
+        
+        # 격식도 점수 - 어미 분석 결과 기반
         korean_endings = grammar.get("korean_endings", {})
-        formality_score = 85.0 if korean_endings.get("ending_ok") else 70.0
+        if korean_endings.get("ending_ok"):
+            formality_score = 85.0
+        else:
+            # 어미 타입별 점수
+            speech_level = korean_endings.get("speech_level", "기타")
+            formality_map = {
+                "합쇼체": 80.0,
+                "해요체": 75.0,
+                "의문형": 78.0,
+                "평서/반말": 60.0,
+                "기타": 65.0
+            }
+            formality_score = formality_map.get(speech_level, 65.0)
         
+        # 가독성 점수 - 평균 문장 길이 기반
         avg_len = grammar.get("metrics", {}).get("avg_sentence_len", 30)
-        readability_score = 90.0 if avg_len < 20 else (75.0 if avg_len < 50 else 60.0)
+        if avg_len < 20:
+            readability_score = 90.0
+        elif avg_len < 30:
+            readability_score = 85.0
+        elif avg_len < 50:
+            readability_score = 75.0
+        elif avg_len < 80:
+            readability_score = 65.0
+        else:
+            readability_score = 55.0
         
+        # 프로토콜 점수 - policy_score 변환
         protocol_score = protocol.get("metrics", {}).get("policy_score", 0.7) * 100
         
         return {
@@ -342,82 +359,58 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
                 "protocol_score": protocol_score,
                 "compliance_issues": [],
                 "tone_assessment": {
-                    "matches_company_tone": True,
+                    "matches_company_tone": protocol.get("flags", {}).get("tone_consistent", True),
                     "appropriateness": "appropriate",
                     "suggestions": []
                 },
                 "format_compliance": {
-                    "meets_format": True,
-                    "required_elements": []
+                    "meets_format": protocol.get("flags", {}).get("format_ok", True),
+                    "required_elements": protocol.get("details", {}).get("missing_sections", [])
                 }
             },
             "overall_assessment": {
                 "enterprise_readiness": (grammar_score + formality_score + protocol_score) / 3,
-                "primary_concerns": ["규칙 기반 분석 결과"],
-                "strengths": []
-            }
-        }
-    
-    def _minimal_analysis(self) -> dict:
-        """최소 기본값"""
-        return {
-            "grammar_analysis": {
-                "grammar_score": 60.0,
-                "formality_score": 60.0,
-                "readability_score": 60.0,
-                "grammar_issues": []
-            },
-            "protocol_analysis": {
-                "protocol_score": 60.0,
-                "compliance_issues": [],
-                "tone_assessment": {},
-                "format_compliance": {}
-            },
-            "overall_assessment": {
-                "enterprise_readiness": 60.0,
-                "primary_concerns": ["Agent 분석 실패"],
+                "primary_concerns": ["규칙 기반 분석"],
                 "strengths": []
             }
         }
     
     async def _process_analysis_results(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
-        """분석 결과 처리 및 점수 계산"""
+        """분석 결과 처리 및 점수 계산 """
         async with self._step_context("결과 처리", state):
             analysis = state["comprehensive_analysis"]
             
+            # 분석 결과가 없으면 에러 상태로 설정
             if not analysis:
-                # 기본값으로 설정
-                state["grammar_score"] = 60.0
-                state["formality_score"] = 60.0
-                state["readability_score"] = 60.0
-                state["protocol_score"] = 60.0
-                state["compliance_score"] = 60.0
+                self.logger.error("분석 결과가 비어있음")
+                state["error_message"] = "분석 실패: 결과 없음"
+                # 점수는 0으로 남김 (초기값 유지)
                 return state
             
             # 문법 분석 결과 추출
             grammar_analysis = analysis.get("grammar_analysis", {})
             state["grammar_score"] = self._validate_and_normalize_score(
-                grammar_analysis.get("grammar_score", 70)
+                grammar_analysis.get("grammar_score")
             )
             state["formality_score"] = self._validate_and_normalize_score(
-                grammar_analysis.get("formality_score", 70)
+                grammar_analysis.get("formality_score")
             )
             state["readability_score"] = self._validate_and_normalize_score(
-                grammar_analysis.get("readability_score", 70)
+                grammar_analysis.get("readability_score")
             )
             state["grammar_feedback"] = grammar_analysis
             
             # 프로토콜 분석 결과 추출
             protocol_analysis = analysis.get("protocol_analysis", {})
             state["protocol_score"] = self._validate_and_normalize_score(
-                protocol_analysis.get("protocol_score", 80)
+                protocol_analysis.get("protocol_score")
             )
             state["protocol_feedback"] = protocol_analysis
             
             # 전체 평가 추출
             overall = analysis.get("overall_assessment", {})
             state["compliance_score"] = self._validate_and_normalize_score(
-                overall.get("enterprise_readiness", 75)
+                overall.get("enterprise_readiness")
             )
             
             # 제안사항 생성
@@ -587,17 +580,23 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             user_id=user_id
         )
         
-        return result.data if result.success else {
-            "error": result.error,
-            "grammar_score": 60.0,
-            "protocol_score": 60.0,
-            "suggestions": [],
-            "protocol_suggestions": [],
-            "optimization_info": {
-                "api_calls_used": 0,
-                "analysis_method": "error"
+        # 실패 시에도 에러 명시
+        if not result.success:
+            return {
+                "error": result.error,
+                "grammar_score": 0.0,
+                "formality_score": 0.0,
+                "readability_score": 0.0,
+                "protocol_score": 0.0,
+                "compliance_score": 0.0,
+                "suggestions": [],
+                "protocol_suggestions": [],
+                "optimization_info": {
+                    "api_calls_used": 0,
+                    "analysis_method": "error"
+                }
             }
-        }
+        
+        return result.data
 
-# 팩토리 등록
 AgentFactory.register("optimized_enterprise_quality", OptimizedEnterpriseQualityAgent)
