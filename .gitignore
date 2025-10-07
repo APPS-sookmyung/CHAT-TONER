@@ -45,3 +45,6 @@ python_backend/core/config.py
 CLAUDE.md
 API_MISMATCH_ISSUES.md
 
+
+*storybook.log
+storybook-static
