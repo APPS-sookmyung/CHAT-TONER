@@ -172,8 +172,8 @@ async def analyze_company_text_quality(
                     CompanySuggestionItem(
                         id=f"protocol_{i}",
                         category=sugg.get('category', 'protocol'),
-                        original=sugg.get('violation', sugg.get('rule', '')),
-                        suggestion=sugg.get('correction', sugg.get('suggestion', '')),
+                        original=sugg.get('original', ''),  # violation → original
+                        suggestion=sugg.get('suggestion', ''),  # correction → suggestion
                         reason=sugg.get('reason', '') or sugg.get('rule', ''),
                         severity=sugg.get('severity', 'medium')
                     )
