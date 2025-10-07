@@ -80,7 +80,7 @@ class Container(containers.DeclarativeContainer):
         )
 
         # 기업용 품질분석 서비스
-        enterprise_quality_service = providers.Factory(
+        enterprise_quality_service = providers.Singleton(
             OptimizedEnterpriseQualityService,
             rag_service=rag_service
         )
