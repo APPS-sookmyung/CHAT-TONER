@@ -2,17 +2,14 @@
 @import "tailwindcss";
 
 :root {
-  font-family: "Roboto", sans-serif;
   background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@theme {
   --color-primary: #10b981;
+  --color-primary-foreground: #ffffff;
   --color-secondary: #d9d9d9;
   --color-surface: #f7f7f7;
   --color-text-primary: #000000;
