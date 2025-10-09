@@ -17,10 +17,12 @@ const meta: Meta<typeof Button> = {
       control: { type: "select" },
       options: ["sm", "md", "lg", "xl"],
     },
-
     disabled: {
       control: { type: "boolean" },
     },
+  },
+  args: {
+    children: "Button",
   },
 };
 
@@ -30,14 +32,12 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   args: {
     variant: "primary",
-    children: "Button",
   },
 };
 
 export const Secondary: Story = {
   args: {
     variant: "secondary",
-    children: "Button",
   },
 };
 
