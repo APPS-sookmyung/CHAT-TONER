@@ -11,10 +11,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const buttonVariants = {
-  primary:
-    "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary)]/90",
-  secondary:
-    "bg-[var(--color-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-secondary)]/80",
+  primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+  secondary: "bg-secondary text-text-primary hover:bg-secondary/80",
 } as const;
 
 const buttonSizes = {
