@@ -8,7 +8,7 @@ from langgraph.graph import StateGraph, END
 from dataclasses import dataclass
 import logging
 import json
-
+import asyncio
 from .base_agent import (
     BaseAgent, BaseAgentState, BaseAgentConfig, BaseAgentResult,
     CommonAgentNodes, AgentFactory, agent_monitor
@@ -386,6 +386,31 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             
             # 제안사항 생성
             self._generate_suggestions_from_analysis(state)
+
+            # Save analysis results to the databas
+            try:
+                analysis_to_save = {
+                    "user_id": state.get("user_id"),
+                    "company_id": state.get("company_id"),
+                    "original_text": state.get("text"),
+                    "grammar_score": state.get("grammar_score"),
+                    "formality_score": state.get("formality_score"),
+                    "readability_score": state.get("readability_score"),
+                    "protocol_score": state.get("protocol_score"),
+                    "compliance_score": state.get("compliance_score"),
+                    "metadata": {
+                        "grammar_feedback": state.get("grammar_feedback"),
+                        "protocol_feedback": state.get("protocol_feedback"),
+                        "overall_assessment": state.get("comprehensive_analysis", {}).get("overall_assessment"),
+                        "analysis_method": state.get("processing_metadata", {}).get("analysis_method")
+                    }
+                }
+                save_task = asyncio.create_task(self.db_service.save_quality_analysis(analysis_to_save))
+                # Run in the background without blocking the agent’s main flow
+                asyncio.gather(save_task) 
+                self.logger.info("품질 분석 결과 DB 저장 요청 완료")
+            except Exception as e:
+                self.logger.error(f"품질 분석 결과 DB 저장 실패: {e}")
             
             self.logger.info("분석 결과 처리 완료")
         
