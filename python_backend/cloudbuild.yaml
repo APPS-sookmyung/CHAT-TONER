@@ -58,8 +58,16 @@ steps:
       - '0'
       - '--max-instances'
       - '10'
+      - '--max-scale'
+      - '20'
+      - '--add-cloudsql-instances'
+      - 'chattoner-project:asia-northeast3:chattoner'
+      - '--vpc-connector'
+      - 'run-to-db-connector'
+      - '--vpc-egress'
+      - 'private-ranges-only'
       - '--set-env-vars'
-      - 'ENVIRONMENT=production,env.FASTAPI_URL=https://chattoner-back-184664486594.asia-northeast3.run.app,DB_HOST=10.118.192.2,DB_USER=chattoner-user,DB_PASS=r~o+^[uD@6+p,kby,DB_NAME=chattoner,DB_PORT=5432'
+      - 'ENVIRONMENT=production'
     id: 'deploy-backend-cloudrun'
 
 # Images to be stored in Container Registry
