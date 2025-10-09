@@ -108,7 +108,7 @@ async def analyze_company_text_quality(
             f"대상: {request.target_audience.value}, 상황: {request.context.value}"
         )
 
-        # Service 호출 (Agent는 Service 내부에서 처리)
+        # Call the Service (Agent is handled inside the Service)
         result = await service.analyze_enterprise_text(
             text=request.text,
             target_audience=request.target_audience.value,
@@ -118,25 +118,25 @@ async def analyze_company_text_quality(
             detailed=request.detailed
         )
         
-        # 에러 체크
+        # Check errors
         if result.get('error'):
             error_msg = result.get('error')
             logger.error(f"분석 실패: {error_msg}")
             
-            # 기업 프로필 관련 에러는 400
+            # Return 400 for company-profile related errors
             if 'company' in error_msg.lower() or 'profile' in error_msg.lower():
                 raise HTTPException(
                     status_code=400,
                     detail="기업 프로필 설정이 필요합니다"
                 )
             
-            # 기타 에러는 500
+            # Return 500 for all other errors
             raise HTTPException(
                 status_code=500,
                 detail=f"분석 실패: {error_msg}"
             )
         
-        # 점수 검증
+        # Validate scores
         grammar_score = result.get('grammar_score', 0.0)
         if grammar_score == 0.0:
             logger.error("분석 결과가 비어있음")
@@ -145,7 +145,7 @@ async def analyze_company_text_quality(
                 detail="분석 실패: 점수 계산 불가"
             )
         
-        # 분석 결과를 DB에 백그라운드로 저장
+        # Persist analysis results to the DB in the background
         analysis_data_to_save = {
             "user_id": request.user_id,
             "company_id": request.company_id,
@@ -165,7 +165,7 @@ async def analyze_company_text_quality(
         }
         background_tasks.add_task(db_service.save_quality_analysis, analysis_data_to_save)
 
-        # Service 결과를 API 응답 형식으로 변환
+        # Convert Service result to API response schema
         response = CompanyQualityAnalysisResponse(
             grammarScore=result['grammar_score'],
             formalityScore=result['formality_score'],
@@ -213,7 +213,7 @@ async def analyze_company_text_quality(
             )
         )
         
-        # 성능 로깅
+        # Performance logging
         execution_time = time.time() - start_time
         logger.info(
             f"기업용 분석 완료 - 실행시간: {execution_time:.2f}초, "
@@ -295,7 +295,7 @@ async def generate_final_integrated_text(
             f"프로토콜 {len(request.selected_protocol_ids)}개"
         )
         
-        # 선택된 제안들을 FeedbackItem 형식으로 변환
+        # Transform selected suggestions into FeedbackItem format
         feedback_items = []
         
         for sugg in request.grammar_suggestions:
@@ -334,7 +334,7 @@ async def generate_final_integrated_text(
                 message="적용할 제안이 선택되지 않았습니다."
             )
 
-        # rewrite_service로 최종 텍스트 생성
+        # Generate final text via rewrite_service
         rewrite_result = rewrite_text(
             text=request.original_text,
             traits={},
