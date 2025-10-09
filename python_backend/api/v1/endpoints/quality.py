@@ -94,7 +94,9 @@ async def get_dropdown_options() -> DropdownOptions:
 @router.post("/company/analyze", response_model=CompanyQualityAnalysisResponse)
 async def analyze_company_text_quality(
     request: CompanyQualityAnalysisRequest,
-    service: Annotated[OptimizedEnterpriseQualityService, Depends(get_enterprise_quality_service)]
+    service: Annotated[OptimizedEnterpriseQualityService, Depends(get_enterprise_quality_service)],
+    background_tasks: BackgroundTasks,
+    db_service: Annotated[EnterpriseDBService, Depends(get_enterprise_db_service_dep)]
 ) -> CompanyQualityAnalysisResponse:
     """기업용 텍스트 품질 분석 (Service Layer를 통한 호출)"""
     
@@ -143,6 +145,26 @@ async def analyze_company_text_quality(
                 detail="분석 실패: 점수 계산 불가"
             )
         
+        # 분석 결과를 DB에 백그라운드로 저장
+        analysis_data_to_save = {
+            "user_id": request.user_id,
+            "company_id": request.company_id,
+            "original_text": request.text,
+            "grammar_score": result.get('grammar_score'),
+            "formality_score": result.get('formality_score'),
+            "readability_score": result.get('readability_score'),
+            "protocol_score": result.get('protocol_score'),
+            "compliance_score": result.get('compliance_score'),
+            "metadata": {
+                "suggestions": result.get('suggestions', []),
+                "protocol_suggestions": result.get('protocol_suggestions', []),
+                "company_analysis": result.get('company_analysis', {}),
+                "method_used": result.get('method_used', 'unknown'),
+                "processing_time": result.get('processing_time', 0.0)
+            }
+        }
+        background_tasks.add_task(db_service.save_quality_analysis, analysis_data_to_save)
+
         # Service 결과를 API 응답 형식으로 변환
         response = CompanyQualityAnalysisResponse(
             grammarScore=result['grammar_score'],
