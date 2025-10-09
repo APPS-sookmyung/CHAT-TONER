@@ -22,6 +22,7 @@ const rxjs_1 = require("rxjs");
 const axios_2 = require("axios");
 const quality_analysis_request_dto_1 = require("./dto/quality-analysis-request.dto");
 const rag_query_dto_1 = require("./dto/rag-query.dto");
+const rag_ingest_dto_1 = require("./dto/rag-ingest.dto");
 const profile_dto_1 = require("./dto/profile.dto");
 let AppController = class AppController {
     httpService;
@@ -71,6 +72,19 @@ let AppController = class AppController {
                 throw new common_1.HttpException(error.response.data, error.response.status);
             }
             throw new common_1.HttpException('RAG 질의응답 중 오류 발생', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async ingestRagDocuments(body) {
+        try {
+            const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/ingest`;
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(fastApiUrl, body));
+            return response.data;
+        }
+        catch (error) {
+            if (error instanceof axios_2.AxiosError && error.response) {
+                throw new common_1.HttpException(error.response.data, error.response.status);
+            }
+            throw new common_1.HttpException('RAG 문서 주입 중 오류 발생', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     async getUserProfile(userId) {
@@ -143,6 +157,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AppController.prototype, "askRagQuestion", null);
 __decorate([
+    (0, common_1.Post)('rag/ingest'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [rag_ingest_dto_1.RAGIngestRequestDto]),
+    __metadata("design:returntype", Promise)
+], AppController.prototype, "ingestRagDocuments", null);
+__decorate([
     (0, common_1.Get)('profile/:user_id'),
     __param(0, (0, common_1.Param)('user_id')),
     __metadata("design:type", Function),
@@ -164,7 +185,7 @@ __decorate([
     __metadata("design:returntype", feedback_response_dto_1.FeedbackResponseDto)
 ], AppController.prototype, "submitFeedback", null);
 exports.AppController = AppController = __decorate([
-    (0, common_1.Controller)('api'),
+    (0, common_1.Controller)('api/v1'),
     __metadata("design:paramtypes", [axios_1.HttpService])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map
