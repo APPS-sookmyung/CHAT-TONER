@@ -7,11 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwind()],
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:5003',
+      "/api": {
+        target: "http://localhost:5003",
         changeOrigin: true,
-      }
-    }
+      },
+    },
   },
   resolve: {
     alias: {
