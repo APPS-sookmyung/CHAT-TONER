@@ -58,8 +58,6 @@ steps:
       - '0'
       - '--max-instances'
       - '10'
-      - '--max-scale'
-      - '20'
       - '--add-cloudsql-instances'
       - 'chattoner-project:asia-northeast3:chattoner'
       - '--vpc-connector'
