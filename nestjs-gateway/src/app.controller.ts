@@ -20,9 +20,10 @@ import { AxiosError } from 'axios';
 import { CompanyQualityAnalysisRequestDto } from './dto/quality-analysis-request.dto';
 import { CompanyQualityAnalysisResponseDto } from './dto/quality-analysis-response.dto';
 import { RAGQueryRequestDto, RAGQueryResponseDto } from './dto/rag-query.dto';
+import { RAGIngestRequestDto, RAGIngestResponseDto } from './dto/rag-ingest.dto';
 import { ProfileRequestDto, ProfileResponseDto } from './dto/profile.dto';
 
-@Controller('api')
+@Controller('api/v1')
 export class AppController {
   private readonly fastApiBaseUrl: string;
 
@@ -127,6 +128,27 @@ export class AppController {
       }
       throw new HttpException(
         'RAG 질의응답 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('rag/ingest')
+  async ingestRagDocuments(
+    @Body() body: RAGIngestRequestDto,
+  ): Promise<RAGIngestResponseDto> {
+    try {
+      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/ingest`;
+      const response = await firstValueFrom(
+        this.httpService.post<RAGIngestResponseDto>(fastApiUrl, body),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw new HttpException(
+        'RAG 문서 주입 중 오류 발생',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

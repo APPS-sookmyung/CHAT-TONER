@@ -1,0 +1,58 @@
+steps:
+  # Build the Docker image from the client directory
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/chattoner-client:latest'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/chattoner-client:$COMMIT_SHA'
+      - '-f'
+      - 'client/Dockerfile'
+      - 'client'
+    id: 'build-image'
+
+  # Push the image to Google Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/chattoner-client:latest'
+    id: 'push-latest'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/chattoner-client:$COMMIT_SHA'
+    id: 'push-commit-sha'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'client'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/chattoner-client:latest'
+      - '--region'
+      - 'asia-northeast3'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+    id: 'deploy-cloud-run'
+
+# Images to be pushed to Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/chattoner-client:latest'
+  - 'gcr.io/$PROJECT_ID/chattoner-client:$COMMIT_SHA'
+
+# Build timeout (default is 10 minutes)
+timeout: '1200s'
+
+options:
+  # Use E2 machine type (N1 not supported in some regions)
+  machineType: 'E2_HIGHCPU_8'
+  # Disk size in GB
+  diskSizeGb: 100
+  # Enable logging
+  logging: CLOUD_LOGGING_ONLY

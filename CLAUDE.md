@@ -68,3 +68,4 @@ This is a multi-service architecture for ChatToner, a personalized tone conversi
 - Python backend uses environment variables for OpenAI API and other settings
 - Express server connects to Python backend on localhost:5001
 - Production builds serve static files from `dist/public`
+- api 목록 중에 구조가 물아정한거 프론트 백 다 찾아줘
