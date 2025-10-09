@@ -1,4 +1,3 @@
-# python_backend/core/config.py
 # BaseSettings + .env + @lru_cache 
 from pydantic_settings import BaseSettings
 import os
@@ -51,10 +50,15 @@ class Settings(BaseSettings):
     # 피드백 보안키 설정
     SECRET_KEY: str = "default-secret-key-for-dev"
 
+    # JWT (인증 토큰) 설정
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 # 토큰 만료 시간 (60분)
+
     class Config:
         env_file = Path(__file__).resolve().parent.parent / ".env"  # 프로젝트 루트의 .env 파일 참조
         case_sensitive = True
-        extra = "ignore"
+        extra = "ignore"    
 
 @lru_cache()
 def get_settings() -> Settings:
