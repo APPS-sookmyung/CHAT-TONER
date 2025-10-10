@@ -63,7 +63,7 @@ class OptimizedEnterpriseQualityService:
     async def _ensure_initialized(self):
         """DB 서비스 및 Agent 초기화 (실패해도 계속)"""
         if self.enterprise_agent is not None:
-            return  # 이미 초기화됨
+            return  
 
         # DB 서비스 초기화
         if self.db_service is None:
@@ -204,7 +204,8 @@ class OptimizedEnterpriseQualityService:
             apply_expectation_gap,
             map_audience,
             map_channel,
-            determine_improvement_priority
+            determine_improvement_priority,
+            create_basic_suggestions
         )
         from utils.quality_analysis_llm import generate_suggestions_with_llm
         
@@ -251,11 +252,9 @@ class OptimizedEnterpriseQualityService:
                 logger.info("Service Fallback LLM 제안 생성 완료")
             except Exception as e:
                 logger.error(f"LLM 제안 생성 실패: {e}")
-                from quality_analysis_utils import create_basic_suggestions
                 suggestions = create_basic_suggestions(rewrite_result)
                 method_used = "service_fallback_basic"
         else:
-            from quality_analysis_utils import create_basic_suggestions
             suggestions = create_basic_suggestions(rewrite_result)
             method_used = "service_fallback_basic"
         
@@ -325,7 +324,7 @@ class OptimizedEnterpriseQualityService:
         context: str
     ) -> Dict[str, Any]:
         """상세 분석 정보 추가"""
-        from quality_analysis_utils import determine_improvement_priority
+        from utils.quality_analysis_utils import determine_improvement_priority
         
         target_info = ENTERPRISE_TARGETS.get(target_audience, {})
         context_info = ENTERPRISE_CONTEXTS.get(context, {})
