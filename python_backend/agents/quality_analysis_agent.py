@@ -8,7 +8,6 @@ from langgraph.graph import StateGraph, END
 from dataclasses import dataclass
 import logging
 import json
-import asyncio
 from .base_agent import (
     BaseAgent, BaseAgentState, BaseAgentConfig, BaseAgentResult,
     CommonAgentNodes, AgentFactory, agent_monitor
@@ -405,12 +404,11 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
                         "analysis_method": state.get("processing_metadata", {}).get("analysis_method")
                     }
                 }
-                save_task = asyncio.create_task(self.db_service.save_quality_analysis(analysis_to_save))
-                # Run in the background without blocking the agent’s main flow
-                asyncio.gather(save_task) 
+                # Await the save to ensure data is persisted before returning
+                await self.db_service.save_quality_analysis(analysis_to_save) 
                 self.logger.info("품질 분석 결과 DB 저장 요청 완료")
             except Exception as e:
-                self.logger.error(f"품질 분석 결과 DB 저장 실패: {e}")
+                self.logger.exception(f"품질 분석 결과 DB 저장 실패: {e}")
             
             self.logger.info("분석 결과 처리 완료")
         
