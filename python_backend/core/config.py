@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     DESCRIPTION: str = "AI 기반 한국어 텍스트 스타일 개인화 API"
     VERSION: str = "1.0.0"
     DEBUG: bool = True
-    
+    DEFAULT_QUALITY_SCORE: float = 75.0
+
     # 서버 설정
     HOST: str = "0.0.0.0"
     # HOST: str = "127.0.0.1"

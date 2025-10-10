@@ -48,9 +48,12 @@ def create_app() -> FastAPI:
         "api.v1.endpoints.health",
         "api.v1.endpoints.profile",
         "api.v1.endpoints.feedback",
-        "api.v1.endpoints.rag"
-        # @@ quality와 company는 langgraph/enterprise 의존성 문제로 제외됨. 추가 필요!!!
+        "api.v1.endpoints.rag",
+        # --- 아래 2개 모듈 추가 ---
+        "api.v1.endpoints.quality",
+        "api.v1.endpoints.company"
     ])
+        # @@ quality와 company는 langgraph/enterprise 의존성 문제로 제외, 추가
     
     # FastAPI 앱 생성
     swagger_params = get_swagger_ui_parameters()
