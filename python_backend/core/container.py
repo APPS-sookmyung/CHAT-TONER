@@ -12,6 +12,7 @@ from services.user_preferences import UserPreferencesService
 from services.document_service import DocumentService
 # from services.document_service import DocumentService  # pypdf 의존성 문제로 주석 처리
 from services.rag_service import RAGService
+from services.rewrite_service import RewriteService
 
 # 선택적 import (의존성이 있을 때만)
 try:
@@ -54,6 +55,9 @@ class Container(containers.DeclarativeContainer):
         prompt_engineer=prompt_engineer,
         openai_service=openai_service
     )
+
+    # 텍스트 재작성/수정 서비스
+    rewrite_service = providers.Factory(RewriteService)
 
     # 파인튜닝 서비스 제거됨 (finetune_service 미사용)
 

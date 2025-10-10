@@ -10,10 +10,8 @@ import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, JSON, Boolean, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-
-Base = declarative_base()
+from .base_class import Base
 
 class User(Base):
     """사용자 기본 정보 모델"""
@@ -171,35 +169,6 @@ class RAGQueryHistory(Base):
 
     # 메타데이터
     created_at = Column(DateTime, default=datetime.utcnow)
-
-# 데이터베이스 엔진 및 세션 설정
-def create_database_engine():
-    """데이터베이스 엔진 생성"""
-    database_url = os.getenv("DATABASE_URL", "sqlite:///./chat_toner.db")
-    
-    if database_url.startswith("sqlite"):
-        engine = create_engine(
-            database_url, connect_args={"check_same_thread": False}
-        )
-    else:
-        engine = create_engine(database_url)
-    
-    return engine
-
-# 글로벌 엔진 및 세션 생성
-engine = create_database_engine()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# 테이블 생성
-Base.metadata.create_all(bind=engine)
-
-def get_db():
-    """데이터베이스 세션 의존성"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 class CompanyProfile(Base):
     """기업 프로필 모델"""
