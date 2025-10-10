@@ -3,7 +3,7 @@ import { Modal } from "./index";
 import { ToneProfileModal } from "../../Toneprofile";
 
 const meta: Meta<typeof Modal> = {
-  title: "Molecules/Modal",
+  title: "molecules/Modal",
   component: Modal,
   tags: ["autodocs"],
   argTypes: {

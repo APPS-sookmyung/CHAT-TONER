@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Chip } from "./index";
 
 const meta: Meta<typeof Chip> = {
-  title: "Atoms/Chip",
+  title: "atoms/Chip",
   component: Chip,
   tags: ["autodocs"],
   argTypes: {
@@ -19,7 +19,6 @@ const meta: Meta<typeof Chip> = {
 export default meta;
 type Story = StoryObj<typeof Chip>;
 
-// 노란색 칩 스토리
 export const YellowChip: Story = {
   args: {
     colorScheme: "yellow",
@@ -27,7 +26,6 @@ export const YellowChip: Story = {
   },
 };
 
-// 보라색 칩 스토리
 export const PurpleChip: Story = {
   args: {
     colorScheme: "purple",
