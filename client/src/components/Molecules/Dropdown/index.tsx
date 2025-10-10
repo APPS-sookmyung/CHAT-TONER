@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import ChevronDownIcon from "../../assets/icons/chevron-down.svg?react";
+import ChevronDownIcon from "../../../assets/icons/chevron-down.svg?react";
 import { cn } from "@/lib/utils";
 
 const dropdownTriggerVariants = cva(

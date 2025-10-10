@@ -1,19 +1,17 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-interface TagProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ChipProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-  variant?: "chip";
   colorScheme?: "yellow" | "purple";
 }
 
-export const Tag = ({
+export const Chip = ({
   children,
-  variant = "chip",
   colorScheme = "yellow",
   className,
   ...props
-}: TagProps) => {
+}: ChipProps) => {
   const baseStyles =
     "px-[19px] py-[6px] text-2xl font-medium rounded-[30px] inline-block";
 

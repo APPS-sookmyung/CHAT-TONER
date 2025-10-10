@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dropdown } from "./index";
 
 const meta: Meta<typeof Dropdown> = {
-  title: "Components/Dropdown",
+  title: "Molecules/Dropdown",
   component: Dropdown,
   tags: ["autodocs"],
   argTypes: {
