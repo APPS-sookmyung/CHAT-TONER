@@ -136,10 +136,9 @@ async def analyze_company_text_quality(
                 detail=f"분석 실패: {error_msg}"
             )
         
-        # Validate scores
-        grammar_score = result.get('grammar_score', 0.0)
-        if grammar_score == 0.0:
-            logger.error("분석 결과가 비어있음")
+        # Validate scores are present
+        if 'grammar_score' not in result:
+            logger.error("분석 결과에 grammar_score가 없음")
             raise HTTPException(
                 status_code=500,
                 detail="분석 실패: 점수 계산 불가"
