@@ -11,7 +11,7 @@ class RewriteContext(BaseModel):
 
 class FeedbackItem(BaseModel):
     id: str
-    type: Literal["grammar", "clarity", "tone", "policy", "term"]
+    type: Literal["grammar", "clarity", "tone", "policy", "term", "protocol"]
     note: Optional[str] = None
     before: Optional[str] = None
     after: Optional[str] = None

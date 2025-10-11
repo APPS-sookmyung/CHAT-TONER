@@ -198,6 +198,43 @@ class EnterpriseDBService:
             except Exception as e:
                 logger.error(f"사용자 피드백 저장 실패: {e}")
                 return False
+
+    async def save_quality_analysis(self, analysis_data: Dict[str, Any]) -> bool:
+        """Store automated quality analysis results"""
+        if not self.pool:
+            await self.initialize()
+            
+        async with self.pool.acquire() as conn:
+            try:
+                await conn.execute("""
+                    INSERT INTO company_user_feedback 
+                    (user_id, company_id, session_id, original_text, suggested_text,
+                     feedback_type, feedback_value, metadata, created_at,
+                     grammar_score, formality_score, readability_score, protocol_score, compliance_score)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                """,
+                    analysis_data.get('user_id'),
+                    analysis_data.get('company_id'),
+                    analysis_data.get('session_id', 'N/A'),
+                    analysis_data.get('original_text'),
+                    analysis_data.get('suggested_text', ''),
+                    'auto_analysis',  # feedback_type
+                    'none',           # feedback_value
+                    json.dumps(analysis_data.get('metadata', {})),
+                    datetime.now(),
+                    analysis_data.get('grammar_score'),
+                    analysis_data.get('formality_score'),
+                    analysis_data.get('readability_score'),
+                    analysis_data.get('protocol_score'),
+                    analysis_data.get('compliance_score')
+                )
+                
+                logger.info(f"품질 분석 결과 저장 완료")
+                return True
+                
+            except Exception as e:
+                logger.error(f"품질 분석 결과 저장 실패: {e}")
+                return False
     
     # Test and development methods
     async def create_test_company(self, company_id: str = "test_company") -> bool:

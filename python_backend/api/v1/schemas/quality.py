@@ -190,14 +190,6 @@ class DropdownOptions(BaseModel):
         description="상황 선택 옵션들"
     )
 
-# 에러 응답 스키마
-class CompanyErrorResponse(BaseModel):
-    """기업용 에러 응답"""
-    error: str = Field(..., description="에러 메시지")
-    error_code: Optional[str] = Field(None, description="에러 코드")
-    details: Optional[Dict[str, Any]] = Field(None, description="상세 정보")
-    fallback_available: bool = Field(default=True, description="fallback 이용 가능 여부")
-
 # 개발/테스트용 스키마들
 class AnalysisDebugInfo(BaseModel):
     """분석 디버그 정보"""
