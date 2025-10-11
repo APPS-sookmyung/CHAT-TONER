@@ -67,6 +67,8 @@ steps:
       - '--set-env-vars'
       - 'ENVIRONMENT=production'
       - '--set-env-vars'
+      - 'DATABASE_URL=postgresql://chattoner-user:r~o+^[uD@6+p,kby@10.118.192.2:5432/chattoner'
+      - '--set-env-vars'
       - 'DB_HOST=10.118.192.2'
       - '--set-env-vars'
       - 'DB_PORT=5432'
