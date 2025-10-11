@@ -66,6 +66,16 @@ steps:
       - 'private-ranges-only'
       - '--set-env-vars'
       - 'ENVIRONMENT=production'
+      - '--set-env-vars'
+      - 'DB_HOST=10.118.192.2'
+      - '--set-env-vars'
+      - 'DB_PORT=5432'
+      - '--set-env-vars'
+      - 'DB_NAME=chattoner'
+      - '--set-env-vars'
+      - 'DB_USER=chattoner-user'
+      - '--set-env-vars'
+      - 'DB_PASS=r~o+^[uD@6+p,kby'
     id: 'deploy-backend-cloudrun'
 
 # Images to be stored in Container Registry

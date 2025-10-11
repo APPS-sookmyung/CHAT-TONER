@@ -21,7 +21,8 @@ from core.container import Container
 from core.middleware import setup_middleware
 from core.exception_handlers import setup_exception_handlers
 from api.v1.router import api_router
-from starlette.middleware.session import SessionMiddleware
+# SessionMiddleware requires itsdangerous - temporarily disabled
+# from starlette.middleware.session import SessionMiddleware
 from api import feedback
 
 FRONT_ORIGINS = [
@@ -81,7 +82,8 @@ def create_app() -> FastAPI:
     setup_middleware(app, settings)
 
     # 세션 미들웨어 추가 - secret_key .env 설정 파일에서 관리
-    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+    # Temporarily disabled - SessionMiddleware requires additional setup
+    # app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
     # 예외 핸들러 설정
     setup_exception_handlers(app)
