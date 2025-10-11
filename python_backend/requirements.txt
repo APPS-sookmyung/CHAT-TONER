@@ -15,6 +15,12 @@ langchain-community>=0.0.10
 langchain-text-splitters>=0.0.1
 faiss-cpu>=1.7.4
 
+# --- Alembic Dependencies ---
+# Alembic core library
+alembic
+# Alembic's recommended PostgreSQL driver for 'postgresql+psycopg://' URL
+psycopg[binary]
+
 # Testing dependencies
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
