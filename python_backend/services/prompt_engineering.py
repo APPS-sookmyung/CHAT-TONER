@@ -208,8 +208,31 @@ class PromptEngineer:
             return "\n추가 사용자 맞춤 제한사항:\n" + "\n".join(user_negative_parts)
         return ""
     
+    def _generate_enterprise_prompt_part(self, enterprise_context: Optional[Dict[str, Any]]) -> str:
+        """기업 컨텍스트를 프롬프트의 일부로 변환"""
+        if not enterprise_context:
+            return ""
+        
+        parts = []
+        # enterprise_context 딕셔너리를 순회하며 프롬프트 문자열 생성
+        for key, value in enterprise_context.items():
+            # 값이 리스트인 경우 각 항목을 불렛 포인트로 처리
+            if isinstance(value, list):
+                items = "\n".join([f"- {item}" for item in value])
+                parts.append(f"기업 {key}:\n{items}")
+            # 값이 리스트가 아닌 경우 단순 키-값 형태로 처리
+            else:
+                parts.append(f"기업 {key}: {value}")
+        
+        # 생성된 부분이 있을 경우 제목과 함께 최종 문자열 반환
+        if parts:
+            return "\n기업별 가이드라인:\n" + "\n".join(parts) + "\n"
+        return ""
+
+    
     def generate_conversion_prompts(self, user_profile: Dict[str, Any], 
                                    context: str, 
+                                    enterprise_context: Optional[Dict[str, Any]] = None,
                                    negative_preferences: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         """사용자 프로필과 컨텍스트에 따른 변환 프롬프트 생성"""
         
@@ -231,6 +254,8 @@ class PromptEngineer:
 - 감정표현: {emotion_level}/10 (1=건조한, 10=감정적)
 - 직설성: {directness_level}/10 (1=돌려서, 10=직접적)
 """
+        # 기업별 가이드라인 프롬프트 생성
+        enterprise_guidelines = self._generate_enterprise_prompt_part(enterprise_context)
         
         # 기본 네거티브 프롬프트
         base_negative = self.base_negative_prompts.get("common", "")
@@ -255,7 +280,7 @@ class PromptEngineer:
             
             prompts[style] = f"""
 {user_characteristics}
-
+{enterprise_guidelines}
 {style_template}
 
 {combined_negative}
