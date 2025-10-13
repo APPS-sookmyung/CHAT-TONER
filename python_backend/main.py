@@ -94,7 +94,7 @@ def create_app() -> FastAPI:
         """서비스 상태를 확인하는 기본 엔드포인트"""
         return {"status": "ok", "message": "Welcome to Chat Toner API!"}
     app.include_router(api_router, prefix="/api/v1")
-    app.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
+    app.include_router(feedback.router, tags=["Feedback"])
     
     return app
 
