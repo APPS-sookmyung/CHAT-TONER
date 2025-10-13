@@ -194,39 +194,47 @@ def rewrite_text(
     channel = ctx.get("situation") or ctx.get("channel")
     extras = ctx.get("extras") or {}
     strict = bool((options or {}).get("strict_policy"))
+    analysis_only = bool((options or {}).get("analysis_only")) # for fallback use
 
     revised = text
     applied_fixes: List[Dict[str, Any]] = []
     steps: List[str] = []
 
-    # 1) Apply grammar/clarity feedback
-    revised, fixes = _apply_feedback(revised, feedback)
-    if fixes:
-        applied_fixes.extend(fixes)
-        steps.append("feedback_grammar_applied")
+    # If analysis_only is True, only analysis is performed without making any modifications (for fallback use)
+    # Skip text modification step if analysis_only is True
+    if not analysis_only:
+        # 1) Apply grammar/clarity feedback
+        revised, fixes = _apply_feedback(revised, feedback)
+        if fixes:
+            applied_fixes.extend(fixes)
+            steps.append("feedback_grammar_applied")
 
-    # 2) Apply terminology suggestions
-    revised, term_fixes = _apply_term_suggestions(revised, term_suggestions)
-    if term_fixes:
-        applied_fixes.extend([{"id": fx.get("id"), "before": fx.get("before"), "after": fx.get("after"), "rule": "term"} for fx in term_fixes])
-        steps.append("terms_normalized")
+        # 2) Apply terminology suggestions
+        revised, term_fixes = _apply_term_suggestions(revised, term_suggestions)
+        if term_fixes:
+            applied_fixes.extend([{"id": fx.get("id"), "before": fx.get("before"), "after": fx.get("after"), "rule": "term"} for fx in term_fixes])
+            steps.append("terms_normalized")
 
-    # 3) Policy/channel specific normalizations
-    emoji_removed = 0
-    if channel in {"email", "report", "meeting_minutes"} and ("executives" in audience or "clients_vendors" in audience):
-        revised, n = _strip_emoji(revised)
-        emoji_removed += n
-    if channel == "email":
-        revised, ch = _insert_email_sections(revised, extras.get("subject_hint"))
-        if ch:
-            steps.extend(ch)
-    # ensure formal endings for formal contexts
-    if ("executives" in audience or channel in {"email", "report"}):
-        revised, tag = _ensure_formal_request(revised)
-        if tag:
-            steps.append(tag)
+        # 3) Policy/channel specific normalizations
+        emoji_removed = 0
+        if channel in {"email", "report", "meeting_minutes"} and ("executives" in audience or "clients_vendors" in audience):
+            revised, n = _strip_emoji(revised)
+            emoji_removed += n
+        if channel == "email":
+            revised, ch = _insert_email_sections(revised, extras.get("subject_hint"))
+            if ch:
+                steps.extend(ch)
+        # ensure formal endings for formal contexts
+        if ("executives" in audience or channel in {"email", "report"}):
+            revised, tag = _ensure_formal_request(revised)
+            if tag:
+                steps.append(tag)
+    else:
+        # Analysis-only mode
+        steps.append("analysis_only_mode")
+        emoji_removed = 0
 
-    # 4) Grammar summary
+    # 4) Grammar summary 
     expected = "formal" if ("executives" in audience or channel in {"email", "report"}) else "polite"
     ko_end = _analyze_korean_endings(revised, expected)
     avg_sentence_len = 0
@@ -234,16 +242,16 @@ def rewrite_text(
     if sents:
         avg_sentence_len = int(sum(len(s) for s in sents) / len(sents))
     grammar = {
-        "summary": "격식 점검 및 기본 문법 휴리스틱 적용",
-        "metrics": {"errors_per_1k": 0.0, "grammar_score": 95 if ko_end.get("ending_ok") else 85, "avg_sentence_len": avg_sentence_len},
+        "summary": "격식 점검 및 기본 문법 휴리스틱 적용" if not analysis_only else "원본 텍스트 분석",
+        "metrics": {"errors_per_1k": 0.0, "grammar_score": 95 if ko_end.get("ending_ok") else 70, "avg_sentence_len": avg_sentence_len},
         "korean_endings": ko_end,
         "word_flags": {"slang": [], "jargon": [], "banned_terms": [], "emoji_used": 0},
     }
 
-    # 5) Protocol section
+    # 5) Protocol section 
     protocol = _protocol_checks(revised, channel, audience)
 
-    summary = "피드백과 정책을 반영하여 재작성했습니다."
+    summary = "원본 텍스트를 분석했습니다." if analysis_only else "피드백과 정책을 반영하여 재작성했습니다."
     if strict and (protocol["metrics"]["banned_count"] or protocol["metrics"]["pii_hits_count"]):
         summary += " 금칙어나 민감정보가 감지되어 일부 적용이 제한되었습니다."
 

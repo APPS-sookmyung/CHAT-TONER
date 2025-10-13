@@ -1,21 +1,23 @@
 """
 최적화된 기업용 Quality Analysis Agent
-단일 API 호출로 문법 + 프로토콜 통합 분석
+RAG 통합 분석 → 실패 시 Agent 내부 Fallback (utils/llm 활용)
 """
 
 from typing import TypedDict, Dict, Any, List, Optional
 from langgraph.graph import StateGraph, END
 from dataclasses import dataclass
+import logging
 import json
-import asyncio
-
 from .base_agent import (
     BaseAgent, BaseAgentState, BaseAgentConfig, BaseAgentResult,
     CommonAgentNodes, AgentFactory, agent_monitor
 )
 
+logger = logging.getLogger('chattoner.quality_analysis_agent')
+
+
 class OptimizedEnterpriseQualityState(BaseAgentState):
-    """ 기업용 Quality Analysis Agent 전용 상태"""
+    """기업용 Quality Analysis Agent 전용 상태"""
     # 기본 입력
     text: str
     target_audience: str
@@ -31,12 +33,10 @@ class OptimizedEnterpriseQualityState(BaseAgentState):
     # 통합 분석 결과
     comprehensive_analysis: Dict[str, Any]  
     
-    # 분석 결과 (기존)
+    # 분석 결과
     grammar_score: float
     formality_score: float
     readability_score: float
-    
-    # 새로운 분석 결과 (기업용)
     protocol_score: float
     compliance_score: float
     
@@ -46,33 +46,35 @@ class OptimizedEnterpriseQualityState(BaseAgentState):
     suggestions: List[Dict[str, str]]
     protocol_suggestions: List[Dict[str, str]]
 
+
 @dataclass
 class OptimizedEnterpriseQualityConfig(BaseAgentConfig):
-    """ 기업용 Quality Agent 설정"""
+    """기업용 Quality Agent 설정"""
     name: str = "optimized_enterprise_quality"
-    version: str = "1.1.0"
-    timeout: float = 35.0  # 단일 호출로 시간 단축
+    version: str = "1.4.0"
+    timeout: float = 35.0
     max_suggestions: int = 4
     max_protocol_suggestions: int = 4
     confidence_threshold: float = 0.6
-    enable_comprehensive_analysis: bool = True
+    enable_llm_fallback: bool = True
+
 
 class OptimizedEnterpriseQualityAgent(BaseAgent):
-    """기업용 품질분석 Agent"""
+    """기업용 품질분석 Agent (RAG + 내부 Fallback)"""
     
     def __init__(self, rag_service, db_service, config: Optional[OptimizedEnterpriseQualityConfig] = None):
         super().__init__(rag_service, config or OptimizedEnterpriseQualityConfig())
         self.db_service = db_service
-    
+        
     def _build_graph(self) -> StateGraph:
-        """워크플로우 """
+        """워크플로우"""
         workflow = StateGraph(OptimizedEnterpriseQualityState)
         
         # 노드 정의 
         workflow.add_node("initialize", CommonAgentNodes.initialize_step)
         workflow.add_node("load_company_data", self._load_company_data)
-        workflow.add_node("comprehensive_analysis", self._comprehensive_analysis)  # 통합 분석
-        workflow.add_node("process_results", self._process_analysis_results)      # 결과 처리
+        workflow.add_node("comprehensive_analysis", self._comprehensive_analysis)
+        workflow.add_node("process_results", self._process_analysis_results)
         workflow.add_node("finalize", CommonAgentNodes.finalize_step)
         
         # 워크플로우 연결 
@@ -86,12 +88,12 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         return workflow.compile()
     
     def _create_initial_state(self, **kwargs) -> OptimizedEnterpriseQualityState:
-        """최적화된 초기 상태 생성"""
+        """초기 상태 생성"""
         return OptimizedEnterpriseQualityState(
             # 기본 입력
             text=kwargs.get('text', ''),
             target_audience=kwargs.get('target_audience', '팀동료'),
-            context=kwargs.get('context', '이메일'),
+            context=kwargs.get('context', '메시지'),
             company_id=kwargs.get('company_id', ''),
             user_id=kwargs.get('user_id', ''),
             
@@ -129,7 +131,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         return OptimizedEnterpriseQualityConfig()
     
     async def _load_company_data(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
-        """기업 데이터 로딩 (기존과 동일)"""
+        """기업 데이터 로딩"""
         async with self._step_context("기업 데이터 로딩", state):
             try:
                 # 기업 프로필 로딩
@@ -155,14 +157,13 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         return state
     
     async def _comprehensive_analysis(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
-        """통합 분석 (단일 API 호출)"""
+        """RAG 기반 통합 분석 → 실패 시 Agent 내부 fallback"""
         async with self._step_context("통합 분석", state):
-            # @@ 클로드가 프롬프트 길이 최적화 필요하대요: 현재 228줄의 긴 프롬프트는 토큰 낭비 및 성능 저하 원인
             # 기업 맥락 정보 구성
             company_style = state["company_profile"].get("communication_style", "formal")
             main_channels = state["company_profile"].get("main_channels", [])
             
-            # 가이드라인 텍스트 구성
+            # 가이드라인 텍스트 구성 (상위 3개만)
             guidelines_text = "기본 비즈니스 커뮤니케이션 규칙"
             if state["company_guidelines"]:
                 guidelines_text = "\n".join([
@@ -194,7 +195,6 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         "grammar_issues": [
             {{
                 "original": "문제 표현",
-                "issue": "문제점",
                 "suggestion": "개선안",
                 "reason": "개선 이유"
             }}
@@ -204,9 +204,9 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         "protocol_score": <0-100>,
         "compliance_issues": [
             {{
-                "rule": "위반된 규칙",
-                "violation": "위반 내용",
-                "correction": "수정 방안",
+                "original": "위반 표현",
+                "suggestion": "수정 방안",
+                "reason": "위반 이유",
                 "severity": "high|medium|low"
             }}
         ],
@@ -227,7 +227,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
     }}
 }}"""
             
-            # 단일 RAG 호출
+            # RAG 호출
             result = await self._call_rag_with_retry(
                 prompt=comprehensive_prompt,
                 context="기업 커뮤니케이션 종합 분석"
@@ -235,19 +235,115 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             
             if result:
                 try:
-                    # @@ JSON 파싱 실패 처리 부족: fallback 로직 없어서 전체 분석 실패 가능성
+
                     analysis_data = self._extract_json_from_text(result["answer"])
                     state["comprehensive_analysis"] = analysis_data
                     state["rag_sources"].extend(result.get("sources", []))
-
-                    self.logger.info("통합 분석 완료")
-
-                except Exception as e:
-                    self.logger.warning(f"통합 분석 결과 파싱 실패: {e}")
-                    state["error_message"] = f"통합 분석 결과 처리 실패: {str(e)}"
+                    state["processing_metadata"]["analysis_method"] = "rag_comprehensive"
+                    
+                    self.logger.info("RAG 통합 분석 완료")
+                    return state
+                    
+                except (ValueError, json.JSONDecodeError) as e:
+                    # JSON 파싱 실패 → Agent 내부 fallback
+                    self.logger.warning(f"JSON 파싱 실패: {e}, Agent 내부 fallback 시작")
             else:
-                state["error_message"] = "통합 분석 RAG 호출 실패"
+                # RAG 호출 실패 → Agent 내부 fallback
+                self.logger.warning("RAG 호출 실패, Agent 내부 fallback 시작")
+            
+            # Agent 내부 fallback 실행
+            return await self._agent_internal_fallback(state)
         
+        return state
+    
+    async def _agent_internal_fallback(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
+        """
+        Agent 내부 fallback: 규칙 기반 분석 + LLM 제안
+        이미 로드된 company_profile 재사용
+        """
+        from services.rewrite_service import rewrite_text
+        from utils.quality_analysis_utils import (
+            extract_base_scores, apply_expectation_gap, 
+            map_audience, map_channel, identify_concerns, create_basic_suggestions
+        )
+        from utils.quality_analysis_llm import generate_suggestions_with_llm
+        
+        self.logger.info("Agent 내부 fallback 실행 (이미 로드된 기업 데이터 활용)")
+        
+        # 1) rewrite_text로 분석
+        rewrite_result = rewrite_text(
+            text=state["text"],
+            traits={},
+            context={
+                "audience": map_audience(state["target_audience"]),
+                "channel": map_channel(state["context"])
+            },
+            options={"analysis_only": True}
+        )
+        
+        # 2) 점수 계산 (이미 로드된 company_profile 활용!)
+        base_scores = extract_base_scores(rewrite_result)
+        adjusted_scores, adjustment_info = apply_expectation_gap(
+            base_scores, 
+            state["company_profile"] if state["company_profile"] else None
+        )
+        
+        # 3) LLM 제안 생성
+        if self.config.enable_llm_fallback:
+            try:
+                suggestions = await generate_suggestions_with_llm(
+                    rag_service=self.rag_service,
+                    text=state["text"],
+                    rewrite_result=rewrite_result,
+                    target_audience=state["target_audience"],
+                    context=state["context"],
+                    company_profile=state["company_profile"] if state["company_profile"] else None,
+                    max_grammar=self.config.max_suggestions,
+                    max_protocol=self.config.max_protocol_suggestions
+                )
+            except Exception as e:
+                self.logger.error(f"LLM 제안 실패: {e}, 기본 제안 사용")
+
+                suggestions = create_basic_suggestions(rewrite_result)
+        else:
+
+            suggestions = create_basic_suggestions(rewrite_result)
+        
+        # 4) comprehensive_analysis 구성
+        grammar = rewrite_result.get("grammar", {})
+        protocol = rewrite_result.get("protocol", {})
+        
+        state["comprehensive_analysis"] = {
+            "grammar_analysis": {
+                "grammar_score": adjusted_scores["grammar_score"],
+                "formality_score": adjusted_scores["formality_score"],
+                "readability_score": adjusted_scores["readability_score"],
+                "grammar_issues": suggestions["grammar"]
+            },
+            "protocol_analysis": {
+                "protocol_score": adjusted_scores["protocol_score"],
+                "compliance_issues": suggestions["protocol"],
+                "tone_assessment": {
+                    "matches_company_tone": protocol.get("flags", {}).get("tone_consistent", True),
+                    "appropriateness": "appropriate",
+                    "suggestions": []
+                },
+                "format_compliance": {
+                    "meets_format": protocol.get("flags", {}).get("format_ok", True),
+                    "required_elements": protocol.get("details", {}).get("missing_sections", [])
+                }
+            },
+            "overall_assessment": {
+                "enterprise_readiness": (adjusted_scores["grammar_score"] + adjusted_scores["protocol_score"]) / 2,
+                "primary_concerns": identify_concerns(adjusted_scores),
+                "strengths": []
+            }
+        }
+        
+        state["processing_metadata"]["analysis_method"] = "agent_fallback"
+        state["processing_metadata"]["adjustment_info"] = adjustment_info
+        
+        self.logger.info("Agent 내부 fallback 완료")
         return state
     
     async def _process_analysis_results(self, state: OptimizedEnterpriseQualityState) -> OptimizedEnterpriseQualityState:
@@ -255,46 +351,64 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         async with self._step_context("결과 처리", state):
             analysis = state["comprehensive_analysis"]
             
+            # 분석 결과가 없으면 에러
             if not analysis:
-                # 기본값으로 설정
-                state["grammar_score"] = 60.0
-                state["formality_score"] = 60.0
-                state["readability_score"] = 60.0
-                state["protocol_score"] = 60.0
-                state["compliance_score"] = 60.0
+                self.logger.error("분석 결과가 비어있음")
+                state["error_message"] = "분석 실패: 결과 없음"
                 return state
             
             # 문법 분석 결과 추출
             grammar_analysis = analysis.get("grammar_analysis", {})
             state["grammar_score"] = self._validate_and_normalize_score(
-                grammar_analysis.get("grammar_score", 70)
+                grammar_analysis.get("grammar_score")
             )
             state["formality_score"] = self._validate_and_normalize_score(
-                grammar_analysis.get("formality_score", 70)
+                grammar_analysis.get("formality_score")
             )
             state["readability_score"] = self._validate_and_normalize_score(
-                grammar_analysis.get("readability_score", 70)
+                grammar_analysis.get("readability_score")
             )
             state["grammar_feedback"] = grammar_analysis
             
             # 프로토콜 분석 결과 추출
             protocol_analysis = analysis.get("protocol_analysis", {})
             state["protocol_score"] = self._validate_and_normalize_score(
-                protocol_analysis.get("protocol_score", 80)
+                protocol_analysis.get("protocol_score")
             )
             state["protocol_feedback"] = protocol_analysis
             
             # 전체 평가 추출
             overall = analysis.get("overall_assessment", {})
             state["compliance_score"] = self._validate_and_normalize_score(
-                overall.get("enterprise_readiness", 75)
+                overall.get("enterprise_readiness")
             )
             
             # 제안사항 생성
             self._generate_suggestions_from_analysis(state)
-            
-            # 기업 맥락 반영한 점수 조정
-            self._apply_company_adjustments(state)
+
+            # Save analysis results to the databas
+            try:
+                analysis_to_save = {
+                    "user_id": state.get("user_id"),
+                    "company_id": state.get("company_id"),
+                    "original_text": state.get("text"),
+                    "grammar_score": state.get("grammar_score"),
+                    "formality_score": state.get("formality_score"),
+                    "readability_score": state.get("readability_score"),
+                    "protocol_score": state.get("protocol_score"),
+                    "compliance_score": state.get("compliance_score"),
+                    "metadata": {
+                        "grammar_feedback": state.get("grammar_feedback"),
+                        "protocol_feedback": state.get("protocol_feedback"),
+                        "overall_assessment": state.get("comprehensive_analysis", {}).get("overall_assessment"),
+                        "analysis_method": state.get("processing_metadata", {}).get("analysis_method")
+                    }
+                }
+                # Await the save to ensure data is persisted before returning
+                await self.db_service.save_quality_analysis(analysis_to_save) 
+                self.logger.info("품질 분석 결과 DB 저장 요청 완료")
+            except Exception as e:
+                self.logger.exception(f"품질 분석 결과 DB 저장 실패: {e}")
             
             self.logger.info("분석 결과 처리 완료")
         
@@ -306,7 +420,7 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         grammar_issues = state["grammar_feedback"].get("grammar_issues", [])
         state["suggestions"] = [
             {
-                "category": "문법",
+                "category": issue.get("category", "문법"),
                 "original": issue.get("original", ""),
                 "suggestion": issue.get("suggestion", ""),
                 "reason": issue.get("reason", "")
@@ -316,54 +430,16 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         
         # 프로토콜 제안
         compliance_issues = state["protocol_feedback"].get("compliance_issues", [])
-        protocol_suggestions = [
+        state["protocol_suggestions"] = [
             {
-                "category": "프로토콜",
-                "rule": issue.get("rule", ""),
-                "violation": issue.get("violation", ""),
-                "correction": issue.get("correction", ""),
+                "category": issue.get("category", "프로토콜"),
+                "original": issue.get("original", ""),           # violation → original
+                "suggestion": issue.get("suggestion", ""),       # correction → suggestion
+                "reason": issue.get("reason", ""),
                 "severity": issue.get("severity", "medium")
             }
             for issue in compliance_issues[:self.config.max_protocol_suggestions]
         ]
-        
-        # 톤 제안 추가
-        tone_assessment = state["protocol_feedback"].get("tone_assessment", {})
-        tone_suggestions = tone_assessment.get("suggestions", [])
-        for suggestion in tone_suggestions[:2]:
-            protocol_suggestions.append({
-                "category": "톤앤매너",
-                "rule": "기업 커뮤니케이션 스타일",
-                "violation": "톤 일관성",
-                "correction": suggestion,
-                "severity": "medium"
-            })
-        
-        state["protocol_suggestions"] = protocol_suggestions
-    
-    def _apply_company_adjustments(self, state: OptimizedEnterpriseQualityState):
-        """기업 맥락 반영한 점수 조정"""
-        company_style = state["company_profile"].get("communication_style", "formal")
-
-        # @@ 점수 조정 로직 부족: 단순 곱셈만으로는 기업별 특성 반영 한계
-        # 기업 스타일별 조정
-        style_multipliers = {
-            "strict": 0.9,
-            "formal": 1.0,
-            "friendly": 1.05
-        }
-
-        multiplier = style_multipliers.get(company_style, 1.0)
-        
-        # RAG 신뢰도 반영
-        rag_confidence = self._calculate_rag_confidence(state["rag_sources"])
-        
-        # 최종 조정
-        state["grammar_score"] = min(100.0, state["grammar_score"] * multiplier)
-        state["formality_score"] = min(100.0, state["formality_score"] * multiplier)
-        state["readability_score"] = min(100.0, state["readability_score"] * multiplier)
-        state["protocol_score"] = min(100.0, state["protocol_score"] * multiplier * rag_confidence)
-        state["compliance_score"] = min(100.0, state["compliance_score"] * multiplier * rag_confidence)
     
     async def _process_final_result(self, final_state: OptimizedEnterpriseQualityState) -> BaseAgentResult:
         """최종 결과 처리"""
@@ -396,14 +472,15 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             # 메타데이터
             "company_analysis": {
                 "company_id": final_state["company_id"],
-                "communication_style": final_state["company_profile"].get("communication_style"),
-                "compliance_level": final_state["compliance_score"]
+                "communication_style": final_state["company_profile"].get("communication_style") if final_state["company_profile"] else "unknown",
+                "compliance_level": final_state["compliance_score"],
+                "adjustment_info": final_state["processing_metadata"].get("adjustment_info", {})
             },
             
             # 최적화 정보
             "optimization_info": {
-                "api_calls_used": 1,  # 단일 호출
-                "analysis_method": "comprehensive"
+                "api_calls_used": 1 if final_state["processing_metadata"].get("analysis_method") == "rag_comprehensive" else 0,
+                "analysis_method": final_state["processing_metadata"].get("analysis_method", "unknown")
             }
         }
         
@@ -424,20 +501,17 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
         if state.get("error_message"):
             return "낮음"
         
-        # 통합 분석의 완성도 평가
-        analysis_completeness = bool(state["comprehensive_analysis"])
-        company_data_availability = bool(state["company_profile"]) and bool(state["company_guidelines"])
-        rag_source_quality = len(state["rag_sources"]) >= 2
+        analysis_method = state["processing_metadata"].get("analysis_method", "")
         
-        confidence_factors = [analysis_completeness, company_data_availability, rag_source_quality]
-        score = sum(confidence_factors)
-        
-        if score >= 3:
+        # RAG 성공 시 높은 신뢰도
+        if analysis_method == "rag_comprehensive":
             return "높음"
-        elif score >= 2:
+        
+        # Agent fallback 시 보통
+        if analysis_method == "agent_fallback":
             return "보통"
-        else:
-            return "낮음"
+        
+        return "낮음"
     
     # 외부 인터페이스
     async def analyze_enterprise_quality(
@@ -457,17 +531,26 @@ class OptimizedEnterpriseQualityAgent(BaseAgent):
             user_id=user_id
         )
         
-        return result.data if result.success else {
-            "error": result.error,
-            "grammar_score": 60.0,
-            "protocol_score": 60.0,
-            "suggestions": [],
-            "protocol_suggestions": [],
-            "optimization_info": {
-                "api_calls_used": 0,
-                "analysis_method": "error"
+        # 실패 시에도 에러 명시
+        if not result.success:
+            return {
+                "error": result.error,
+                "grammar_score": 0.0,
+                "formality_score": 0.0,
+                "readability_score": 0.0,
+                "protocol_score": 0.0,
+                "compliance_score": 0.0,
+                "suggestions": [],
+                "protocol_suggestions": [],
+                "optimization_info": {
+                    "api_calls_used": 0,
+                    "analysis_method": "error"
+                }
             }
-        }
+        
+        output_data = result.data
+        output_data['rag_sources_count'] = result.rag_sources_count
+        return output_data
 
-# 팩토리 등록
+
 AgentFactory.register("optimized_enterprise_quality", OptimizedEnterpriseQualityAgent)

@@ -36,12 +36,19 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o"
     
     # 데이터베이스 설정
-    DATABASE_URL: str = "sqlite:///./chat_toner.db"
+    DATABASE_URL: Optional[str] = None
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
-    DB_NAME: str = "chattoner_db"
-    DB_USER: str = "username"
-    DB_PASSWORD: str = "password"
+    DB_NAME: str = "chattoner"
+    DB_USER: str = "chattoner-user"
+    DB_PASS: str = ""
+
+    @property
+    def POSTGRES_URL(self) -> str:
+        """PostgreSQL DATABASE_URL 생성"""
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+        return f"postgresql://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     # CORS 설정
     CORS_ORIGINS: list = ["*"]

@@ -68,4 +68,52 @@ This is a multi-service architecture for ChatToner, a personalized tone conversi
 - Python backend uses environment variables for OpenAI API and other settings
 - Express server connects to Python backend on localhost:5001
 - Production builds serve static files from `dist/public`
-- api 목록 중에 구조가 물아정한거 프론트 백 다 찾아줘
+
+## GCP Cloud Deployment
+
+### Cloud Run Services
+1. **chattoner-back** (Python FastAPI Backend)
+   - URL: https://chattoner-back-184664486594.asia-northeast3.run.app
+   - Region: asia-northeast3
+   - Image Registry: gcr.io/chattoner-project/chattoner-back:latest
+   - Port: 8080 (auto-set by Cloud Run, do NOT manually set PORT env var)
+   - Resources: 2Gi memory, 2 CPU
+   - Scaling: 0-10 instances, max-scale 20
+   - Database: Cloud SQL PostgreSQL (10.118.192.2)
+   - VPC: run-to-db-connector (private-ranges-only egress)
+
+2. **client** (React Frontend)
+   - Separate Cloud Run service
+   - Build config: cloudbuild.yaml (root)
+
+### Cloud Build Triggers
+- **deploy-backend** (ID: 350f774a-9a95-4852-b8f4-798a3933593a)
+  - Config: `python_backend/cloudbuild.yaml`
+  - Trigger: Push to main branch in python_backend/**
+  - Repository: APPS-sookmyung/CHAT-TONER
+
+- **chattoner-client** (ID: 6dd0055b-6a26-4126-bd0f-bc729668c610)
+  - Config: `cloudbuild.yaml` (root)
+  - Trigger: Push to main branch
+
+### Environment Variables (chattoner-back)
+```
+ENVIRONMENT=production
+env.FASTAPI_URL=https://chattoner-back-184664486594.asia-northeast3.run.app
+DB_HOST=10.118.192.2
+DB_USER=chattoner-user
+DB_PASS=r~o+^[uD@6+p,kby
+DB_NAME=chattoner
+DB_PORT=5432
+```
+
+### Cloud SQL Connection
+- Instance: chattoner-project:asia-northeast3:chattoner
+- Private IP: 10.118.192.2
+- Connected via VPC connector: run-to-db-connector
+
+### Known Deployment Issues
+1. **PORT env conflict**: Cloud Run automatically sets PORT - do not set it manually in cloudbuild.yaml
+2. **Image mismatch**: Previously Express server was deployed instead of FastAPI backend
+3. **Build failures**: Recent builds (Oct 4-9) failed due to PORT conflict and other config issues
+4. **Registry path**: Images stored in gcr.io, not asia-northeast3-docker.pkg.dev/cloud-run-source-deploy

@@ -1,32 +1,15 @@
 """
-Text Quality Analysis Endpoints (기업용 확장) - 수정된 버전
-Agent를 직접 사용하여 서비스 중복 제거
+Text Quality Analysis Endpoints (기업용 확장)
+Service Layer를 통한 명확한 계층 구조
 """
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 import json
 import logging
+import time
 from typing import Annotated, Dict, Any
-
-# 수정된 imports - 존재하는 모듈들만 import
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from services.rag_service import RAGService
-# from services.enterprise_db_service import get_enterprise_db_service, EnterpriseDBService  # asyncpg 의존성 문제
-
-# langgraph 의존성 문제 해결을 위한 조건부 import
-try:
-    from agents.quality_analysis_agent import OptimizedEnterpriseQualityAgent
-    ENTERPRISE_AGENT_AVAILABLE = True
-except ImportError:
-    OptimizedEnterpriseQualityAgent = None
-    ENTERPRISE_AGENT_AVAILABLE = False
-
-try:
-    from services.enterprise_db_service import get_enterprise_db_service, EnterpriseDBService
-    ENTERPRISE_DB_AVAILABLE = True
-except ImportError:
-    get_enterprise_db_service = None
-    EnterpriseDBService = None
-    ENTERPRISE_DB_AVAILABLE = False
+from services.rewrite_service import rewrite_text
 from api.v1.schemas.quality import (
     CompanyQualityAnalysisRequest,
     CompanyQualityAnalysisResponse,
@@ -40,82 +23,157 @@ from api.v1.schemas.quality import (
     CompanyAnalysis,
     DropdownOptions
 )
+from api.v1.schemas.suggest import FeedbackItem
 
+# Conditional imports for enterprise features
+try:
+    from services.quality_analysis_service import OptimizedEnterpriseQualityService
+    ENTERPRISE_SERVICE_AVAILABLE = True
+except ImportError:
+    OptimizedEnterpriseQualityService = None
+    ENTERPRISE_SERVICE_AVAILABLE = False
+
+try:
+    from services.enterprise_db_service import get_enterprise_db_service, EnterpriseDBService
+    ENTERPRISE_DB_AVAILABLE = True
+except ImportError:
+    get_enterprise_db_service = None
+    EnterpriseDBService = None
+    ENTERPRISE_DB_AVAILABLE = False
+
+# Logger setup
 logger = logging.getLogger('chattoner')
 router = APIRouter()
 
-# 컨테이너에서 싱글톤 서비스들 가져오기
+
+# Dependency injection functions
 def get_rag_service():
     """RAG 서비스 싱글톤 인스턴스 반환"""
     from core.container import Container
     container = Container()
     return container.rag_service()
 
-def get_enterprise_quality_agent():
-    """기업용 품질분석 Agent 싱글톤 인스턴스 반환 (성능 최적화)"""
-    if not ENTERPRISE_AGENT_AVAILABLE:
+
+def get_enterprise_quality_service():
+    """기업용 품질분석 Service 반환"""
+    if not ENTERPRISE_SERVICE_AVAILABLE:
         raise HTTPException(
             status_code=503,
-            detail="기업용 기능이 비활성화되어 있습니다. langgraph 의존성을 설치해주세요."
+            detail="기업용 기능이 비활성화되어 있습니다."
         )
-
+    
     from core.container import Container
     container = Container()
-    return container.enterprise_quality_agent()
+    service = container.enterprise_quality_service()
+    
+    if service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="기업용 서비스를 초기화할 수 없습니다."
+        )
+    
+    return service
 
-def get_enterprise_db_service_dep():
+
+async def get_enterprise_db_service_dep():
     """기업용 DB 서비스 의존성"""
     if not ENTERPRISE_DB_AVAILABLE:
         raise HTTPException(
             status_code=503,
             detail="기업용 DB 기능이 비활성화되어 있습니다. asyncpg 의존성을 설치해주세요."
         )
-    return get_enterprise_db_service()
+    return await get_enterprise_db_service()
+
 
 @router.get("/company/options", response_model=DropdownOptions)
 async def get_dropdown_options() -> DropdownOptions:
     """프론트엔드 드롭다운 옵션 제공"""
     return DropdownOptions()
 
+
 @router.post("/company/analyze", response_model=CompanyQualityAnalysisResponse)
 async def analyze_company_text_quality(
     request: CompanyQualityAnalysisRequest,
-    agent: Annotated[object, Depends(get_enterprise_quality_agent)]
+    service: Annotated[OptimizedEnterpriseQualityService, Depends(get_enterprise_quality_service)],
+    background_tasks: BackgroundTasks,
+    db_service: Annotated[EnterpriseDBService, Depends(get_enterprise_db_service_dep)]
 ) -> CompanyQualityAnalysisResponse:
-    """기업용 텍스트 품질 분석 (문법 + 프로토콜 분석) - 성능 최적화 적용"""
-
-    # 성능 측정 시작
-    import time
+    """기업용 텍스트 품질 분석 (Service Layer를 통한 호출)"""
+    
     start_time = time.time()
 
     try:
-        logger.info(f"기업용 품질분석 시작 - 회사: {request.company_id}, 대상: {request.target_audience.value}, 상황: {request.context.value}")
+        logger.info(
+            f"기업용 품질분석 시작 - 회사: {request.company_id}, "
+            f"대상: {request.target_audience.value}, 상황: {request.context.value}"
+        )
 
-        # Agent 직접 호출 (싱글톤으로 그래프 재사용)
-        result = await agent.analyze_enterprise_quality(
+        # Call the Service (Agent is handled inside the Service)
+        result = await service.analyze_enterprise_text(
             text=request.text,
             target_audience=request.target_audience.value,
             context=request.context.value,
             company_id=request.company_id,
-            user_id=request.user_id
+            user_id=request.user_id,
+            detailed=request.detailed
         )
         
+        # Check errors
         if result.get('error'):
-            logger.warning(f"기업용 분석 중 경고: {result['error']}")
-        
-        # @@ 하드코딩된 기본값 60.0: 더 적절한 기본값 및 계산 로직 필요
-        # Agent 결과를 API 응답 형식으로 변환
-        response = CompanyQualityAnalysisResponse(
-            # 기본 점수들
-            grammarScore=result.get('grammar_score', 60.0),
-            formalityScore=result.get('formality_score', 60.0),
-            readabilityScore=result.get('readability_score', 60.0),
-            protocolScore=result.get('protocol_score', 60.0),
-            complianceScore=result.get('compliance_score', 60.0),
+            error_msg = result.get('error')
+            logger.error(f"분석 실패: {error_msg}")
             
-            # 섹션별 결과
+            # Return 400 for company-profile related errors
+            if 'company' in error_msg.lower() or 'profile' in error_msg.lower():
+                raise HTTPException(
+                    status_code=400,
+                    detail="기업 프로필 설정이 필요합니다"
+                )
+            
+            # Return 500 for all other errors
+            raise HTTPException(
+                status_code=500,
+                detail=f"분석 실패: {error_msg}"
+            )
+        
+        # Validate scores are present
+        if 'grammar_score' not in result:
+            logger.error("분석 결과에 grammar_score가 없음")
+            raise HTTPException(
+                status_code=500,
+                detail="분석 실패: 점수 계산 불가"
+            )
+        
+        # Persist analysis results to the DB in the background
+        analysis_data_to_save = {
+            "user_id": request.user_id,
+            "company_id": request.company_id,
+            "original_text": request.text,
+            "grammar_score": result.get('grammar_score'),
+            "formality_score": result.get('formality_score'),
+            "readability_score": result.get('readability_score'),
+            "protocol_score": result.get('protocol_score'),
+            "compliance_score": result.get('compliance_score'),
+            "metadata": {
+                "suggestions": result.get('suggestions', []),
+                "protocol_suggestions": result.get('protocol_suggestions', []),
+                "company_analysis": result.get('company_analysis', {}),
+                "method_used": result.get('method_used', 'unknown'),
+                "processing_time": result.get('processing_time', 0.0)
+            }
+        }
+        background_tasks.add_task(db_service.save_quality_analysis, analysis_data_to_save)
+
+        # Convert Service result to API response schema
+        response = CompanyQualityAnalysisResponse(
+            grammarScore=result['grammar_score'],
+            formalityScore=result['formality_score'],
+            readabilityScore=result['readability_score'],
+            protocolScore=result['protocol_score'],
+            complianceScore=result['compliance_score'],
+            
             grammarSection=GrammarSection(
-                score=result.get('grammar_score', 60.0),
+                score=result['grammar_score'],
                 suggestions=[
                     CompanySuggestionItem(
                         id=f"grammar_{i}",
@@ -129,14 +187,14 @@ async def analyze_company_text_quality(
                 ]
             ),
             
-                        protocolSection=ProtocolSection(
-                score=result.get('protocol_score', 60.0),
+            protocolSection=ProtocolSection(
+                score=result['protocol_score'],
                 suggestions=[
                     CompanySuggestionItem(
                         id=f"protocol_{i}",
                         category=sugg.get('category', 'protocol'),
-                        original=sugg.get('violation', sugg.get('rule', '')),
-                        suggestion=sugg.get('correction', sugg.get('suggestion', '')),
+                        original=sugg.get('original', ''),  # violation → original
+                        suggestion=sugg.get('suggestion', ''),  # correction → suggestion
                         reason=sugg.get('reason', '') or sugg.get('rule', ''),
                         severity=sugg.get('severity', 'medium')
                     )
@@ -144,31 +202,39 @@ async def analyze_company_text_quality(
                 ]
             ),
             
-            # 메타데이터
             companyAnalysis=CompanyAnalysis(
                 companyId=request.company_id,
                 communicationStyle=result.get('company_analysis', {}).get('communication_style', 'formal'),
-                complianceLevel=result.get('compliance_score', 60.0),
-                methodUsed=result.get('optimization_info', {}).get('analysis_method', 'comprehensive'),
+                complianceLevel=result['compliance_score'],
+                methodUsed=result.get('method_used', 'unknown'),
                 processingTime=result.get('processing_time', 0.0),
                 ragSourcesCount=result.get('rag_sources_count', 0)
             )
         )
         
-        # 성능 로깅
+        # Performance logging
         execution_time = time.time() - start_time
-        logger.info(f"기업용 분석 완료 - 실행시간: {execution_time:.2f}초")
+        logger.info(
+            f"기업용 분석 완료 - 실행시간: {execution_time:.2f}초, "
+            f"방법: {result.get('method_used', 'unknown')}"
+        )
 
-        # 성능 경고 (5초 이상 소요시)
         if execution_time > 5.0:
-            logger.warning(f"느린 품질분석 호출 감지: {execution_time:.2f}초 (텍스트 길이: {len(request.text)})")
+            logger.warning(
+                f"느린 품질분석 호출 감지: {execution_time:.2f}초 "
+                f"(텍스트 길이: {len(request.text)})"
+            )
 
         return response
 
+    except HTTPException:
+        raise
+    
     except Exception as e:
         execution_time = time.time() - start_time
-        logger.error(f"기업용 품질분석 실패 ({execution_time:.2f}초): {str(e)}")
+        logger.error(f"기업용 품질분석 실패 ({execution_time:.2f}초): {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"기업용 품질분석 실패: {str(e)}")
+
 
 @router.post("/company/feedback", response_model=UserFeedbackResponse)
 async def save_user_feedback(
@@ -176,12 +242,13 @@ async def save_user_feedback(
     background_tasks: BackgroundTasks,
     db_service: Annotated[object, Depends(get_enterprise_db_service_dep)]
 ) -> UserFeedbackResponse:
-    """사용자 피드백 저장 (good/bad 선택)"""
-    
+    """사용자 피드백 저장"""
     try:
-        logger.info(f"사용자 피드백 저장 - 세션: {request.session_id}, 타입: {request.feedback_type.value}")
+        logger.info(
+            f"사용자 피드백 저장 - 세션: {request.session_id}, "
+            f"타입: {request.feedback_type.value}"
+        )
         
-        # 피드백 데이터 구성
         feedback_data = {
             'user_id': request.user_id,
             'company_id': request.company_id,
@@ -198,7 +265,6 @@ async def save_user_feedback(
             }
         }
         
-        # 백그라운드에서 DB에 저장
         background_tasks.add_task(db_service.save_user_feedback, feedback_data)
         
         return UserFeedbackResponse(
@@ -215,49 +281,64 @@ async def save_user_feedback(
             session_id=request.session_id
         )
 
+
 @router.post("/company/generate-final", response_model=FinalTextGenerationResponse)
 async def generate_final_integrated_text(
-    request: FinalTextGenerationRequest,
-    agent: Annotated[object, Depends(get_enterprise_quality_agent)]
+    request: FinalTextGenerationRequest
 ) -> FinalTextGenerationResponse:
-    """사용자 선택 기반 최종 통합본 생성 (AI 기반)"""
-    # Local imports for self-contained replacement
-    from services.rewrite_service import rewrite_text
-    from api.v1.schemas.suggest import FeedbackItem
-
+    """최종 통합본 생성 (rewrite_service 직접 호출)"""
     try:
-        logger.info(f"최종 통합본 생성 시작 - 선택된 제안: 문법 {len(request.selected_grammar_ids)}개, 프로토콜 {len(request.selected_protocol_ids)}개")
+        logger.info(
+            f"최종 통합본 생성 시작 - 선택된 제안: "
+            f"문법 {len(request.selected_grammar_ids)}개, "
+            f"프로토콜 {len(request.selected_protocol_ids)}개"
+        )
         
-        # 선택된 제안들을 rewrite_service가 요구하는 FeedbackItem 형식으로 변환
+        # Transform selected suggestions into FeedbackItem format
         feedback_items = []
+        
         for sugg in request.grammar_suggestions:
             if sugg.id in request.selected_grammar_ids:
                 feedback_items.append(
-                    FeedbackItem(id=sugg.id, type="grammar", before=sugg.original, after=sugg.suggestion)
+                    FeedbackItem(
+                        id=sugg.id,
+                        type="grammar",
+                        before=sugg.original,
+                        after=sugg.suggestion
+                    )
                 )
         
         for sugg in request.protocol_suggestions:
             if sugg.id in request.selected_protocol_ids:
                 feedback_items.append(
-                    FeedbackItem(id=sugg.id, type="protocol", before=sugg.original, after=sugg.suggestion)
+                    FeedbackItem(
+                        id=sugg.id,
+                        type="protocol",
+                        before=sugg.original,
+                        after=sugg.suggestion
+                    )
                 )
 
         if not feedback_items:
             return FinalTextGenerationResponse(
                 success=True,
                 finalText=request.original_text,
-                appliedSuggestions={'grammarCount': 0, 'protocolCount': 0, 'totalApplied': 0},
+                appliedSuggestions={
+                    'grammarCount': 0,
+                    'protocolCount': 0,
+                    'totalApplied': 0
+                },
                 originalLength=len(request.original_text),
                 finalLength=len(request.original_text),
                 message="적용할 제안이 선택되지 않았습니다."
             )
 
-        # rewrite_service를 사용하여 제안 사항들을 안정적으로 적용
-        # 이 서비스는 단순 치환이 아닌, 문맥을 고려한 수정을 수행합니다.
+        # Generate final text via rewrite_service
         rewrite_result = rewrite_text(
             text=request.original_text,
+            traits={},
             feedback=[fb.model_dump() for fb in feedback_items],
-            options={"strict_policy": True} # 제안된 내용을 최대한 반영하도록 옵션 설정
+            options={"strict_policy": True}
         )
 
         final_text = rewrite_result.get("revised_text", request.original_text)
@@ -277,7 +358,11 @@ async def generate_final_integrated_text(
         
     except Exception as e:
         logger.error(f"최종 통합본 생성 중 오류: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"최종 통합본 생성 중 서버 오류 발생: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"최종 통합본 생성 중 서버 오류 발생: {e}"
+        )
+
 
 @router.get("/company/{company_id}/status")
 async def get_company_setup_status(
@@ -285,16 +370,13 @@ async def get_company_setup_status(
     db_service: Annotated[object, Depends(get_enterprise_db_service_dep)]
 ) -> Dict[str, Any]:
     """기업 설정 상태 확인"""
-    
     try:
-        # DB에서 기업 정보 조회
         profile = await db_service.get_company_profile(company_id)
         guidelines = await db_service.get_company_guidelines(company_id)
         
         profile_exists = profile is not None
         guidelines_count = len(guidelines) if guidelines else 0
         
-        # 상태 결정
         if profile_exists and guidelines_count > 0:
             status = "ready"
         elif profile_exists:
@@ -321,19 +403,17 @@ async def get_company_setup_status(
             "ready_for_analysis": False
         }
 
+
 @router.post("/company/test-setup")
 async def create_test_company_setup(
-    company_id: str = "test_company",
-    db_service: Annotated[object, Depends(get_enterprise_db_service_dep)] = None
+    company_id: str,
+    db_service: Annotated[EnterpriseDBService, Depends(get_enterprise_db_service_dep)]
 ) -> Dict[str, Any]:
-    """테스트용 기업 설정 생성 (개발/테스트용)"""
-    
+    """테스트용 기업 설정 생성"""
     try:
-        # 테스트 회사 데이터 생성
         success = await db_service.create_test_company(company_id)
         
         if success:
-            # 상태 확인
             profile = await db_service.get_company_profile(company_id)
             guidelines = await db_service.get_company_guidelines(company_id)
             

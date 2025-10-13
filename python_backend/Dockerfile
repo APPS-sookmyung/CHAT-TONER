@@ -28,4 +28,4 @@ USER appuser
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/tini","--"]
 # Cloud Run/프록시 환경 고려 옵션 추가
-CMD ["uvicorn", "run_fastapi:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips=*"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips=*"]
