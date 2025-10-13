@@ -20,6 +20,14 @@ class VectorStorePG:
 
         db = await get_enterprise_db_service()
         pool = getattr(db, "pool", db)
+
+        if pool is None:
+            raise RuntimeError(
+                "Database connection pool is not initialized. "
+                "Please check database configuration (DB_HOST, DB_USER, DB_PASS, DB_NAME) "
+                "or DATABASE_URL environment variable."
+            )
+
         return cls(pool)
 
     # ----- Style profile index -----

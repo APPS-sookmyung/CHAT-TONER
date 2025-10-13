@@ -10,23 +10,50 @@ from typing import Dict, Any, List, Optional
 import asyncpg
 from datetime import datetime
 import os
+from urllib.parse import quote_plus
 
 logger = logging.getLogger('chattoner.enterprise_db')
 
 class EnterpriseDBService:
     """Enterprise database service"""
-    
+
     def __init__(self, database_url: str = None):
-        # Get DATABASE_URL from .env or use default value
-        self.database_url = database_url or os.getenv(
-            'DATABASE_URL', 
-            'postgresql://user:password@localhost:5432/chattoner-db'
-        )
+        # Get DATABASE_URL from environment or construct from individual variables
+        if database_url:
+            self.database_url = database_url
+        else:
+            self.database_url = self._build_database_url()
         self.pool = None
-        
+
+    def _build_database_url(self) -> str:
+        """Build DATABASE_URL from environment variables with proper URL encoding"""
+        database_url = os.getenv('DATABASE_URL')
+
+        if database_url:
+            return database_url
+
+        # Construct from individual environment variables
+        db_user = os.getenv("DB_USER", "")
+        db_pass = os.getenv("DB_PASS", "")
+        db_host = os.getenv("DB_HOST", "localhost")
+        db_port = os.getenv("DB_PORT", "5432")
+        db_name = os.getenv("DB_NAME", "chattoner")
+
+        if db_user and db_host and db_name:
+            # URL encode password to handle special characters
+            encoded_pass = quote_plus(db_pass) if db_pass else ""
+            database_url = f"postgresql://{db_user}:{encoded_pass}@{db_host}:{db_port}/{db_name}"
+            logger.info(f"Constructed DATABASE_URL from env vars: postgresql://{db_user}:***@{db_host}:{db_port}/{db_name}")
+            return database_url
+        else:
+            # Fallback - this should not be used in production
+            logger.warning("Missing database credentials, using default URL (will likely fail)")
+            return 'postgresql://user:password@localhost:5432/chattoner-db'
+
     async def initialize(self):
         """Initialize database connection pool"""
         try:
+            logger.info(f"Attempting to connect to database...")
             self.pool = await asyncpg.create_pool(
                 self.database_url,
                 min_size=1,
@@ -36,6 +63,7 @@ class EnterpriseDBService:
             logger.info("DB 연결 풀 초기화 완료")
         except Exception as e:
             logger.error(f"DB 연결 실패: {e}")
+            logger.error(f"Database URL pattern: {self.database_url.split('@')[0].split(':')[0]}://***@{self.database_url.split('@')[1] if '@' in self.database_url else 'unknown'}")
             raise
     
     async def close(self):

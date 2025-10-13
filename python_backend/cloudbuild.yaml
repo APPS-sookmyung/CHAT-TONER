@@ -65,9 +65,7 @@ steps:
       - '--vpc-egress'
       - 'private-ranges-only'
       - '--update-env-vars'
-      - 'ENVIRONMENT=production,DB_HOST=10.118.192.2,DB_PORT=5432,DB_NAME=chattoner,DB_USER=chattoner-user,DB_PASS=sH&_8Ai21dRTAjY('
-      - '--set-env-vars'
-      - '^||^DATABASE_URL=postgresql://chattoner-user:sH%26_8Ai21dRTAjY%28@10.118.192.2:5432/chattoner'
+      - 'ENVIRONMENT=production,DB_HOST=10.118.192.2,DB_PORT=5432,DB_NAME=chattoner,DB_USER=chattoner-user,DB_PASS=Test123!,DATABASE_URL=postgresql://chattoner-user:Test123%21@10.118.192.2:5432/chattoner'
     id: 'deploy-backend-cloudrun'
 
 # Images to be stored in Container Registry
