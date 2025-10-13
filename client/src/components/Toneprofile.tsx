@@ -1,4 +1,4 @@
-import Button from "@/components/atoms/Button";
+import Button from "@/components/Atoms/Button";
 
 interface ToneProfileModalProps {
   hasProfile?: boolean;

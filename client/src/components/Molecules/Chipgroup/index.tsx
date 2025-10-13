@@ -1,5 +1,5 @@
-import { Card, type CardVariantProps } from "@/components/molecules/Card";
-import { Chip } from "@/components/atoms/Chip";
+import { Card, type CardVariantProps } from "@/components/Molecules/Card";
+import { Chip } from "@/components/Atoms/Chip";
 import { cn } from "@/lib/utils";
 
 interface ChipgroupProps extends CardVariantProps {
