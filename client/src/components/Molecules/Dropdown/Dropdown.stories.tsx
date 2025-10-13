@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
 import { Dropdown } from "./index";
+import { situationOptions, targetOptions } from "@/constants/dropdownOptions";
 
 const meta: Meta<typeof Dropdown> = {
   title: "molecules/Dropdown",
@@ -21,21 +22,6 @@ const meta: Meta<typeof Dropdown> = {
 export default meta;
 type Story = StoryObj<typeof Dropdown>;
 
-const situationOptions = [
-  { label: "Report", value: "report" },
-  { label: "Meeting Minutes", value: "meeting-minutes" },
-  { label: "Email", value: "email" },
-  { label: "Announcement", value: "announcement" },
-  { label: "Instant Message / Chat", value: "message" },
-];
-const targetOptions = [
-  { label: "Teammate / Colleague", value: "teammate" },
-  { label: "Another Department", value: "cross-functional" },
-  { label: "Client", value: "client" },
-  { label: "External Partner / Vendor", value: "vendor" },
-  { label: "Junior Colleague / New Hire", value: "junior" },
-];
-
 const InteractiveDropdown = (args: any) => {
   const [selectedValue, setSelectedValue] = useState<string | undefined>();
 
@@ -54,7 +40,7 @@ export const Situation: Story = {
     variant: "situation",
     size: "default",
     options: situationOptions,
-    placeholder: "Select a situation",
+    placeholder: "Select situation",
   },
   render: InteractiveDropdown,
 };
