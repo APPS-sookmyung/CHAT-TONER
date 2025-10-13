@@ -14,7 +14,10 @@ pypdf>=4.2.0
 langchain>=0.1.0
 langchain-community>=0.0.10
 langchain-text-splitters>=0.0.1
+langchain-openai>=0.0.1
 faiss-cpu>=1.7.4
+asyncpg>=0.29.0
+pgvector>=0.3.0
 
 # Testing dependencies
 pytest>=7.4.0

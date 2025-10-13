@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from services.profile_pipeline import run_profile_pipeline
 
 
-router = APIRouter(prefix="/surveys", tags=["surveys"])
+router = APIRouter(tags=["surveys"])
 
 
 class SurveySchema(BaseModel):

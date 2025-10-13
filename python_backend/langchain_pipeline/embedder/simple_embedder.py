@@ -25,7 +25,7 @@ class SimpleTextEmbedder:
         Args:
             save_path: 임베딩 인덱스 저장 경로
         """
-        self.save_path = save_path or Path("langchain_pipeline/data/simple_embeddings")
+        self.save_path = save_path or Path("/tmp/langchain_pipeline/data/simple_embeddings")
         self.save_path.mkdir(parents=True, exist_ok=True)
         
         # 문서 저장소

@@ -18,8 +18,8 @@ class RAGConfig:
     """RAG 관련 경로/모델/청킹 설정을 제공"""
 
     # 단일 회사(stand-alone) 기준 고정 경로
-    faiss_index_path: Path = Path("langchain_pipeline/data/faiss_index")
-    documents_path: Path = Path("langchain_pipeline/data/documents")
+    faiss_index_path: Path = Path("/tmp/langchain_pipeline/data/faiss_index")
+    documents_path: Path = Path("/tmp/langchain_pipeline/data/documents")
 
     # 임베딩/청킹 설정
     _embedding_model: str = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")

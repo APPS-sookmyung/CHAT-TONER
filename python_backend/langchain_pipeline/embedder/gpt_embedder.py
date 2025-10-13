@@ -20,7 +20,7 @@ class GPTTextEmbedder:
     
     def __init__(self, save_path: Optional[Path] = None):
         """초기화"""
-        self.save_path = save_path or Path("langchain_pipeline/data/gpt_embeddings")
+        self.save_path = save_path or Path("/tmp/langchain_pipeline/data/gpt_embeddings")
         self.save_path.mkdir(parents=True, exist_ok=True)
         
         self.client = None
