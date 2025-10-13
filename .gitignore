@@ -39,7 +39,7 @@ __pycache__/
 backup_before_reset/
 python_backend/.venv/
 
-python_backend/core/config.py
+
 
 # Documentation and issue tracking (local only)
 CLAUDE.md

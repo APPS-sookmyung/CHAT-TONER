@@ -112,8 +112,30 @@ DB_PORT=5432
 - Private IP: 10.118.192.2
 - Connected via VPC connector: run-to-db-connector
 
-### Known Deployment Issues
-1. **PORT env conflict**: Cloud Run automatically sets PORT - do not set it manually in cloudbuild.yaml
-2. **Image mismatch**: Previously Express server was deployed instead of FastAPI backend
-3. **Build failures**: Recent builds (Oct 4-9) failed due to PORT conflict and other config issues
-4. **Registry path**: Images stored in gcr.io, not asia-northeast3-docker.pkg.dev/cloud-run-source-deploy
+### Known Deployment Issues (Resolved & Pending)
+
+#### ✅ Resolved
+1. **PORT env conflict**: Cloud Run automatically sets PORT - do not set it manually in cloudbuild.yaml (Fixed)
+2. **Image mismatch**: Previously Express server was deployed instead of FastAPI backend (Fixed - using main:app)
+3. **SessionMiddleware**: Import path corrected to `starlette.middleware.sessions` (Currently disabled)
+4. **Frontend-Backend connection**: Nginx proxy configured for `/api/*` requests (Working)
+
+#### ⚠️ Pending
+1. **DATABASE_URL special characters**: Password needs URL encoding
+   - Current: `r~o+^[uD@6+p,kby`
+   - Needed: `r~o%2B%5E%5BuD%406%2Bp%2Ckby`
+   - Status: Currently using SQLite fallback
+
+2. **Cloud Build Trigger File Filters**: Need to add file filters in GCP Console
+   - `deploy-backend` trigger → add `python_backend/**`
+   - `chattoner-client` trigger → add `client/**`
+   - Currently: All triggers run on every push
+
+### Registry Paths
+- Production images: gcr.io/chattoner-project/
+- Legacy source deploy: asia-northeast3-docker.pkg.dev/cloud-run-source-deploy/
+
+### Quick Reference
+- **Backend URL**: https://chattoner-back-3yj2y7svbq-du.a.run.app
+- **Frontend URL**: https://client-3yj2y7svbq-du.a.run.app
+- **Deployment Summary**: See `DEPLOYMENT_SUMMARY.md` for complete details

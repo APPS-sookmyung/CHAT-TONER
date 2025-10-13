@@ -28,4 +28,5 @@ USER appuser
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/tini","--"]
 # Cloud Run/프록시 환경 고려 옵션 추가
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips=*"]
+# $PORT 환경 변수를 동적으로 사용하도록 수정
+CMD sh -c "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers --forwarded-allow-ips=*"
