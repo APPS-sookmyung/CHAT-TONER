@@ -32,8 +32,7 @@ class HealthResponse(BaseModel):
                     "basic_conversion": True,
                     "advanced_prompts": True,
                     "openai_integration": True,
-                    "rag_chains": True,
-                    "finetune_service": True
+                    "rag_chains": True
                 }
             }
         }
@@ -63,8 +62,7 @@ async def health_check() -> HealthResponse:
             "basic_conversion": True,
             "advanced_prompts": True,
             "openai_integration": bool(settings.OPENAI_API_KEY),
-            "rag_chains": True,
-            "finetune_service": True
+            "rag_chains": True
         }
     )
 

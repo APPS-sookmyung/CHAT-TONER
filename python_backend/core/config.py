@@ -20,17 +20,6 @@ class Settings(BaseSettings):
     # PORT: int = 5001
     PORT: int = int(os.environ.get("PORT", 8080))
     
-    #파인 튜닝 추론 서버 설정
-    FINETUNE_INFERENCE_HOST: str = Field(default="localhost", validation_alias="RUNPOD_IP")
-    FINETUNE_INFERENCE_PORT: int = 8010
-    FINETUNE_URL_OVERRIDE: Optional[str] = Field(default=None)
-
-    @property
-    def FINETUNE_URL(self) -> str:
-        if self.FINETUNE_URL_OVERRIDE:
-            return self.FINETUNE_URL_OVERRIDE
-        return f"http://{self.FINETUNE_INFERENCE_HOST}:{self.FINETUNE_INFERENCE_PORT}"
-    
     # OpenAI 설정
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
