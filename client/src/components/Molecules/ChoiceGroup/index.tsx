@@ -22,12 +22,12 @@ export const ChoiceGroup = ({
   className,
 }: ChoiceGroupProps) => {
   const layoutStyles = {
-    sm: "grid-cols-3 gap-[29px]",
-    lg: "grid-cols-2 gap-[45px]",
+    sm: "grid-cols-3 gap-x-[39px]",
+    lg: "grid-cols-2 gap-x-[48px]",
   };
 
   return (
-    <div className={cn("grid", layoutStyles[size], className)}>
+    <div className={cn("grid gap-y-[19px]", layoutStyles[size], className)}>
       {options.map((option) => (
         <ChoiceCard
           key={option.value}
