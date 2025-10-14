@@ -1,4 +1,4 @@
-import type { UserProfile, ConversionRequest } from "@shared/schema";
+import type { UserProfile } from "@shared/schema";
 
 export const NEGATIVE_PROMPTS = {
   chatgpt_style: [
@@ -26,7 +26,7 @@ export const NEGATIVE_PROMPTS = {
 };
 
 export function analyzeUserProfile(userProfile: UserProfile) {
-  const responses = userProfile.responses as any || {};
+  const responses = (userProfile.responses as any) || {};
 
   return {
     formalityDescription: getFormalityDescription(

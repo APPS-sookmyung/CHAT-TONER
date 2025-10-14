@@ -2,12 +2,12 @@ import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-const cardVariants = cva("p-8 rounded-[30px]", {
+const cardVariants = cva("rounded-[30px]", {
   variants: {
     // Variant prop
     variant: {
-      primary: "bg-surface",
-      secondary: "bg-primary-foreground",
+      primary: "bg-surface p-8",
+      secondary: "bg-white px-[83px]",
     },
     // Size prop
     size: {
@@ -17,7 +17,7 @@ const cardVariants = cva("p-8 rounded-[30px]", {
     },
   },
   compoundVariants: [
-    // secondary variant size
+    // primary variant
     {
       variant: "primary",
       size: "small",
@@ -31,18 +31,19 @@ const cardVariants = cva("p-8 rounded-[30px]", {
     {
       variant: "primary",
       size: "large",
-      className: "w-[642px] h-[615px]",
+      className: "w-[559px] h-[615px]",
     },
-    // primary-foreground variant size
+
+    // secondary variant
     {
       variant: "secondary",
       size: "small",
-      className: "w-[880px] h-[118px]",
+      className: "w-[880px] h-[118px] border-1 border-secondary shadow-md",
     },
     {
       variant: "secondary",
       size: "medium",
-      className: "w-[880px] h-[435px]",
+      className: "w-[880px] h-[435px] border-1 border-secondary shadow-md",
     },
   ],
 
@@ -52,9 +53,12 @@ const cardVariants = cva("p-8 rounded-[30px]", {
   },
 });
 
+// Card variant
+export type CardVariantProps = VariantProps<typeof cardVariants>;
+
 interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof cardVariants> {
+    CardVariantProps {
   children: React.ReactNode;
 }
 

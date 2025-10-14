@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Tag } from "./index";
+import { Chip } from "./index";
 
-const meta: Meta<typeof Tag> = {
-  title: "Components/Tag",
-  component: Tag,
+const meta: Meta<typeof Chip> = {
+  title: "atoms/Chip",
+  component: Chip,
   tags: ["autodocs"],
   argTypes: {
     colorScheme: {
@@ -17,21 +17,17 @@ const meta: Meta<typeof Tag> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof Tag>;
+type Story = StoryObj<typeof Chip>;
 
-// 노란색 태그 스토리
 export const YellowChip: Story = {
   args: {
-    variant: "chip",
     colorScheme: "yellow",
     children: "Clarity",
   },
 };
 
-// 보라색 태그 스토리
 export const PurpleChip: Story = {
   args: {
-    variant: "chip",
     colorScheme: "purple",
     children: "Grammar",
   },
