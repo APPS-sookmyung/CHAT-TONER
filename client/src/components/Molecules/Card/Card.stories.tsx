@@ -36,7 +36,7 @@ export const Primary: Story = {
         Primary Medium (w-[642px] h-[489px])
       </Card>
       <Card {...args} variant="primary" size="large">
-        Primary Large (w-[642px] h-[615px])
+        Primary Large (w-[559px] h-[615px])
       </Card>
     </div>
   ),
