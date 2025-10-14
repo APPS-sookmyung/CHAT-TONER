@@ -6,10 +6,12 @@ on:
     branches: [main]
     paths:
       - "**.stories.tsx"
+      - "client/src/components/**/*.tsx"
   push:
     branches: [main]
     paths:
       - "**.stories.tsx"
+      - "client/src/components/**/*.tsx"
 
 jobs:
   chromatic-deployment:

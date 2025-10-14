@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card } from "@/components/Molecules/Card";
 import { ProgressBar } from "@/components/Atoms/ProgressBar";
 import { Input } from "@/components/Atoms/Input";
@@ -18,6 +17,8 @@ export interface Question {
 interface SurveyStepProps {
   question: Question;
   totalSteps: number;
+  answer: string;
+  onAnswerChange: (answer: string) => void;
   onNext: () => void;
   onPrev: () => void;
 }
@@ -25,11 +26,11 @@ interface SurveyStepProps {
 export const SurveyStep = ({
   question,
   totalSteps,
+  answer,
+  onAnswerChange,
   onNext,
   onPrev,
 }: SurveyStepProps) => {
-  const [answer, setAnswer] = useState("");
-
   return (
     <div className="w-[880px] space-y-[39px]">
       <Card variant="secondary" size="small">
@@ -60,7 +61,7 @@ export const SurveyStep = ({
               {question.type === "text" && (
                 <Input
                   value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
+                  onChange={(e) => onAnswerChange(e.target.value)}
                   placeholder={question.placeholder}
                 />
               )}
@@ -69,7 +70,7 @@ export const SurveyStep = ({
                 <ChoiceGroup
                   options={question.options}
                   value={answer}
-                  onChange={setAnswer}
+                  onChange={onAnswerChange}
                   size={question.choiceSize}
                 />
               )}

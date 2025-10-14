@@ -22,7 +22,7 @@ const meta: Meta<typeof Dropdown> = {
 export default meta;
 type Story = StoryObj<typeof Dropdown>;
 
-const InteractiveDropdown = (args: any) => {
+const InteractiveDropdown = (args: React.ComponentProps<typeof Dropdown>) => {
   const [selectedValue, setSelectedValue] = useState<string | undefined>();
 
   return (
