@@ -8,8 +8,8 @@ const dropdownTriggerVariants = cva(
   {
     variants: {
       variant: {
-        situation: "p-4 bg-white",
-        target: "p-4 bg-white",
+        situation: "p-4 bg-white border border-secondary",
+        target: "p-4 bg-white border border-secondary",
       },
       size: {
         default: "w-[299px] h-[63px]",
@@ -59,7 +59,9 @@ export const Dropdown = ({
         className={cn(dropdownTriggerVariants({ variant, size }))}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span>{selectedOption ? selectedOption.label : placeholder}</span>
+        <span className={cn({ "text-text-secondary": !selectedOption })}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
         <ChevronDownIcon
           className={`w-4 h-4 ml-2 transition-transform ${
             isOpen ? "rotate-180" : ""
@@ -68,7 +70,7 @@ export const Dropdown = ({
       </button>
 
       {isOpen && (
-        <ul className="absolute z-10 w-full mt-2 bg-white rounded-lg shadow-lg top-full">
+        <ul className="absolute z-10 w-full mt-2 bg-white rounded-lg shadow-lg top-full ">
           {options.map((option) => (
             <li
               key={option.value}

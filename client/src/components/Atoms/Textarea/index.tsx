@@ -16,7 +16,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     const conditionalStyles = readOnly
       ? "w-[554px] h-[346px] border-primary focus:ring-primary/50 cursor-default"
-      : "w-[497px] h-90 border-text-secondary focus:ring-primary/50 focus:border-primary";
+      : "w-[497px] h-90 border-secondary focus:ring-primary/50 focus:border-primary";
 
     return (
       <textarea
