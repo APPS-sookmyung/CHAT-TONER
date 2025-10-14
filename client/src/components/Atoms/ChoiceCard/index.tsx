@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const choiceCardVariants = cva(
   // Base styles
-  "p-4 text-center border-2 rounded-lg transition-colors font-medium",
+  "p-4 text-center border rounded-lg transition-colors font-medium",
   {
     variants: {
       // 2. isSelected variant
