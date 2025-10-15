@@ -1,6 +1,7 @@
 """
 Feedback Endpoints
 피드백 처리 엔드포인트
+get_feedback_stats 함수에 누락된 user_service 의존성 주입 파라미터 추가
 """
 
 from fastapi import APIRouter, HTTPException, Depends
