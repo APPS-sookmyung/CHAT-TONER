@@ -298,11 +298,11 @@ def _save_document_metadata_to_postgres(folder_path: Path, documents: List[Docum
                                        split_docs: List[Document], vectorstore: FAISS):
     """PostgreSQL에 벡터 문서 메타데이터 저장"""
     try:
-        from database.storage import DatabaseStorage
+        from core.container import Container
         from core.rag_config import get_rag_config
 
         config = get_rag_config()
-        storage = DatabaseStorage()
+        storage = Container.database_storage()
 
         for doc in documents:
             file_path = doc.metadata.get("source", "unknown")
