@@ -45,6 +45,11 @@ python_backend/.venv/
 CLAUDE.md
 API_MISMATCH_ISSUES.md
 
+# Cloud deployment documentation (local only)
+CLOUD_BUILD_SETUP.md
+DEPLOYMENT_INFO.md
+DEPLOYMENT_SUMMARY.md
+
 
 *storybook.log
 storybook-static
