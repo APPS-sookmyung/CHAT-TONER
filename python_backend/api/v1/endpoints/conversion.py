@@ -26,7 +26,7 @@ router = APIRouter()
 @router.get("/test")
 async def test_endpoint():
     """간단한 테스트 엔드포인트"""
-    print("[DEBUG] 테스트 엔드포인트 호출됨")
+    logger.debug("테스트 엔드포인트 호출됨")
     return {"message": "테스트 성공", "status": "ok"}
 
 @router.post("/convert")
