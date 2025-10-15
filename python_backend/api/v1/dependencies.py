@@ -24,3 +24,8 @@ def get_conversion_service() -> ConversionService:
 def get_document_service() -> DocumentService:
     """DocumentService 인스턴스를 제공합니다."""
     return Container.document_service()
+
+def get_user_preferences_service():
+    """UserPreferencesService 인스턴스를 제공합니다."""
+    from services.user_preferences import UserPreferencesService
+    return Container.user_preferences_service()
