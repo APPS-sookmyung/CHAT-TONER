@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
+import logging
 
 from services.profile_pipeline import run_profile_pipeline
 from services.vector_store_pg import VectorStorePG
 from api.dependencies import get_vector_store
+
+logger = logging.getLogger('chattoner.surveys')
 
 
 router = APIRouter(tags=["surveys"])
@@ -51,7 +54,6 @@ async def submit_survey(key: str, req: SubmitRequest, store: VectorStorePG = Dep
         )
         return res
     except Exception as e:
-        # 로깅 추가 권장
-        print(f"An error occurred during survey processing: {e}")
+        logger.error(f"설문 처리 중 오류 발생: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred during survey processing.")
 
