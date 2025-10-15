@@ -1,6 +1,4 @@
-// src/components/organisms/AnalyzeQualityCard/index.tsx
-
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/Atoms/Button";
 import { Textarea } from "@/components/Atoms/Textarea";
 import { Card } from "@/components/Molecules/Card";
