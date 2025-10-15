@@ -8,12 +8,8 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 from services.user_preferences import UserPreferencesService
-from database.storage import DatabaseStorage
-from sqlalchemy.orm import Session
 from typing import List
-# from schemas.feedback import NegativePromptUpdate  # 스키마 파일이 존재하지 않음
-# from core.db import get_db  # 모듈이 존재하지 않음
-# from models.user import UserProfile as UserProfileModel  # 모듈이 존재하지 않음
+from api.v1.dependencies import get_user_preferences_service
 
 router = APIRouter()
 
@@ -78,15 +74,6 @@ class ProfileResponse(BaseModel):
                 "completedAt": "2025-08-10T00:00:00Z"
             }
         }
-
-# Dependency injection
-def get_database_storage():
-    return DatabaseStorage()
-
-def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_storage)):
-    from services.openai_services import OpenAIService
-    openai_service = OpenAIService()
-    return UserPreferencesService(db, openai_service)
 
 @router.get("/{user_id}", response_model=ProfileResponse, summary="사용자 프로필 조회", description="사용자의 개인화 설정을 조회합니다.")
 async def get_user_profile(
