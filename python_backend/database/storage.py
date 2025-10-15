@@ -6,11 +6,15 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 import hashlib
+import logging
 from sqlalchemy.orm import Session
+from .db import SessionLocal
 from .models import (
-    SessionLocal, UserProfile, ConversionHistory,
+    UserProfile, ConversionHistory,
     NegativePreferences, User, VectorDocumentMetadata, RAGQueryHistory
 )
+
+logger = logging.getLogger('chattoner.storage')
 
 class DatabaseStorage:
     """데이터베이스 CRUD 작업을 위한 스토리지 클래스"""
@@ -22,7 +26,9 @@ class DatabaseStorage:
         """사용자 프로필 조회"""
         with self.session_factory() as db:
             try:
-                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+                # user_id를 int로 변환 (DB 모델이 Integer 타입)
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_int).first()
                 if not profile:
                     return None
                 
@@ -48,8 +54,11 @@ class DatabaseStorage:
         """사용자 프로필 저장"""
         with self.session_factory() as db:
             try:
+                # user_id를 int로 변환
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+
                 # 기존 프로필 조회
-                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_int).first()
                 
                 if profile:
                     # 기존 프로필 업데이트
