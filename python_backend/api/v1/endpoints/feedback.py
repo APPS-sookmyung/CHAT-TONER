@@ -9,8 +9,8 @@ from typing import Dict, Any
 from pydantic import BaseModel
 
 from services.user_preferences import UserPreferencesService
-from database.storage import DatabaseStorage
 from typing import List
+from api.v1.dependencies import get_user_preferences_service
 
 router = APIRouter()
 
@@ -27,15 +27,6 @@ class FeedbackResponse(BaseModel):
     message: str
     feedbackId: int
     timestamp: str
-
-# Dependency injection
-def get_database_storage():
-    return DatabaseStorage()
-
-def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_storage)):
-    from services.openai_services import OpenAIService
-    openai_service = OpenAIService()
-    return UserPreferencesService(db, openai_service)
 
 @router.post("", response_model=FeedbackResponse)
 async def submit_feedback(
