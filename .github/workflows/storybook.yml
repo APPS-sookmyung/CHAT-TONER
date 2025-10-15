@@ -1,46 +1,55 @@
-# Workflow name
 name: "Chromatic Deployment"
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
-      - "**.stories.tsx"
+      - "**/*.stories.@(ts|tsx|mdx)"
       - "client/src/components/**/*.tsx"
+      - "client/.storybook/**"
   push:
     branches: [main]
     paths:
-      - "**.stories.tsx"
+      - "**/*.stories.@(ts|tsx|mdx)"
       - "client/src/components/**/*.tsx"
+      - "client/.storybook/**"
 
 jobs:
   chromatic-deployment:
     runs-on: ubuntu-latest
     steps:
-      - name: actions/checkout
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Set node linker to nodeModules
-        run: yarn config set nodeLinker "node-modules"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
-        run: yarn install --immutable --check-cache
+        working-directory: ./client
+        run: npm ci
 
       - name: Publish to Chromatic
         id: publish_chromatic
         uses: chromaui/action@v1
         with:
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN  }}
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           buildScriptName: build-storybook
+          workingDir: ./client
           onlyChanged: true
           autoAcceptChanges: true
+          exitZeroOnChanges: true
 
-      - name: comment PR
-        uses: thollander/actions-comment-pull-request@v1
+      - name: Comment PR with Storybook URL
         if: ${{ github.event_name == 'pull_request' }}
+        uses: thollander/actions-comment-pull-request@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          message: "🚀 **storybook**: ${{ steps.publish_chromatic.outputs.storybookUrl }}"
+          message: "🚀 **Storybook**: ${{ steps.publish_chromatic.outputs.storybookUrl }}"
