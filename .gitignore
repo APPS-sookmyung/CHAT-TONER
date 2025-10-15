@@ -50,6 +50,21 @@ CLOUD_BUILD_SETUP.md
 DEPLOYMENT_INFO.md
 DEPLOYMENT_SUMMARY.md
 
+# Development and test scripts
+api_test_runner.py
+check_openai_key.py
+temp_test_script.py
+bash.exe.stackdump
+
+# Database files
+chat_toner.db
+database_migration.sql
+safe_migration.sql
+
+# Cloud tools and setup scripts
+cloud-sql-proxy.exe
+setup-cloud-build-triggers.ps1
+setup-cloud-build-triggers.sh
 
 *storybook.log
 storybook-static
