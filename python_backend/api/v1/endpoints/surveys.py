@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 
 from services.profile_pipeline import run_profile_pipeline
+from services.vector_store_pg import VectorStorePG
+from api.dependencies import get_vector_store
 
 
 router = APIRouter(tags=["surveys"])
@@ -36,11 +38,20 @@ class SubmitRequest(BaseModel):
 
 
 @router.post("/{key}/responses")
-async def submit_survey(key: str, req: SubmitRequest):
+async def submit_survey(key: str, req: SubmitRequest, store: VectorStorePG = Depends(get_vector_store)):
     if key != "onboarding-intake":
         raise HTTPException(404, "unknown survey key")
-    res = await run_profile_pipeline(
-        tenant_id=req.tenant_id, user_id=req.user_id, survey_answers=req.answers, store_vector=True
-    )
-    return res
+    try:
+        res = await run_profile_pipeline(
+            tenant_id=req.tenant_id,
+            user_id=req.user_id,
+            survey_answers=req.answers,
+            store=store,
+            store_vector=True
+        )
+        return res
+    except Exception as e:
+        # 로깅 추가 권장
+        print(f"An error occurred during survey processing: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred during survey processing.")
 
