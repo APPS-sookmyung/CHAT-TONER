@@ -10,7 +10,7 @@ def answers_to_traits(answers: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def run_profile_pipeline(
-    *, tenant_id: str, user_id: str, survey_answers: Dict[str, Any], store_vector: bool = True
+    *, tenant_id: str, user_id: str, survey_answers: Dict[str, Any], store: VectorStorePG, store_vector: bool = True
 ) -> Dict[str, Any]:
     traits = answers_to_traits(survey_answers)
     profile = build_style_profile(user_id=user_id, tenant_id=tenant_id, traits=traits, use_llm=False)
@@ -20,7 +20,6 @@ async def run_profile_pipeline(
     if store_vector:
         embedder = EmbeddingService(provider="local")
         vec = (await embedder.embed_texts([profile_text]))[0]
-        store = await VectorStorePG.from_enterprise_db()
         await store.upsert_style_profile(
             tenant_id=tenant_id,
             user_id=user_id,

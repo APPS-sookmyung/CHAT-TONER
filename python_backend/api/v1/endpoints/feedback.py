@@ -62,7 +62,10 @@ async def submit_feedback(
         raise HTTPException(status_code=500, detail=f"피드백 처리 실패: {str(e)}")
 
 @router.get("/stats/{user_id}")
-async def get_feedback_stats(user_id: str) -> Dict[str, Any]:
+async def get_feedback_stats(
+    user_id: str,
+    user_service: UserPreferencesService = Depends(get_user_preferences_service)
+) -> Dict[str, Any]:
     """사용자의 피드백 통계 조회"""
     try:
         # 실제 통계 조회 (활성화됨)
