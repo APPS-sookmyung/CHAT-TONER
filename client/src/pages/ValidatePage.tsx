@@ -13,14 +13,14 @@ export default function ValidatePage() {
   const companyId = "test-company-id";
 
   return (
-    <main className="max-w-6xl mx-auto p-8">
+    <main className="max-w-6xl p-8 mx-auto">
       <div className="mb-4">
         <Button
           variant="outline"
           onClick={handleGoHome}
           className="bg-white border-gray-200"
         >
-          ← 모드 선택으로
+          ← Select Mode
         </Button>
       </div>
       <QualityValidator companyId={companyId} />
