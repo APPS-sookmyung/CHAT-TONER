@@ -40,15 +40,15 @@ export default function ProfileSummary({
   return (
     <Card className="shadow-sm border border-gray-200">
       <CardHeader>
-        <CardTitle>당신의 말투 프로필</CardTitle>
+        <CardTitle>Your Tone Profile</CardTitle>
         <p className="text-sm text-muted-foreground">
-          수집된 선호도를 기반으로 텍스트를 변환합니다
+          Converts text based on your collected preferences
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
           <div className="flex items-center justify-between text-sm mb-1">
-            <span>정중함 정도</span>
+            <span>Formality Level</span>
             <span>{formality}/10</span>
           </div>
           <Progress value={toPct(formality)} className="h-2" />
@@ -56,7 +56,7 @@ export default function ProfileSummary({
 
         <div>
           <div className="flex items-center justify-between text-sm mb-1">
-            <span>친근함 정도</span>
+            <span>Friendliness Level</span>
             <span>{friendliness}/10</span>
           </div>
           <Progress value={toPct(friendliness)} className="h-2" />
@@ -64,7 +64,7 @@ export default function ProfileSummary({
 
         <div>
           <div className="flex items-center justify-between text-sm mb-1">
-            <span>감정 표현</span>
+            <span>Emotion Expression</span>
             <span>{emotion}/10</span>
           </div>
           <Progress value={toPct(emotion)} className="h-2" />
@@ -72,7 +72,7 @@ export default function ProfileSummary({
 
         <div>
           <div className="flex items-center justify-between text-sm mb-1">
-            <span>직설성</span>
+            <span>Directness</span>
             <span>{directness}/10</span>
           </div>
           <Progress value={toPct(directness)} className="h-2" />
