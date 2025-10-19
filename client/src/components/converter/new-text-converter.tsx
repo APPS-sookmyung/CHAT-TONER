@@ -89,10 +89,8 @@ const generateMockConversion = (
   ) => {
     let transformed = text;
 
-
     // Direct style - brief and clear
     if (style === "direct") {
-
       transformed = transformed
         .replace(/Could you please\?/g, "Please do.")
         .replace(/I would appreciate it if you could do it/g, "Please do")
@@ -106,25 +104,23 @@ const generateMockConversion = (
         .replace(/You can ~/g, "You do ~");
     }
 
-
     // Gentle style - friendly and polite
     else if (style === "gentle") {
-
       transformed = transformed
         .replace(/Please do/g, "I would appreciate it if you could do it")
         .replace(/Please do\./g, "I would appreciate it if you could do it.")
         .replace(/Could I\?/g, "Could you please?")
         .replace(/a little/g, "I ask of you")
-        .replace(/Please do/g, "I would really appreciate it if you could do it")
+        .replace(
+          /Please do/g,
+          "I would really appreciate it if you could do it"
+        )
         .replace(/It is ~/g, "It seems to be ~")
-        .replace(/I do ~/g, "It seems to be ~")
-        .replace(/~s/g, "It seems like you are doing ~");
+        .replace(/I do ~/g, "It seems to be ~");
     }
-
 
     // Neutral style - balanced expression
     else if (style === "neutral") {
-
       transformed = transformed
         .replace(/Please do/g, "I ask of you")
         .replace(/Could I\?/g, "Could you please?")
@@ -315,7 +311,6 @@ export default function NewTextConverter({
         timestamp: new Date().toISOString(),
       };
 
-
       const existingFeedback = JSON.parse(
         localStorage.getItem("chatToner_feedback") || "[]"
       );
@@ -324,7 +319,6 @@ export default function NewTextConverter({
         "chatToner_feedback",
         JSON.stringify(existingFeedback)
       );
-
 
       return { success: true };
     },
@@ -414,13 +408,16 @@ export default function NewTextConverter({
                 <SelectContent>
                   <SelectItem value="general">General</SelectItem>
                   <SelectItem value="report">Report/Document</SelectItem>
-                  <SelectItem value="education">Education/Explanation</SelectItem>
+                  <SelectItem value="education">
+                    Education/Explanation
+                  </SelectItem>
                   <SelectItem value="social">Social Media</SelectItem>
                 </SelectContent>
               </Select>
               {context === "report" && (
                 <div className="mt-1 text-xs text-blue-600">
-                  Report/Official Document mode uses a specialized fine-tuning model to provide a single optimized result.
+                  Report/Official Document mode uses a specialized fine-tuning
+                  model to provide a single optimized result.
                 </div>
               )}
             </div>
@@ -471,14 +468,12 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.rhetoricLevel}
-
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           rhetoricLevel: value,
                         })
                       }
-
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -497,14 +492,12 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.repetitionTolerance}
-
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           repetitionTolerance: value,
                         })
                       }
-
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -523,14 +516,12 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.punctuationStyle}
-
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           punctuationStyle: value,
                         })
                       }
-
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -549,15 +540,12 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.contentFocus}
-
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           contentFocus: value,
                         })
                       }
-
-
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -576,14 +564,12 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.bulletPreference}
-
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           bulletPreference: value,
                         })
                       }
-
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -602,14 +588,12 @@ export default function NewTextConverter({
                     </label>
                     <Select
                       value={negativePreferences.emoticonPolicy}
-
                       onValueChange={(value) =>
                         setNegativePreferences({
                           ...negativePreferences,
                           emoticonPolicy: value,
                         })
                       }
-
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -625,7 +609,8 @@ export default function NewTextConverter({
                 </div>
 
                 <div className="text-xs text-gray-600">
-                  Negative prompts help with more accurate conversions by specifying styles for the AI to avoid.
+                  Negative prompts help with more accurate conversions by
+                  specifying styles for the AI to avoid.
                 </div>
               </div>
             )}
@@ -662,7 +647,9 @@ export default function NewTextConverter({
                   <div className="text-2xl font-bold text-purple-600">
                     {convertMutation.data.analysis.emotionLevel}/10
                   </div>
-                  <div className="text-sm text-gray-600">Emotion Expression</div>
+                  <div className="text-sm text-gray-600">
+                    Emotion Expression
+                  </div>
                 </div>
               </div>
             </CardContent>

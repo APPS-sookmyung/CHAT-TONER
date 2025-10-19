@@ -50,7 +50,8 @@ export default function ProfileDropdown({
       toast({
         variant: "destructive",
         title: "Error",
-        description: "This content has already been added, or there is no input.",
+        description:
+          "This content has already been added, or there is no input.",
       });
     }
   };
@@ -128,7 +129,7 @@ export default function ProfileDropdown({
           </div>
           <div className="flex gap-2">
             <Input
-              placeholder="e.g., 'Do not use 'Keep up the good work'"
+              placeholder="e.g., Do not use 'Keep up the good work'"
               value={newPrompt}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}

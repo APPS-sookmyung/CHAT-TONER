@@ -68,39 +68,91 @@ export function NegativePromptSettings({
   }, [userId]);
 
   const rhetoricOptions = [
-    { value: "strict", label: "Strict", description: "Prohibit all exaggerated expressions" },
-    { value: "moderate", label: "Moderate", description: "Moderate level of expression" },
-    { value: "lenient", label: "Lenient", description: "Allow natural expressions" },
+    {
+      value: "strict",
+      label: "Strict",
+      description: "Prohibit all exaggerated expressions",
+    },
+    {
+      value: "moderate",
+      label: "Moderate",
+      description: "Moderate level of expression",
+    },
+    {
+      value: "lenient",
+      label: "Lenient",
+      description: "Allow natural expressions",
+    },
   ];
 
   const repetitionOptions = [
-    { value: "strict", label: "Strict", description: "Completely prohibit repeated expressions" },
-    { value: "moderate", label: "Moderate", description: "Allow only when necessary" },
-    { value: "lenient", label: "Lenient", description: "Allow natural repetition" },
+    {
+      value: "strict",
+      label: "Strict",
+      description: "Completely prohibit repeated expressions",
+    },
+    {
+      value: "moderate",
+      label: "Moderate",
+      description: "Allow only when necessary",
+    },
+    {
+      value: "lenient",
+      label: "Lenient",
+      description: "Allow natural repetition",
+    },
   ];
 
   const punctuationOptions = [
-    { value: "minimal", label: "Minimal", description: "Only necessary commas" },
+    {
+      value: "minimal",
+      label: "Minimal",
+      description: "Only necessary commas",
+    },
     { value: "standard", label: "Standard", description: "General use" },
     { value: "verbose", label: "Verbose", description: "Rich use of commas" },
   ];
 
   const contentFocusOptions = [
-    { value: "content", label: "Content-focused", description: "Prioritize core content" },
-    { value: "balanced", label: "Balanced", description: "Harmony between content and format" },
-    { value: "format", label: "Format-focused", description: "Prioritize systematic composition" },
+    {
+      value: "content",
+      label: "Content-focused",
+      description: "Prioritize core content",
+    },
+    {
+      value: "balanced",
+      label: "Balanced",
+      description: "Harmony between content and format",
+    },
+    {
+      value: "format",
+      label: "Format-focused",
+      description: "Prioritize systematic composition",
+    },
   ];
 
   const bulletOptions = [
     { value: "avoid", label: "Avoid", description: "Do not use bullet points" },
-    { value: "minimal", label: "Minimal", description: "Use only when necessary" },
+    {
+      value: "minimal",
+      label: "Minimal",
+      description: "Use only when necessary",
+    },
     { value: "prefer", label: "Prefer", description: "Active use" },
   ];
 
   const emoticonOptions = [
-    { value: "none", label: "None", description: "Completely prohibit emoticons" },
+    {
+      value: "none",
+      label: "None",
+      description: "Completely prohibit emoticons",
+    },
     { value: "minimal", label: "Minimal", description: "Only basic ones" },
-    { value: "contextual", label: "Contextual", description: "According to context" },
+    {
+      value: "contextual",
+      label: "Contextual",
+      description: "According to context",
+    },
     { value: "frequent", label: "Frequent", description: "Frequent use" },
   ];
 
@@ -146,7 +198,8 @@ export function NegativePromptSettings({
           <CardTitle>Negative Prompt Settings</CardTitle>
         </div>
         <CardDescription>
-          Customize the expressions you want to exclude when converting text. These settings apply to all text conversions.
+          Customize the expressions you want to exclude when converting text.
+          These settings apply to all text conversions.
         </CardDescription>
       </CardHeader>
 
@@ -157,7 +210,8 @@ export function NegativePromptSettings({
             <Label className="text-base font-medium">Rhetoric Limit</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            Set the extent to which exaggerated modifiers such as "amazing", "great", and "excellent" are allowed.
+            Set the extent to which exaggerated modifiers such as "amazing",
+            "great", and "excellent" are allowed.
           </p>
           <Select
             value={preferences.rhetoricLevel}
@@ -192,7 +246,8 @@ export function NegativePromptSettings({
             <Label className="text-base font-medium">Repetition Limit</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            Restricts the repeated use of similar words such as "and also" and "as for ~".
+            Restricts the repeated use of similar words such as "and also" and
+            "furthermore".
           </p>
           <Select
             value={preferences.repetitionTolerance}
@@ -328,7 +383,9 @@ export function NegativePromptSettings({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Badge variant="outline">Positive</Badge>
-            <Label className="text-base font-medium">Emoticon Usage Policy</Label>
+            <Label className="text-base font-medium">
+              Emoticon Usage Policy
+            </Label>
           </div>
           <p className="text-sm text-muted-foreground">
             Sets the extent to which emoticons are allowed in the text.

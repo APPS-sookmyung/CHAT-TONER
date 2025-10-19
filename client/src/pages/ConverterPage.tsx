@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { UserProfile } from '@shared/schema';
-import ProfileSummary from '@/components/converter/profile-summary';
-import StyleConverter from '@/components/converter/style-converter';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import type { UserProfile } from "@shared/schema";
+import ProfileSummary from "@/components/converter/profile-summary";
+import StyleConverter from "@/components/converter/style-converter";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from 'lucide-react';
+import { Terminal } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 
 export default function ConverterPage() {
   const navigate = useNavigate();
@@ -26,23 +27,29 @@ export default function ConverterPage() {
   }, []);
 
   if (isLoading) {
-    return <div className="text-center p-8">Loading profile...</div>;
+    return <div className="p-8 text-center">Loading profile...</div>;
   }
 
   if (!userProfile) {
     return (
-        <div className="max-w-2xl mx-auto mt-16 text-center">
-            <Alert>
-                <Terminal className="h-4 w-4" />
-                <AlertTitle>Profile not found!</AlertTitle>
-                <AlertDescription>
-                    <p>To use the style converter, you must first define your own tone profile.</p>
-                    <Button onClick={() => navigate('/style-definition')} className="mt-4">
-                        Go to Style Definition
-                    </Button>
-                </AlertDescription>
-            </Alert>
-        </div>
+      <div className="max-w-2xl mx-auto mt-16 text-center">
+        <Alert>
+          <Terminal className="w-4 h-4" />
+          <AlertTitle>Profile not found!</AlertTitle>
+          <AlertDescription>
+            <p>
+              To use the style converter, you must first define your own tone
+              profile.
+            </p>
+            <Button
+              onClick={() => navigate(ROUTES.QUESTIONNAIRE)}
+              className="mt-4"
+            >
+              Go to Style Definition
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 

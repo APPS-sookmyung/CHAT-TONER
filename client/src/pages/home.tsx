@@ -125,7 +125,7 @@ export default function HomePage() {
                     Quality Conversion
                   </CardTitle>
                   <CardDescription>
-                    Instantly improve the quality and tone of your Korean text
+                    Instantly improve the quality and tone of your text
                   </CardDescription>
                 </div>
               </div>

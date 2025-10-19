@@ -81,9 +81,9 @@ export default function QuestionnairePage() {
     // Later, this should be integrated with backend API to create actual profiles.
     console.log("Submitting company questionnaire responses:", responses);
 
-    const profileSummary = `Main Business: ${ 
-      responses.company_business_category?.[0] || "N/A"
-    }\nCommunication Culture: ${responses.communication_style_overall?.[0] || "N/A"}`;
+    const profileSummary = `Company Name: ${ 
+      responses.company_name?.[0] || "N/A"
+    }\nCommunication Style: ${responses.communication_style?.[0] || "N/A"}`;
 
     // Temporarily save to localStorage and navigate to results page
     const tempProfile = {
