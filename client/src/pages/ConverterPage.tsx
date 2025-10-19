@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import type { UserProfile } from '@shared/schema';
 import ProfileSummary from '@/components/converter/profile-summary';
 import StyleConverter from '@/components/converter/style-converter';
@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from 'lucide-react';
 
 export default function ConverterPage() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,11 +34,11 @@ export default function ConverterPage() {
         <div className="max-w-2xl mx-auto mt-16 text-center">
             <Alert>
                 <Terminal className="h-4 w-4" />
-                <AlertTitle>프로필을 찾을 수 없습니다!</AlertTitle>
+                <AlertTitle>Profile not found!</AlertTitle>
                 <AlertDescription>
-                    <p>스타일 변환기를 사용하려면, 먼저 나만의 말투 프로필을 정의해야 합니다.</p>
-                    <Button onClick={() => setLocation('/style-definition')} className="mt-4">
-                        스타일 정의하러 가기
+                    <p>To use the style converter, you must first define your own tone profile.</p>
+                    <Button onClick={() => navigate('/style-definition')} className="mt-4">
+                        Go to Style Definition
                     </Button>
                 </AlertDescription>
             </Alert>

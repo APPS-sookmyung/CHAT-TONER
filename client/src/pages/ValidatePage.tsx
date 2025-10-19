@@ -1,12 +1,12 @@
 import QualityValidator from "@/components/quality-validator";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 export default function ValidatePage() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   const handleGoHome = () => {
-    setLocation("/");
+    navigate("/");
   };
 
   // Later, the actual company ID should be obtained from parent context or state management library.

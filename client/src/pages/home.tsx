@@ -6,13 +6,13 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { PencilRuler, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import WelcomeModal from "@/components/welcome-modal";
 
 export default function HomePage() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -34,12 +34,12 @@ export default function HomePage() {
 
   const handleStartQuestionnaire = () => {
     setShowModal(false);
-    setLocation("/questionnaire");
+    navigate("/questionnaire");
   };
 
   const handleStartUpload = () => {
     setShowModal(false);
-    setLocation("/upload");
+    navigate("/upload");
   };
 
   const handleCloseModal = () => {
@@ -51,11 +51,11 @@ export default function HomePage() {
       const profile = localStorage.getItem("chatToner_profile");
       // If profile exists, go to converter. Otherwise, go to questionnaire.
       const targetUrl = profile ? "/converter" : "/questionnaire";
-      setLocation(targetUrl);
+      navigate(targetUrl);
     } catch (error) {
       console.error("Error reading localStorage:", error);
       // Fallback to questionnaire if localStorage fails
-      setLocation("/questionnaire");
+      navigate("/questionnaire");
     }
   };
 
@@ -71,14 +71,16 @@ export default function HomePage() {
         />
       )}
       {/* Hero section */}
-      <div className="py-16 text-center">
+      <div className="py-4 text-center">
         <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-          언제, 어디서나 톤 맞춤 <br />
+          An AI-powered tool to unify communication styles across your team{" "}
+          <br />
           <span className="text-[#00C4B7]">Chat Toner</span>
         </h1>
         <p className="max-w-3xl mx-auto text-lg leading-relaxed text-gray-600 sm:text-xl md:text-2xl">
-          나만의 말투를 정의하고 <br />
-          메시지 품질을 향상시키는 AI 도구
+          Standardize team communication with style profiles <br />
+          Reduce editing overhead with automated tone checks <br />
+          Build trust with consistent brand voice
         </p>
       </div>
 
@@ -91,24 +93,25 @@ export default function HomePage() {
                 <PencilRuler className="w-10 h-10 text-[#00C4B7]" />
                 <div>
                   <CardTitle className="text-2xl font-bold">
-                    스타일 정의
+                    Style Definition
                   </CardTitle>
                   <CardDescription>
-                    설문을 통해 나만의 고유한 말투를 정의합니다
+                    Define your own unique tone of voice through a survey
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <p className="mb-6 text-lg text-gray-600">
-                몇 가지 질문에 답하여 개인화된 텍스트 스타일 프로필을
-                생성하세요. AI가 당신의 격식성, 친근함 등의 선호도를 학습합니다.
+                Create a personalized text style profile by answering a few
+                questions. The AI learns your preferences for formality,
+                friendliness, etc.
               </p>
               <Button
                 onClick={handleStyleDefinitionClick}
                 className="w-full py-3 text-lg"
               >
-                스타일 정의 시작하기
+                Start Defining Style
               </Button>
             </CardContent>
           </Card>
@@ -119,24 +122,24 @@ export default function HomePage() {
                 <Sparkles className="w-10 h-10 text-[#00C4B7]" />
                 <div>
                   <CardTitle className="text-2xl font-bold">
-                    품질 변환
+                    Quality Conversion
                   </CardTitle>
                   <CardDescription>
-                    한국어 텍스트의 품질과 톤을 즉시 개선합니다
+                    Instantly improve the quality and tone of your Korean text
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <p className="mb-6 text-lg text-gray-600">
-                텍스트를 붙여넣으면 AI가 명확성을 높이고, 오타를 수정하며, 기본
-                프로필에 따라 톤을 조정합니다.
+                Paste your text and the AI will increase clarity, correct typos,
+                and adjust the tone according to your base profile.
               </p>
               <Button
-                onClick={() => setLocation("/validate")}
+                onClick={() => navigate("/validate")}
                 className="w-full py-3 text-lg"
               >
-                분석기로 이동
+                Go to Analyzer
               </Button>
             </CardContent>
           </Card>
