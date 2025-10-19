@@ -111,10 +111,6 @@ const generateMockConversion = (
         .replace(/Please do\./g, "I would appreciate it if you could do it.")
         .replace(/Could I\?/g, "Could you please?")
         .replace(/a little/g, "I ask of you")
-        .replace(
-          /Please do/g,
-          "I would really appreciate it if you could do it"
-        )
         .replace(/It is ~/g, "It seems to be ~")
         .replace(/I do ~/g, "It seems to be ~");
     }
