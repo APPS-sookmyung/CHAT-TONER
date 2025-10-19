@@ -62,46 +62,46 @@ export function NegativePromptSettings({
         const parsed = JSON.parse(savedPreferences);
         setPreferences({ ...defaultPreferences, ...parsed });
       } catch (error) {
-        console.error("설정 불러오기 실패:", error);
+        console.error("Failed to load settings:", error);
       }
     }
   }, [userId]);
 
   const rhetoricOptions = [
-    { value: "strict", label: "엄격", description: "모든 과장 표현 금지" },
-    { value: "moderate", label: "보통", description: "적당한 수준의 표현" },
-    { value: "lenient", label: "관대", description: "자연스러운 표현 허용" },
+    { value: "strict", label: "Strict", description: "Prohibit all exaggerated expressions" },
+    { value: "moderate", label: "Moderate", description: "Moderate level of expression" },
+    { value: "lenient", label: "Lenient", description: "Allow natural expressions" },
   ];
 
   const repetitionOptions = [
-    { value: "strict", label: "엄격", description: "반복 표현 완전 금지" },
-    { value: "moderate", label: "보통", description: "필요시에만 허용" },
-    { value: "lenient", label: "관대", description: "자연스러운 반복 허용" },
+    { value: "strict", label: "Strict", description: "Completely prohibit repeated expressions" },
+    { value: "moderate", label: "Moderate", description: "Allow only when necessary" },
+    { value: "lenient", label: "Lenient", description: "Allow natural repetition" },
   ];
 
   const punctuationOptions = [
-    { value: "minimal", label: "최소", description: "꼭 필요한 쉼표만" },
-    { value: "standard", label: "표준", description: "일반적인 사용" },
-    { value: "verbose", label: "상세", description: "풍부한 쉼표 사용" },
+    { value: "minimal", label: "Minimal", description: "Only necessary commas" },
+    { value: "standard", label: "Standard", description: "General use" },
+    { value: "verbose", label: "Verbose", description: "Rich use of commas" },
   ];
 
   const contentFocusOptions = [
-    { value: "content", label: "내용 중심", description: "핵심 내용 우선" },
-    { value: "balanced", label: "균형", description: "내용과 형식 조화" },
-    { value: "format", label: "형식 중심", description: "체계적 구성 우선" },
+    { value: "content", label: "Content-focused", description: "Prioritize core content" },
+    { value: "balanced", label: "Balanced", description: "Harmony between content and format" },
+    { value: "format", label: "Format-focused", description: "Prioritize systematic composition" },
   ];
 
   const bulletOptions = [
-    { value: "avoid", label: "회피", description: "불렛 포인트 사용 안함" },
-    { value: "minimal", label: "최소", description: "필요시에만 사용" },
-    { value: "prefer", label: "선호", description: "적극적 사용" },
+    { value: "avoid", label: "Avoid", description: "Do not use bullet points" },
+    { value: "minimal", label: "Minimal", description: "Use only when necessary" },
+    { value: "prefer", label: "Prefer", description: "Active use" },
   ];
 
   const emoticonOptions = [
-    { value: "none", label: "없음", description: "이모티콘 완전 금지" },
-    { value: "minimal", label: "최소", description: "기본적인 것만" },
-    { value: "contextual", label: "상황적", description: "맥락에 맞게" },
-    { value: "frequent", label: "빈번", description: "자주 사용" },
+    { value: "none", label: "None", description: "Completely prohibit emoticons" },
+    { value: "minimal", label: "Minimal", description: "Only basic ones" },
+    { value: "contextual", label: "Contextual", description: "According to context" },
+    { value: "frequent", label: "Frequent", description: "Frequent use" },
   ];
 
   const handleSave = async () => {
@@ -115,15 +115,15 @@ export function NegativePromptSettings({
 
       // Show success toast
       toast({
-        title: "설정 저장 완료",
-        description: "네거티브 프롬프트 선호도가 저장되었습니다.",
+        title: "Settings saved",
+        description: "Negative prompt preferences have been saved.",
       });
 
       onSave?.(preferences);
     } catch (error) {
       toast({
-        title: "저장 실패",
-        description: "설정 저장 중 오류가 발생했습니다.",
+        title: "Save failed",
+        description: "An error occurred while saving settings.",
         variant: "destructive",
       });
     } finally {
@@ -143,11 +143,10 @@ export function NegativePromptSettings({
       <CardHeader>
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5" />
-          <CardTitle>네거티브 프롬프트 설정</CardTitle>
+          <CardTitle>Negative Prompt Settings</CardTitle>
         </div>
         <CardDescription>
-          텍스트 변환 시 제외하고 싶은 표현들을 맞춤 설정하세요. 이 설정은 모든
-          텍스트 변환에 적용됩니다.
+          Customize the expressions you want to exclude when converting text. These settings apply to all text conversions.
         </CardDescription>
       </CardHeader>
 
@@ -155,11 +154,10 @@ export function NegativePromptSettings({
         {/* Rhetoric settings */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Label className="text-base font-medium">미사여구 제한</Label>
+            <Label className="text-base font-medium">Rhetoric Limit</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            "놀라운", "대단한", "훌륭한" 같은 과장된 수식어 사용을 어느 정도까지
-            허용할지 설정합니다.
+            Set the extent to which exaggerated modifiers such as "amazing", "great", and "excellent" are allowed.
           </p>
           <Select
             value={preferences.rhetoricLevel}
@@ -191,11 +189,10 @@ export function NegativePromptSettings({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Badge variant="outline">Repeat</Badge>
-            <Label className="text-base font-medium">반복 표현 제한</Label>
+            <Label className="text-base font-medium">Repetition Limit</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            "그리고 또한", "~에 대해서도" 같은 비슷한 단어들의 반복 사용을
-            제한합니다.
+            Restricts the repeated use of similar words such as "and also" and "as for ~".
           </p>
           <Select
             value={preferences.repetitionTolerance}
@@ -226,10 +223,10 @@ export function NegativePromptSettings({
         {/* Comma usage style */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Label className="text-base font-medium">쉼표 사용 스타일</Label>
+            <Label className="text-base font-medium">Comma Usage Style</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            문장에서 쉼표를 어느 정도까지 사용할지 설정합니다.
+            Sets the extent to which commas are used in a sentence.
           </p>
           <Select
             value={preferences.punctuationStyle}
@@ -261,11 +258,11 @@ export function NegativePromptSettings({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Label className="text-base font-medium">
-              내용 vs 형식 우선순위
+              Content vs. Format Priority
             </Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            텍스트 변환 시 내용을 우선할지, 형식을 우선할지 설정합니다.
+            Set whether to prioritize content or format when converting text.
           </p>
           <Select
             value={preferences.contentFocus}
@@ -296,10 +293,10 @@ export function NegativePromptSettings({
         {/* Bullet point usage */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Label className="text-base font-medium">불렛 포인트 사용</Label>
+            <Label className="text-base font-medium">Bullet Point Usage</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            "•", "-", "1." 같은 불렛 포인트 사용을 설정합니다.
+            Sets the use of bullet points such as "•", "-", "1.".
           </p>
           <Select
             value={preferences.bulletPreference}
@@ -331,10 +328,10 @@ export function NegativePromptSettings({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Badge variant="outline">Positive</Badge>
-            <Label className="text-base font-medium">이모티콘 사용 정책</Label>
+            <Label className="text-base font-medium">Emoticon Usage Policy</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            텍스트에서 이모티콘 사용을 어느 정도까지 허용할지 설정합니다.
+            Sets the extent to which emoticons are allowed in the text.
           </p>
           <Select
             value={preferences.emoticonPolicy}
@@ -370,7 +367,7 @@ export function NegativePromptSettings({
             className="flex items-center gap-2"
           >
             <Zap className="w-4 h-4" />
-            {isLoading ? "저장 중..." : "설정 저장"}
+            {isLoading ? "Saving..." : "Save Settings"}
           </Button>
         </div>
       </CardContent>

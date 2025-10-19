@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { MessageSquare, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -40,10 +40,10 @@ export default function Header() {
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <Link href="/" className="text-xl font-bold text-gray-900">
+              <Link to="/" className="text-xl font-bold text-gray-900">
                 Chat Toner
               </Link>
-              <p className="text-sm text-gray-500">개인 맞춤형 말투 변환기</p>
+              <p className="text-sm text-gray-500">Personalized Tone Converter</p>
             </div>
           </div>
 
