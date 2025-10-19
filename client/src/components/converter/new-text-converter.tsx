@@ -94,16 +94,16 @@ const generateMockConversion = (
     if (style === "direct") {
 
       transformed = transformed
-        .replace(/할 수 있을까요\?/g, "해주세요.")
-        .replace(/해주시면 감사하겠습니다/g, "해주세요")
-        .replace(/부탁드립니다/g, "해주세요")
-        .replace(/좀/g, "")
-        .replace(/해주실 수 있나요/g, "해주세요")
-        .replace(/혹시/g, "")
-        .replace(/아마도/g, "")
-        .replace(/어쩌면/g, "")
-        .replace(/~일 수도 있습니다/g, "~입니다")
-        .replace(/~할 수도 있습니다/g, "~합니다");
+        .replace(/Could you please\?/g, "Please do.")
+        .replace(/I would appreciate it if you could do it/g, "Please do")
+        .replace(/I ask of you/g, "Please do")
+        .replace(/a little/g, "")
+        .replace(/Can you do it for me/g, "Please do")
+        .replace(/by any chance/g, "")
+        .replace(/maybe/g, "")
+        .replace(/perhaps/g, "")
+        .replace(/It could be ~/g, "It is ~")
+        .replace(/You can ~/g, "You do ~");
     }
 
 
@@ -111,14 +111,14 @@ const generateMockConversion = (
     else if (style === "gentle") {
 
       transformed = transformed
-        .replace(/해주세요/g, "해주시면 감사하겠습니다")
-        .replace(/해주세요\./g, "해주시면 감사하겠습니다.")
-        .replace(/할 수 있을까요\?/g, "해주실 수 있을까요?")
-        .replace(/좀/g, "부탁드려요")
-        .replace(/해주세요/g, "해주시면 정말 감사하겠습니다")
-        .replace(/~입니다/g, "~일 것 같습니다")
-        .replace(/~합니다/g, "~할 것 같습니다")
-        .replace(/~해요/g, "~하시는 것 같아요");
+        .replace(/Please do/g, "I would appreciate it if you could do it")
+        .replace(/Please do\./g, "I would appreciate it if you could do it.")
+        .replace(/Could I\?/g, "Could you please?")
+        .replace(/a little/g, "I ask of you")
+        .replace(/Please do/g, "I would really appreciate it if you could do it")
+        .replace(/It is ~/g, "It seems to be ~")
+        .replace(/I do ~/g, "It seems to be ~")
+        .replace(/~s/g, "It seems like you are doing ~");
     }
 
 
@@ -126,10 +126,10 @@ const generateMockConversion = (
     else if (style === "neutral") {
 
       transformed = transformed
-        .replace(/해주세요/g, "부탁드립니다")
-        .replace(/할 수 있을까요\?/g, "해주실 수 있을까요?")
-        .replace(/좀/g, "부탁드립니다")
-        .replace(/해주세요/g, "해주시면 감사하겠습니다")
+        .replace(/Please do/g, "I ask of you")
+        .replace(/Could I\?/g, "Could you please?")
+        .replace(/a little/g, "I ask of you")
+        .replace(/Please do/g, "I would appreciate it if you could do it")
         .replace(/~입니다/g, "~입니다")
         .replace(/~합니다/g, "~합니다");
     }
@@ -137,18 +137,18 @@ const generateMockConversion = (
     // Adjustment based on formality level
     if (adjustedFormality >= 8) {
       transformed = transformed
-        .replace(/해주세요/g, "해주시기 바랍니다")
-        .replace(/부탁드립니다/g, "부탁드리겠습니다")
-        .replace(/감사하겠습니다/g, "감사드리겠습니다")
-        .replace(/~입니다/g, "~이옵니다")
-        .replace(/~합니다/g, "~하옵니다");
+        .replace(/Please do/g, "I hope you will do it")
+        .replace(/I ask of you/g, "I will ask of you")
+        .replace(/I would appreciate it/g, "I will appreciate it")
+        .replace(/It is ~/g, "It is ~ (very formal)")
+        .replace(/I do ~/g, "I do ~ (very formal)");
     } else if (adjustedFormality <= 3) {
       transformed = transformed
-        .replace(/해주시기 바랍니다/g, "해주세요")
-        .replace(/부탁드리겠습니다/g, "부탁드려요")
-        .replace(/감사드리겠습니다/g, "감사해요")
-        .replace(/~이옵니다/g, "~이에요")
-        .replace(/~하옵니다/g, "~해요");
+        .replace(/I hope you will do it/g, "Please do")
+        .replace(/I will ask of you/g, "I ask of you")
+        .replace(/I will appreciate it/g, "Thank you")
+        .replace(/It is ~ (very formal)/g, "It is ~ (less formal)")
+        .replace(/I do ~ (very formal)/g, "I do ~ (less formal)");
     }
 
     // Adjustment based on friendliness level
@@ -224,8 +224,8 @@ export default function NewTextConverter({
         ...(isFinetune && { force_convert: false }),
       };
 
-      console.log("전송할 요청 데이터:", requestBody);
-      console.log("네거티브 프리퍼런스:", negativePreferences);
+      console.log("Request data to be sent:", requestBody);
+      console.log("Negative Preferences:", negativePreferences);
 
       const response = await fetch(url, {
         method: "POST",
@@ -282,17 +282,17 @@ export default function NewTextConverter({
     },
     onSuccess: (data) => {
       toast({
-        title: "변환 완료",
-        description: "텍스트가 성공적으로 변환되었습니다.",
+        title: "Conversion Complete",
+        description: "The text has been successfully converted.",
       });
     },
     onError: (error) => {
       toast({
-        title: "변환 실패",
+        title: "Conversion Failed",
         description:
           error instanceof Error
             ? error.message
-            : "알 수 없는 오류가 발생했습니다.",
+            : "An unknown error has occurred.",
         variant: "destructive",
       });
     },
@@ -330,8 +330,8 @@ export default function NewTextConverter({
     },
     onSuccess: () => {
       toast({
-        title: "피드백 저장 완료",
-        description: "선택한 버전이 저장되었습니다.",
+        title: "Feedback Saved",
+        description: "The selected version has been saved.",
       });
     },
   });
@@ -339,8 +339,8 @@ export default function NewTextConverter({
   const handleConvert = () => {
     if (!inputText.trim()) {
       toast({
-        title: "텍스트를 입력해주세요",
-        description: "변환할 텍스트를 입력해주세요.",
+        title: "Please enter text",
+        description: "Please enter the text to be converted.",
         variant: "destructive",
       });
       return;
@@ -362,8 +362,8 @@ export default function NewTextConverter({
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "복사 완료",
-      description: "텍스트가 클립보드에 복사되었습니다.",
+      title: "Copy Complete",
+      description: "The text has been copied to the clipboard.",
     });
   };
 
@@ -371,10 +371,10 @@ export default function NewTextConverter({
     ctx: "general" | "report" | "education" | "social"
   ) => {
     const labels = {
-      general: "일반",
-      report: "보고서/문서",
-      education: "교육/설명",
-      social: "소셜미디어",
+      general: "General",
+      report: "Report/Document",
+      education: "Education/Explanation",
+      social: "Social Media",
     } as const;
     return labels[ctx];
   };
@@ -386,12 +386,12 @@ export default function NewTextConverter({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ArrowRightLeft className="w-5 h-5" />
-            텍스트 변환
+            Text Conversion
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="변환할 텍스트를 입력하세요..."
+            placeholder="Enter the text to convert..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="min-h-[120px]"
@@ -400,7 +400,7 @@ export default function NewTextConverter({
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <label className="block mb-2 text-sm font-medium">
-                변환 컨텍스트
+                Conversion Context
               </label>
               <Select
                 value={context}
@@ -412,16 +412,15 @@ export default function NewTextConverter({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="general">일반</SelectItem>
-                  <SelectItem value="report">보고서/문서</SelectItem>
-                  <SelectItem value="education">교육/설명</SelectItem>
-                  <SelectItem value="social">소셜미디어</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="report">Report/Document</SelectItem>
+                  <SelectItem value="education">Education/Explanation</SelectItem>
+                  <SelectItem value="social">Social Media</SelectItem>
                 </SelectContent>
               </Select>
               {context === "report" && (
                 <div className="mt-1 text-xs text-blue-600">
-                  보고서/공문 모드는 특화된 파인튜닝 모델을 사용하여 단일 최적화
-                  결과를 제공합니다.
+                  Report/Official Document mode uses a specialized fine-tuning model to provide a single optimized result.
                 </div>
               )}
             </div>
@@ -434,12 +433,12 @@ export default function NewTextConverter({
               {convertMutation.isPending ? (
                 <>
                   <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                  변환 중...
+                  Converting...
                 </>
               ) : (
                 <>
                   <ArrowRightLeft className="w-4 h-4 mr-2" />
-                  변환하기
+                  Convert
                 </>
               )}
             </Button>
@@ -454,7 +453,7 @@ export default function NewTextConverter({
             >
               <span className="flex items-center gap-2">
                 <Settings className="w-4 h-4" />
-                고급 설정 (네거티브 프롬프트)
+                Advanced Settings (Negative Prompts)
               </span>
               {showAdvanced ? (
                 <ChevronUp className="w-4 h-4" />
@@ -468,7 +467,7 @@ export default function NewTextConverter({
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label className="block mb-2 text-sm font-medium">
-                      수사법 수준
+                      Rhetoric Level
                     </label>
                     <Select
                       value={negativePreferences.rhetoricLevel}
@@ -485,16 +484,16 @@ export default function NewTextConverter({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">낮음</SelectItem>
-                        <SelectItem value="moderate">보통</SelectItem>
-                        <SelectItem value="high">높음</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="moderate">Moderate</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <label className="block mb-2 text-sm font-medium">
-                      반복 허용도
+                      Repetition Tolerance
                     </label>
                     <Select
                       value={negativePreferences.repetitionTolerance}
@@ -511,16 +510,16 @@ export default function NewTextConverter({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">낮음</SelectItem>
-                        <SelectItem value="moderate">보통</SelectItem>
-                        <SelectItem value="high">높음</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="moderate">Moderate</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <label className="block mb-2 text-sm font-medium">
-                      문장부호 스타일
+                      Punctuation Style
                     </label>
                     <Select
                       value={negativePreferences.punctuationStyle}
@@ -537,16 +536,16 @@ export default function NewTextConverter({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="minimal">최소화</SelectItem>
-                        <SelectItem value="standard">표준</SelectItem>
-                        <SelectItem value="expressive">표현력</SelectItem>
+                        <SelectItem value="minimal">Minimal</SelectItem>
+                        <SelectItem value="standard">Standard</SelectItem>
+                        <SelectItem value="expressive">Expressive</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <label className="block mb-2 text-sm font-medium">
-                      내용 초점
+                      Content Focus
                     </label>
                     <Select
                       value={negativePreferences.contentFocus}
@@ -564,16 +563,16 @@ export default function NewTextConverter({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="content">내용 중심</SelectItem>
-                        <SelectItem value="balanced">균형</SelectItem>
-                        <SelectItem value="format">형식 중심</SelectItem>
+                        <SelectItem value="content">Content-focused</SelectItem>
+                        <SelectItem value="balanced">Balanced</SelectItem>
+                        <SelectItem value="format">Format-focused</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <label className="block mb-2 text-sm font-medium">
-                      불릿 포인트
+                      Bullet Points
                     </label>
                     <Select
                       value={negativePreferences.bulletPreference}
@@ -590,16 +589,16 @@ export default function NewTextConverter({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="avoid">피하기</SelectItem>
-                        <SelectItem value="minimal">최소한</SelectItem>
-                        <SelectItem value="prefer">선호</SelectItem>
+                        <SelectItem value="avoid">Avoid</SelectItem>
+                        <SelectItem value="minimal">Minimal</SelectItem>
+                        <SelectItem value="prefer">Prefer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <label className="block mb-2 text-sm font-medium">
-                      이모티콘 정책
+                      Emoticon Policy
                     </label>
                     <Select
                       value={negativePreferences.emoticonPolicy}
@@ -616,18 +615,17 @@ export default function NewTextConverter({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">사용 안함</SelectItem>
-                        <SelectItem value="minimal">최소한</SelectItem>
-                        <SelectItem value="contextual">상황에 맞게</SelectItem>
-                        <SelectItem value="frequent">자주 사용</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="minimal">Minimal</SelectItem>
+                        <SelectItem value="contextual">Contextual</SelectItem>
+                        <SelectItem value="frequent">Frequent</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div className="text-xs text-gray-600">
-                  네거티브 프롬프트는 AI가 피해야 할 스타일을 지정하여 더 정확한
-                  변환을 도와줍니다.
+                  Negative prompts help with more accurate conversions by specifying styles for the AI to avoid.
                 </div>
               </div>
             )}
@@ -643,7 +641,7 @@ export default function NewTextConverter({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                변환 분석
+                Conversion Analysis
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -652,19 +650,19 @@ export default function NewTextConverter({
                   <div className="text-2xl font-bold text-blue-600">
                     {convertMutation.data.analysis.formalityLevel}/10
                   </div>
-                  <div className="text-sm text-gray-600">정중함</div>
+                  <div className="text-sm text-gray-600">Formality</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
                     {convertMutation.data.analysis.friendlinessLevel}/10
                   </div>
-                  <div className="text-sm text-gray-600">친근함</div>
+                  <div className="text-sm text-gray-600">Friendliness</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
                     {convertMutation.data.analysis.emotionLevel}/10
                   </div>
-                  <div className="text-sm text-gray-600">감정 표현</div>
+                  <div className="text-sm text-gray-600">Emotion Expression</div>
                 </div>
               </div>
             </CardContent>
@@ -689,12 +687,12 @@ export default function NewTextConverter({
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span className="text-lg">최적화된 공문체</span>
+                    <span className="text-lg">Optimized Official Style</span>
                     <Badge
                       variant="outline"
                       className="text-blue-800 bg-blue-100"
                     >
-                      파인튜닝
+                      Fine-tuned
                     </Badge>
                   </CardTitle>
                 </CardHeader>
@@ -720,7 +718,7 @@ export default function NewTextConverter({
                           selectedVersion === "neutral" ? "fill-current" : ""
                         }`}
                       />
-                      {selectedVersion === "neutral" ? "선택됨" : "선택"}
+                      {selectedVersion === "neutral" ? "Selected" : "Select"}
                     </Button>
                     <Button
                       size="sm"
@@ -747,8 +745,8 @@ export default function NewTextConverter({
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="text-lg">직접적</span>
-                      <Badge variant="outline">직설적</Badge>
+                      <span className="text-lg">Direct</span>
+                      <Badge variant="outline">Blunt</Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -773,7 +771,7 @@ export default function NewTextConverter({
                             selectedVersion === "direct" ? "fill-current" : ""
                           }`}
                         />
-                        {selectedVersion === "direct" ? "선택됨" : "선택"}
+                        {selectedVersion === "direct" ? "Selected" : "Select"}
                       </Button>
                       <Button
                         size="sm"
@@ -798,12 +796,12 @@ export default function NewTextConverter({
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="text-lg">부드러운</span>
+                      <span className="text-lg">Gentle</span>
                       <Badge
                         variant="outline"
                         className="text-green-800 bg-green-100"
                       >
-                        친근
+                        Friendly
                       </Badge>
                     </CardTitle>
                   </CardHeader>
@@ -829,7 +827,7 @@ export default function NewTextConverter({
                             selectedVersion === "gentle" ? "fill-current" : ""
                           }`}
                         />
-                        {selectedVersion === "gentle" ? "선택됨" : "선택"}
+                        {selectedVersion === "gentle" ? "Selected" : "Select"}
                       </Button>
                       <Button
                         size="sm"
@@ -854,12 +852,12 @@ export default function NewTextConverter({
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="text-lg">중립적</span>
+                      <span className="text-lg">Neutral</span>
                       <Badge
                         variant="outline"
                         className="text-blue-800 bg-blue-100"
                       >
-                        균형
+                        Balanced
                       </Badge>
                     </CardTitle>
                   </CardHeader>
@@ -885,7 +883,7 @@ export default function NewTextConverter({
                             selectedVersion === "neutral" ? "fill-current" : ""
                           }`}
                         />
-                        {selectedVersion === "neutral" ? "선택됨" : "선택"}
+                        {selectedVersion === "neutral" ? "Selected" : "Select"}
                       </Button>
                       <Button
                         size="sm"

@@ -46,8 +46,8 @@ export default function NewOutputVersion({
     setIsSelected(true);
     onSelect(type, feedback);
     toast({
-      title: '선택 완료',
-      description: `${label} 버전을 선택했습니다. 스타일이 업데이트됩니다.`,
+      title: "Selection Complete",
+      description: `You have selected the ${label} version. The style will be updated.`,
     });
   };
 
@@ -83,7 +83,7 @@ export default function NewOutputVersion({
             className="flex-1"
           >
             <Copy className="w-4 h-4 mr-2" />
-            복사
+            Copy
           </Button>
           <Button
             variant={isSelected ? "default" : "outline"}
@@ -93,7 +93,7 @@ export default function NewOutputVersion({
             disabled={isSelected}
           >
             <ThumbsUp className="w-4 h-4 mr-2" />
-            {isSelected ? '선택됨' : '이걸로 선택'}
+            {isSelected ? 'Selected' : 'Select this one'}
           </Button>
         </div>
         
@@ -104,13 +104,13 @@ export default function NewOutputVersion({
           className="w-full text-xs"
         >
           <MessageSquare className="w-3 h-3 mr-2" />
-          피드백 주기
+          Give Feedback
         </Button>
         
         {showFeedback && (
           <div className="w-full space-y-2">
             <Textarea
-              placeholder="이 버전에 대한 피드백을 남겨주세요. (예: 좀 더 부드럽게, 더 간결하게 등)"
+              placeholder="Please leave feedback on this version. (e.g., make it softer, more concise, etc.)"
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               className="text-xs"
@@ -124,13 +124,13 @@ export default function NewOutputVersion({
                 setFeedback('');
                 setShowFeedback(false);
                 toast({
-                  title: '피드백 전송',
-                  description: '피드백이 반영되어 다음 변환에 적용됩니다.',
+                  title: "Feedback Sent",
+                  description: "Your feedback will be reflected in the next conversion.",
                 });
               }}
               className="w-full text-xs"
             >
-              피드백 전송
+              Send Feedback
             </Button>
           </div>
         )}
