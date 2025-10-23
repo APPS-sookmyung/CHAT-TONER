@@ -3,7 +3,7 @@ import ProgressBar from "@/components/questionnaire/progress-bar";
 import QuestionCard from "@/components/questionnaire/question-card";
 import { questions } from "@/data/questions";
 import type { UserProfile, UserResponses } from "@shared/schema";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 // Constants management
 const STORAGE_KEYS = {
@@ -37,7 +37,7 @@ const getUserId = () => {
 };
 
 export default function QuestionnairePage() {
-  const [, setLoc] = useLocation();
+  const navigate = useNavigate();
   const userId = getUserId();
 
   const [idx, setIdx] = useState<number>(0);
@@ -81,9 +81,9 @@ export default function QuestionnairePage() {
     // Later, this should be integrated with backend API to create actual profiles.
     console.log("Submitting company questionnaire responses:", responses);
 
-    const profileSummary = `주요 업무: ${
-      responses.company_business_category?.[0] || "N/A"
-    }\n소통 문화: ${responses.communication_style_overall?.[0] || "N/A"}`;
+    const profileSummary = `Company Name: ${ 
+      responses.company_name?.[0] || "N/A"
+    }\nCommunication Style: ${responses.communication_style?.[0] || "N/A"}`;
 
     // Temporarily save to localStorage and navigate to results page
     const tempProfile = {
@@ -97,7 +97,7 @@ export default function QuestionnairePage() {
       STORAGE_KEYS.USER_PROFILE,
       JSON.stringify(tempProfile)
     );
-    setLoc("/results"); // Results page path may be changed to enterprise version later
+    navigate("/results"); // Results page path may be changed to enterprise version later
   };
 
   const next = () =>

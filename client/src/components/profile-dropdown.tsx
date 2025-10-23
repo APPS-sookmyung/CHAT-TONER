@@ -13,13 +13,13 @@ interface CompanyProfile {
 }
 
 const MOCK_COMPANY_PROFILE: CompanyProfile = {
-  company_name: "(주)챗토너 컴퍼니",
-  communication_style: "간결하고 명확함",
+  company_name: "ChatToner Company",
+  communication_style: "Concise and clear",
   ready_for_analysis: true,
   guidelines_count: 5,
   negative_prompts: [
-    "'수고하세요' 대신 '감사합니다' 사용",
-    "지나치게 긴 서론 지양",
+    "Use 'Thank you' instead of 'Keep up the good work'",
+    "Avoid overly long introductions",
   ],
 };
 
@@ -43,14 +43,15 @@ export default function ProfileDropdown({
       setProfile({ ...profile, negative_prompts: updatedPrompts });
       setNewPrompt("");
       toast({
-        title: "성공",
-        description: "'이렇게 쓰지 않기' 규칙이 추가되었습니다.",
+        title: "Success",
+        description: "The 'Don't write like this' rule has been added.",
       });
     } else {
       toast({
         variant: "destructive",
-        title: "오류",
-        description: "이미 추가된 내용이거나, 입력값이 없습니다.",
+        title: "Error",
+        description:
+          "This content has already been added, or there is no input.",
       });
     }
   };
@@ -60,7 +61,7 @@ export default function ProfileDropdown({
       (p) => p !== promptToRemove
     );
     setProfile({ ...profile, negative_prompts: updatedPrompts });
-    toast({ title: "성공", description: "규칙이 삭제되었습니다." });
+    toast({ title: "Success", description: "The rule has been deleted." });
   };
 
   if (!open) return null;
@@ -77,16 +78,16 @@ export default function ProfileDropdown({
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">
-              {profile.company_name || "회사 프로필"}
+              {profile.company_name || "Company Profile"}
             </h3>
-            <p className="text-sm text-gray-500">AI 프로필 관리</p>
+            <p className="text-sm text-gray-500">AI Profile Management</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <InfoCard
             icon={<Info className="w-5 h-5 text-gray-500" />}
-            label="소통 스타일"
+            label="Communication Style"
             value={profile.communication_style || "-"}
           />
           <InfoCard
@@ -99,14 +100,14 @@ export default function ProfileDropdown({
                 }`}
               />
             }
-            label="프로필 상태"
-            value={profile.ready_for_analysis ? "준비 완료" : "설정 필요"}
+            label="Profile Status"
+            value={profile.ready_for_analysis ? "Ready" : "Setup required"}
           />
         </div>
 
         <div className="mb-6 space-y-4">
           <h4 className="text-sm font-medium text-gray-800">
-            이렇게 쓰지 않기 (Negative Prompts)
+            Don't write like this (Negative Prompts)
           </h4>
           <div className="space-y-2">
             {profile.negative_prompts?.map((prompt, index) => (
@@ -128,7 +129,7 @@ export default function ProfileDropdown({
           </div>
           <div className="flex gap-2">
             <Input
-              placeholder="예: '수고하세요' 사용 금지"
+              placeholder="e.g., Do not use 'Keep up the good work'"
               value={newPrompt}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
@@ -146,7 +147,7 @@ export default function ProfileDropdown({
         </div>
 
         <Button variant="outline" onClick={onClose} className="w-full">
-          닫기
+          Close
         </Button>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { PATH } from "@/constants/paths"; // 1. 경로 상수(사전) 가져오기
+import { PATH } from "@/constants/paths";
 
-// Pages
 import LandingPage from "./pages/LandingPage";
 import ChoicePage from "./pages/ChoicePage";
 import TransformStylePage from "./pages/TransformStylePage";
@@ -26,3 +25,33 @@ const Router = () => {
 };
 
 export default Router;
+// import { Routes, Route } from "react-router-dom";
+// import { ROUTES } from "./constants/routes";
+
+// // Import existing pages
+// import HomePage from "@/pages/home";
+// import QuestionnairePage from "@/pages/QuestionnairePage";
+// import ResultsPage from "@/pages/ResultsPage";
+// import ConverterPage from "@/pages/ConverterPage";
+// import ValidatePage from "@/pages/ValidatePage";
+// import UploadPage from "@/pages/UploadPage";
+// import NotFound from "@/pages/not-found";
+// import Layout from "@/pages/layout";
+
+// const Router = () => {
+//   return (
+//     <Layout>
+//       <Routes>
+//         <Route path={ROUTES.HOME} element={<HomePage />} />
+//         <Route path={ROUTES.QUESTIONNAIRE} element={<QuestionnairePage />} />
+//         <Route path={ROUTES.UPLOAD} element={<UploadPage />} />
+//         <Route path={ROUTES.RESULTS} element={<ResultsPage />} />
+//         <Route path={ROUTES.CONVERTER} element={<ConverterPage />} />
+//         <Route path={ROUTES.VALIDATE} element={<ValidatePage />} />
+//         <Route path="*" element={<NotFound />} />
+//       </Routes>
+//     </Layout>
+//   );
+// };
+
+// export default Router;

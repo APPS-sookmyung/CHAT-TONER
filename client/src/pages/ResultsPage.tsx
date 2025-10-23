@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import ResultsSummary from "@/components/questionnaire/results-summary";
 import type { UserProfile } from "@shared/schema";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 export default function ResultsPage() {
-  const [, setLoc] = useLocation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export default function ResultsPage() {
       <ResultsSummary
         userProfile={profile}
         completionRate={100}
-        onStartConversion={() => setLoc("/validate")}
+        onStartConversion={() => navigate("/validate")}
         onExportData={() => {
           const dataStr = JSON.stringify(profile, null, 2);
           const url = URL.createObjectURL(

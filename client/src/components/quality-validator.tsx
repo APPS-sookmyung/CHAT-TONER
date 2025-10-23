@@ -21,19 +21,19 @@ import type {
 
 const dropdownOptions = {
   target_audiences: [
-    { value: "직속상사", label: "직속상사" },
-    { value: "팀동료", label: "팀동료" },
-    { value: "타부서담당자", label: "타부서 담당자" },
-    { value: "클라이언트", label: "클라이언트" },
-    { value: "외부협력업체", label: "외부 협력업체" },
-    { value: "후배신입", label: "후배/신입" },
+    { value: "직속상사", label: "Direct Supervisor" },
+    { value: "팀동료", label: "Teammate" },
+    { value: "타부서담당자", label: "Contact Person in Other Department" },
+    { value: "클라이언트", label: "Client" },
+    { value: "외부협력업체", label: "External Partner" },
+    { value: "후배신입", label: "Junior/New Hire" },
   ],
   contexts: [
-    { value: "보고서", label: "보고서" },
-    { value: "회의록", label: "회의록" },
-    { value: "이메일", label: "이메일" },
-    { value: "공지사항", label: "공지사항" },
-    { value: "메시지", label: "메시지" },
+    { value: "보고서", label: "Report" },
+    { value: "회의록", label: "Meeting Minutes" },
+    { value: "이메일", label: "Email" },
+    { value: "공지사항", label: "Announcement" },
+    { value: "메시지", label: "Message" },
   ],
 };
 
@@ -49,9 +49,9 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
       suggestions: [
         {
           id: "g1",
-          category: "문법",
-          original: "이부분",
-          suggestion: "이 부분",
+          category: "Grammar",
+          original: "this part",
+          suggestion: "this part",
           reason: "Spacing error",
           severity: "low",
         },
@@ -62,10 +62,10 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
       suggestions: [
         {
           id: "p1",
-          category: "프로토콜",
-          original: "수고하세요",
-          suggestion: "감사합니다",
-          reason: "Avoid '수고하세요' according to guidelines",
+          category: "Protocol",
+          original: "Keep up the good work",
+          suggestion: "Thank you",
+          reason: "Avoid 'Keep up the good work' according to guidelines",
           severity: "medium",
         },
       ],
@@ -104,7 +104,7 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
           .filter(Boolean)
           .join(", ");
         toast({
-          title: "오류",
+          title: "Error",
           description: `Cannot find ${missing}`,
           variant: "destructive",
         });
@@ -157,7 +157,7 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
 
   const handleAnalyze = () => {
     if (!inputText.trim()) {
-      toast({ title: "텍스트를 입력해주세요", variant: "destructive" });
+      toast({ title: "Please enter text", variant: "destructive" });
       return;
     }
     analyzeMutation.mutate(inputText.trim());
@@ -171,25 +171,25 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
-            기업용 품질 분석
+            Quality Analysis for Enterprise
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="품질을 분석할 텍스트를 입력하세요..."
+            placeholder="Enter the text to analyze for quality..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="min-h-[150px]"
           />
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="flex-1">
-              <label className="block mb-2 text-sm font-medium">대상</label>
+              <label className="block mb-2 text-sm font-medium">Target</label>
               <Select
                 value={targetAudience}
                 onValueChange={(v) => setTargetAudience(v as TargetAudience)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="대상을 선택하세요" />
+                  <SelectValue placeholder="Select a target" />
                 </SelectTrigger>
                 <SelectContent>
                   {dropdownOptions.target_audiences.map((opt) => (
@@ -201,13 +201,13 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
               </Select>
             </div>
             <div className="flex-1">
-              <label className="block mb-2 text-sm font-medium">상황</label>
+              <label className="block mb-2 text-sm font-medium">Context</label>
               <Select
                 value={context}
                 onValueChange={(v) => setContext(v as ContextType)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="상황을 선택하세요" />
+                  <SelectValue placeholder="Select a context" />
                 </SelectTrigger>
                 <SelectContent>
                   {dropdownOptions.contexts.map((opt) => (
@@ -223,7 +223,7 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
               disabled={analyzeMutation.isPending}
               className="self-end w-full sm:w-auto"
             >
-              {analyzeMutation.isPending ? "분석 중..." : "품질 분석"}
+              {analyzeMutation.isPending ? "Analyzing..." : "Analyze Quality"}
             </Button>
           </div>
         </CardContent>
@@ -240,8 +240,8 @@ export default function QualityValidator({ companyId }: QualityValidatorProps) {
           onApplySuggestion={(original, suggestion) => {
             setInputText((prev) => prev.replace(original, suggestion));
             toast({
-              title: "적용 완료",
-              description: "제안이 텍스트에 반영되었습니다.",
+              title: "Applied",
+              description: "The suggestion has been applied to the text.",
             });
           }}
         />

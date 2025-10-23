@@ -21,16 +21,16 @@ export default function ProfileSummary({ userProfile }: ProfileSummaryProps) {
             <User className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">당신의 말투 프로필</h3>
+            <h3 className="font-semibold text-gray-900">Your Tone Profile</h3>
             <p className="text-sm text-gray-600">
-              수집된 선호도를 기반으로 텍스트를 변환합니다
+              Converts text based on your collected preferences
             </p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
-            <div className="mb-1 text-sm text-gray-600">정중함 정도</div>
+            <div className="mb-1 text-sm text-gray-600">Formality Level</div>
             <div className="flex items-center space-x-2">
               <div className="flex-1">
                 <Progress
@@ -46,7 +46,7 @@ export default function ProfileSummary({ userProfile }: ProfileSummaryProps) {
           </div>
 
           <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
-            <div className="mb-1 text-sm text-gray-600">친근함 정도</div>
+            <div className="mb-1 text-sm text-gray-600">Friendliness Level</div>
             <div className="flex items-center space-x-2">
               <div className="flex-1">
                 <Progress
@@ -62,7 +62,7 @@ export default function ProfileSummary({ userProfile }: ProfileSummaryProps) {
           </div>
 
           <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
-            <div className="mb-1 text-sm text-gray-600">감정 표현</div>
+            <div className="mb-1 text-sm text-gray-600">Emotion Expression</div>
             <div className="flex items-center space-x-2">
               <div className="flex-1">
                 <Progress

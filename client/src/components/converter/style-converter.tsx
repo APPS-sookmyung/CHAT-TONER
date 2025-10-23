@@ -27,7 +27,7 @@ interface StyleAnalysis {
   softness_score: number;
   politeness_score: number;
   converted_text: string;
-  suggestions: Array<{
+  suggestions: Array<{ 
     type: "directness" | "softness" | "politeness";
     original: string;
     suggestion: string;
@@ -41,25 +41,25 @@ const generateMockAnalysis = (text: string): StyleAnalysis => {
     directness_score: Math.floor(Math.random() * 50) + 50,
     softness_score: Math.floor(Math.random() * 50) + 50,
     politeness_score: Math.floor(Math.random() * 50) + 50,
-    converted_text: text + " (스타일 변환됨)",
+    converted_text: text + " (style converted)",
     suggestions: [
       {
         type: "directness",
-        original: "이 부분",
-        suggestion: "저 부분",
-        reason: "더 직접적인 표현으로 변경하여 의미를 명확히 합니다.",
+        original: "this part",
+        suggestion: "that part",
+        reason: "Changed to a more direct expression to clarify the meaning.",
       },
       {
         type: "softness",
-        original: "하세요",
-        suggestion: "해주시겠어요?",
-        reason: "더 부드러운 표현으로 변경하여 친근한 느낌을 줍니다.",
+        original: "do it",
+        suggestion: "Could you do it for me?",
+        reason: "Changed to a softer expression to give a friendly feeling.",
       },
       {
         type: "politeness",
-        original: "야",
-        suggestion: "님",
-        reason: "더 정중한 표현으로 변경하여 예의를 갖춥니다.",
+        original: "Hey",
+        suggestion: "",
+        reason: "Changed to a more polite expression to be respectful.",
       },
     ],
   };
@@ -86,17 +86,17 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
     onSuccess: (data) => {
       setAnalysis(data);
       toast({
-        title: "변환 완료",
-        description: "텍스트 스타일 변환이 완료되었습니다.",
+        title: "Conversion Complete",
+        description: "Text style conversion is complete.",
       });
     },
     onError: (error) => {
       toast({
-        title: "변환 실패",
+        title: "Conversion Failed",
         description:
           error instanceof Error
             ? error.message
-            : "알 수 없는 오류가 발생했습니다.",
+            : "An unknown error has occurred.",
         variant: "destructive",
       });
     },
@@ -105,8 +105,8 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
   const handleConvert = () => {
     if (!inputText.trim()) {
       toast({
-        title: "텍스트를 입력해주세요",
-        description: "변환할 텍스트를 입력해주세요.",
+        title: "Please enter text",
+        description: "Please enter the text to convert.",
         variant: "destructive",
       });
       return;
@@ -117,8 +117,8 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "복사 완료",
-      description: "텍스트가 클립보드에 복사되었습니다.",
+      title: "Copy Complete",
+      description: "The text has been copied to the clipboard.",
     });
   };
 
@@ -131,12 +131,12 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
 
   const getScoreBadge = (score: number) => {
     if (score >= 80)
-      return <Badge className="bg-green-100 text-green-800">매우 높음</Badge>;
+      return <Badge className="bg-green-100 text-green-800">Very High</Badge>;
     if (score >= 60)
-      return <Badge className="bg-blue-100 text-blue-800">높음</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800">High</Badge>;
     if (score >= 40)
-      return <Badge className="bg-yellow-100 text-yellow-800">보통</Badge>;
-    return <Badge className="bg-red-100 text-red-800">낮음</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800">Moderate</Badge>;
+    return <Badge className="bg-red-100 text-red-800">Low</Badge>;
   };
 
   return (
@@ -146,12 +146,12 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wand2 className="w-5 h-5" />
-            변환할 텍스트
+            Text to Convert
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="스타일을 변환할 텍스트를 입력하세요...\n당신의 프로필에 맞춰 새로운 스타일로 변환해 드립니다."
+            placeholder="Enter the text to convert the style...\nWe will convert it to a new style that matches your profile."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="min-h-[150px]"
@@ -161,7 +161,7 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
             disabled={convertMutation.isPending}
             className="w-full"
           >
-            {convertMutation.isPending ? "변환 중..." : "스타일 변환"}
+            {convertMutation.isPending ? "Converting..." : "Convert Style"}
           </Button>
         </CardContent>
       </Card>
@@ -174,7 +174,7 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sky-700">
                 <CheckCircle className="w-5 h-5" />
-                변환된 텍스트
+                Converted Text
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -191,7 +191,7 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
                   className="hover:bg-gradient-to-r hover:from-sky-50 hover:to-blue-50 hover:border-sky-300 transition-all duration-300"
                 >
                   <Copy className="w-4 h-4 mr-2" />
-                  복사하기
+                  Copy
                 </Button>
               </div>
             </CardContent>
@@ -203,7 +203,7 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
               <CardContent className="p-6 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Zap className="w-5 h-5 text-red-600" />
-                  <h3 className="font-semibold">직접성</h3>
+                  <h3 className="font-semibold">Directness</h3>
                 </div>
                 <div
                   className={`text-3xl font-bold ${getScoreColor(
@@ -221,7 +221,7 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
               <CardContent className="p-6 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Feather className="w-5 h-5 text-green-600" />
-                  <h3 className="font-semibold">부드러움</h3>
+                  <h3 className="font-semibold">Softness</h3>
                 </div>
                 <div
                   className={`text-3xl font-bold ${getScoreColor(
@@ -239,7 +239,7 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
               <CardContent className="p-6 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Hand className="w-5 h-5 text-blue-600" />
-                  <h3 className="font-semibold">정중함</h3>
+                  <h3 className="font-semibold">Politeness</h3>
                 </div>
                 <div
                   className={`text-3xl font-bold ${getScoreColor(
@@ -260,7 +260,7 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Lightbulb className="w-5 h-5" />
-                  스타일 개선 제안 ({analysis.suggestions.length}개)
+                  Style Improvement Suggestions ({analysis.suggestions.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -277,19 +277,19 @@ export default function StyleConverter({ userProfile }: StyleConverterProps) {
                       </div>
                       <div className="space-y-2">
                         <div>
-                          <span className="text-sm text-gray-600">원문: </span>
+                          <span className="text-sm text-gray-600">Original: </span>
                           <span className="text-gray-800">
                             {suggestion.original}
                           </span>
                         </div>
                         <div>
-                          <span className="text-sm text-gray-600">제안: </span>
+                          <span className="text-sm text-gray-600">Suggestion: </span>
                           <span className="text-green-600 font-medium">
                             {suggestion.suggestion}
                           </span>
                         </div>
                         <div>
-                          <span className="text-sm text-gray-600">이유: </span>
+                          <span className="text-sm text-gray-600">Reason: </span>
                           <span className="text-gray-700">
                             {suggestion.reason}
                           </span>

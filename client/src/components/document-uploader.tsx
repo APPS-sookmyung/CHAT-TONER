@@ -27,20 +27,20 @@ export default function DocumentUploader() {
             if (error.code === "file-too-large") {
               toast({
                 variant: "destructive",
-                title: "파일 크기 초과",
-                description: `'${file.name}' 파일이 너무 큽니다. (최대 10MB)`,
+                title: "File size exceeded",
+                description: `File '${file.name}' is too large. (Max 10MB)`,
               });
             } else if (error.code === "file-invalid-type") {
               toast({
                 variant: "destructive",
-                title: "지원하지 않는 파일 형식",
-                description: `'${file.name}' 파일은 지원되지 않는 형식입니다.`,
+                title: "Unsupported file type",
+                description: `File '${file.name}' is an unsupported format.`,
               });
             } else {
               toast({
                 variant: "destructive",
-                title: "파일 오류",
-                description: `'${file.name}' 파일을 추가할 수 없습니다.`,
+                title: "File error",
+                description: `File '${file.name}' could not be added.`,
               });
             }
           });
@@ -71,8 +71,8 @@ export default function DocumentUploader() {
     if (files.length === 0) {
       toast({
         variant: "destructive",
-        title: "파일 없음",
-        description: "업로드할 파일을 먼저 추가해주세요.",
+        title: "No file",
+        description: "Please add a file to upload first.",
       });
       return;
     }
@@ -91,12 +91,12 @@ export default function DocumentUploader() {
 
       if (response.ok) {
         toast({
-          title: "업로드 성공",
-          description: `${files.length}개의 파일이 성공적으로 업로드되었습니다.`,
+          title: "Upload successful",
+          description: `${files.length} files have been successfully uploaded.`,
         });
         setFiles([]);
       } else {
-        let errorMessage = "파일 업로드 중 오류가 발생했습니다.";
+        let errorMessage = "An error occurred while uploading the file.";
         try {
           const contentType = response.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -110,15 +110,15 @@ export default function DocumentUploader() {
         }
         toast({
           variant: "destructive",
-          title: "업로드 실패",
+          title: "Upload failed",
           description: errorMessage,
         });
       }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "네트워크 오류",
-        description: "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.",
+        title: "Network error",
+        description: "Could not connect to the server. Please try again later.",
       });
     } finally {
       setIsUploading(false);
@@ -128,7 +128,7 @@ export default function DocumentUploader() {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>문서 업로드</CardTitle>
+        <CardTitle>Document Upload</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div
@@ -143,16 +143,16 @@ export default function DocumentUploader() {
           <input {...getInputProps()} />
           <Upload className="w-12 h-12 text-gray-400 mb-4" />
           <p className="text-center text-gray-500">
-            여기에 파일을 드래그 앤 드롭하거나 클릭하여 파일을 선택하세요.
+            Drag and drop files here, or click to select files.
           </p>
           <p className="text-xs text-gray-400 mt-2">
-            (PDF, TXT, MD, DOCX 파일 지원, 최대 10MB)
+            (Supports PDF, TXT, MD, DOCX, Max 10MB)
           </p>
         </div>
 
         {files.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-medium">업로드할 파일:</h3>
+            <h3 className="font-medium">Files to upload:</h3>
             <ul className="space-y-2">
               {files.map((file, index) => (
                 <li
@@ -188,10 +188,10 @@ export default function DocumentUploader() {
           {isUploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              업로드 중...
+              Uploading...
             </>
           ) : (
-            `파일 ${files.length}개 업로드`
+            `Upload ${files.length} files`
           )}
         </Button>
       </CardContent>

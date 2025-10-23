@@ -26,39 +26,39 @@ export default function ResultsSummary({
           <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="text-success w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">프로필 수집 완료!</h2>
-          <p className="text-gray-600">당신만의 말투 스타일이 성공적으로 분석되었습니다.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile Collection Complete!</h2>
+          <p className="text-gray-600">Your unique tone and style have been successfully analyzed.</p>
         </div>
         
         <div className="bg-gray-50 rounded-xl p-6 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-4">수집된 데이터 요약</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">Summary of Collected Data</h3>
           <div className="grid md:grid-cols-2 gap-4 text-left">
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">응답 완료율:</span>
+              <span className="text-sm text-gray-600">Response Completion Rate:</span>
               <span className="font-medium text-success">{completionRate}%</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">선호 정중함:</span>
+              <span className="text-sm text-gray-600">Preferred Formality:</span>
               <span className="font-medium">{analysis.formalityDescription}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">선호 친근함:</span>
+              <span className="text-sm text-gray-600">Preferred Friendliness:</span>
               <span className="font-medium">{analysis.friendlinessDescription}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">감정 표현:</span>
+              <span className="text-sm text-gray-600">Emotional Expression:</span>
               <span className="font-medium">{analysis.emotionDescription}</span>
             </div>
             {analysis.usesEmoticons && (
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">특별 선호:</span>
-                <span className="font-medium">이모티콘 사용</span>
+                <span className="text-sm text-gray-600">Special Preference:</span>
+                <span className="font-medium">Use of Emoticons</span>
               </div>
             )}
             {analysis.usesAbbreviations && (
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">언어 특성:</span>
-                <span className="font-medium">줄임말 선호</span>
+                <span className="text-sm text-gray-600">Linguistic Characteristics:</span>
+                <span className="font-medium">Preference for Abbreviations</span>
               </div>
             )}
           </div>
@@ -71,14 +71,14 @@ export default function ResultsSummary({
             className="flex items-center space-x-2"
           >
             <Download className="w-4 h-4" />
-            <span>데이터 내보내기</span>
+            <span>Export Data</span>
           </Button>
           <Button
             onClick={onStartConversion}
             className="flex items-center space-x-2 px-8"
           >
             <Sparkles className="w-4 h-4" />
-            <span>텍스트 변환 시작</span>
+            <span>Start Text Conversion</span>
           </Button>
         </div>
       </CardContent>
