@@ -25,7 +25,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from api import feedback
 
 FRONT_ORIGINS = [
-    "https://client-184664486594.asia-northeast3.run.app",
+    "https://client-3yj2y7svbq-du.a.run.app",
     "http://localhost:5173",
 ]
 
