@@ -82,7 +82,7 @@ export default function OutputVersion({
             size="sm"
             onClick={handleLike}
             className={`p-1 ${feedback === 'like' ? 'text-success' : 'text-gray-400 hover:text-success'}`}
-            title="좋아요"
+            title="Like"
           >
             <ThumbsUp className="w-4 h-4" />
           </Button>
@@ -91,7 +91,7 @@ export default function OutputVersion({
             size="sm"
             onClick={handleDislike}
             className={`p-1 ${feedback === 'dislike' ? 'text-error' : 'text-gray-400 hover:text-error'}`}
-            title="별로예요"
+            title="Dislike"
           >
             <ThumbsDown className="w-4 h-4" />
           </Button>
@@ -100,7 +100,7 @@ export default function OutputVersion({
             size="sm"
             onClick={handleCopy}
             className="p-1 text-gray-400 hover:text-primary"
-            title="복사"
+            title="Copy"
           >
             {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
           </Button>

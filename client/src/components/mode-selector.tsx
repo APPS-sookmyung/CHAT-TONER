@@ -17,10 +17,10 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-          어떤 기능을 사용하시겠습니까?
+          Which feature would you like to use?
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-300">
-          목적에 맞는 도구를 선택해주세요
+          Please select the right tool for your purpose
         </p>
       </div>
 
@@ -36,9 +36,9 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
                 <Wand2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <CardTitle className="text-xl">스타일 변환</CardTitle>
+                <CardTitle className="text-xl">Style Transformation</CardTitle>
                 <CardDescription className="text-sm text-gray-500">
-                  말투나 톤을 바꾸고 싶을 때
+                  When you want to change the tone or style of your speech
                 </CardDescription>
               </div>
             </div>
@@ -46,15 +46,15 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
 
           <CardContent className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              이미 작성된 텍스트의 말투나 톤을 상황에 맞게 변환합니다.
+              Transforms the tone or style of already written text to suit the situation.
             </p>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">이런 경우에 사용하세요:</h4>
+              <h4 className="font-medium text-sm">Use in cases like these:</h4>
               <ul className="text-xs text-gray-500 space-y-1">
-                <li>• 캐주얼한 메시지를 정중하게 바꾸고 싶을 때</li>
-                <li>• 딱딱한 문서를 친근하게 만들고 싶을 때</li>
-                <li>• 상황에 맞는 말투로 조정하고 싶을 때</li>
+                <li>• When you want to change a casual message to a polite one</li>
+                <li>• When you want to make a stiff document more friendly</li>
+                <li>• When you want to adjust your tone to the situation</li>
               </ul>
             </div>
 
@@ -65,7 +65,7 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
                 onModeSelect("transform");
               }}
             >
-              스타일 변환하기
+              Transform Style
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -82,9 +82,9 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
                 <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <CardTitle className="text-xl">품질 검증</CardTitle>
+                <CardTitle className="text-xl">Quality Validation</CardTitle>
                 <CardDescription className="text-sm text-gray-500">
-                  완성된 글이 적절한지 확인하고 싶을 때
+                  When you want to check if the completed text is appropriate
                 </CardDescription>
               </div>
             </div>
@@ -92,15 +92,15 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
 
           <CardContent className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              완성된 텍스트가 맥락에 적절한지 분석하고 개선점을 제안합니다.
+              Analyzes whether the completed text is appropriate for the context and suggests improvements.
             </p>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">이런 경우에 사용하세요:</h4>
+              <h4 className="font-medium text-sm">Use in cases like these:</h4>
               <ul className="text-xs text-gray-500 space-y-1">
-                <li>• 보고서나 공문의 적절성을 확인하고 싶을 때</li>
-                <li>• 맞춤법이나 문법을 점검하고 싶을 때</li>
-                <li>• 더 나은 표현으로 개선하고 싶을 때</li>
+                <li>• When you want to check the appropriateness of a report or official document</li>
+                <li>• When you want to check spelling or grammar</li>
+                <li>• When you want to improve with better expressions</li>
               </ul>
             </div>
 
@@ -111,7 +111,7 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
                 onModeSelect("validate");
               }}
             >
-              품질 검증하기
+              Validate Quality
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -123,16 +123,14 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
           <div className="text-blue-600 dark:text-blue-400 mt-1"></div>
           <div>
             <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-              어떤 도구를 선택해야 할까요?
+              Which tool should I choose?
             </h3>
             <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
               <p>
-                <strong>스타일 변환:</strong> 내용은 좋은데 말투만 바꾸고 싶을
-                때
+                <strong>Style Transformation:</strong> When the content is good but you only want to change the tone
               </p>
               <p>
-                <strong>품질 검증:</strong> 내용 자체를 점검하고 개선하고 싶을
-                때
+                <strong>Quality Validation:</strong> When you want to check and improve the content itself
               </p>
             </div>
           </div>

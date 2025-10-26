@@ -88,15 +88,15 @@ export default function QualityAnalysisResult({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error('최종본 생성에 실패했습니다.');
+      if (!res.ok) throw new Error('Failed to generate final version.');
       return res.json();
     },
     onSuccess: (data) => {
       setFinalText(data.finalText);
-      toast({ title: "성공", description: "최종본이 생성되었습니다." });
+      toast({ title: "Success", description: "The final version has been generated." });
     },
     onError: (error: any) => {
-      toast({ title: "오류", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   });
 
@@ -115,9 +115,9 @@ export default function QualityAnalysisResult({
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="overview">종합</TabsTrigger>
-        <TabsTrigger value="grammar">문법 ({analysisResult.grammarSection.suggestions.length})</TabsTrigger>
-        <TabsTrigger value="protocol">프로토콜 ({analysisResult.protocolSection.suggestions.length})</TabsTrigger>
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="grammar">Grammar ({analysisResult.grammarSection.suggestions.length})</TabsTrigger>
+        <TabsTrigger value="protocol">Protocol ({analysisResult.protocolSection.suggestions.length})</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview">
@@ -169,26 +169,26 @@ function OverviewTab({ analysisResult, onGenerateFinal, isGenerating, finalText 
     if (!finalText) return;
     navigator.clipboard.writeText(finalText);
     setCopied(true);
-    toast({ title: "복사 완료!" });
+    toast({ title: "Copy complete!" });
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <Card>
-      <CardHeader><CardTitle>종합 분석 결과</CardTitle></CardHeader>
+      <CardHeader><CardTitle>Overall Analysis Results</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <ScoreDisplay name="종합 준수도" score={analysisResult.complianceScore} />
-          <ScoreDisplay name="문법" score={analysisResult.grammarScore} />
-          <ScoreDisplay name="격식" score={analysisResult.formalityScore} />
-          <ScoreDisplay name="프로토콜" score={analysisResult.protocolScore} />
+          <ScoreDisplay name="Overall Compliance" score={analysisResult.complianceScore} />
+          <ScoreDisplay name="Grammar" score={analysisResult.grammarScore} />
+          <ScoreDisplay name="Formality" score={analysisResult.formalityScore} />
+          <ScoreDisplay name="Protocol" score={analysisResult.protocolScore} />
         </div>
         <Button onClick={onGenerateFinal} disabled={isGenerating} className="w-full">
-          {isGenerating ? '생성 중...' : '선택한 제안으로 최종본 생성'}
+          {isGenerating ? 'Generating...' : 'Generate final version with selected suggestions'}
         </Button>
         {finalText && (
           <div className="pt-4 space-y-2">
-            <h3 className="font-semibold">최종 생성된 텍스트:</h3>
+            <h3 className="font-semibold">Final generated text:</h3>
             <div className="border rounded-md p-4 bg-gray-50 relative">
               <p className="text-gray-800 whitespace-pre-wrap">{finalText}</p>
               <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={handleCopy}>
@@ -212,17 +212,17 @@ function ScoreDisplay({ name, score }: { name: string, score: number }) {
 }
 
 function SuggestionsTab({ section, selectedIds, onSelect, onApplySuggestion, targetAudience, context, sessionId, userId, companyId }: SuggestionsTabProps) {
-  const category = section.suggestions[0]?.category || '제안';
+  const category = section.suggestions[0]?.category || 'Suggestion';
   
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
             <CardTitle className="flex items-center gap-2">
-                {category === '문법' ? <FileText /> : <Wand2 />}
-                {category} 상세
+                {category === 'Grammar' ? <FileText /> : <Wand2 />}
+                {category} Details
             </CardTitle>
-            <p>점수: <span className="font-bold text-blue-600">{Math.round(section.score)}</span></p>
+            <p>Score: <span className="font-bold text-blue-600">{Math.round(section.score)}</span></p>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -242,7 +242,7 @@ function SuggestionsTab({ section, selectedIds, onSelect, onApplySuggestion, tar
             />
           ))
         ) : (
-          <p className="text-center text-gray-500 py-8">제안할 내용이 없습니다.</p>
+          <p className="text-center text-gray-500 py-8">There are no suggestions.</p>
         )}
       </CardContent>
     </Card>
@@ -254,7 +254,7 @@ function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, c
   const feedbackMutation = useMutation({
     mutationFn: async (data: { feedback_value: 'good' | 'bad' }) => {
         if (!userId || !companyId) {
-          toast({ title: "오류", description: "사용자 또는 회사 ID가 없어 피드백을 보낼 수 없습니다.", variant: "destructive" });
+          toast({ title: "Error", description: "Cannot send feedback because user or company ID is missing.", variant: "destructive" });
           return;
         }
 
@@ -264,7 +264,7 @@ function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, c
             session_id: sessionId,
             original_text: item.original,
             suggested_text: item.suggestion,
-            feedback_type: item.category === '문법' ? 'grammar' : 'protocol',
+            feedback_type: item.category === 'Grammar' ? 'grammar' : 'protocol',
             feedback_value: data.feedback_value,
             target_audience: targetAudience,
             context: context,
@@ -276,14 +276,14 @@ function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, c
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(feedbackData),
         });
-        if (!res.ok) throw new Error('피드백 제출에 실패했습니다.');
+        if (!res.ok) throw new Error('Failed to submit feedback.');
         return res.json();
     },
     onSuccess: () => {
-        toast({ title: "피드백이 제출되었습니다.", description: "소중한 의견 감사합니다." });
+        toast({ title: "Feedback has been submitted.", description: "Thank you for your valuable feedback." });
     },
     onError: (error: any) => {
-        toast({ title: "오류", description: error.message, variant: "destructive" });
+        toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   });
 
@@ -292,11 +292,11 @@ function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, c
       <div className="flex items-start justify-between">
         <div className="space-y-2 flex-1">
             <div>
-                <span className="text-xs text-gray-500">원문: </span>
+                <span className="text-xs text-gray-500">Original: </span>
                 <span className="text-gray-700 line-through">{item.original}</span>
             </div>
             <div>
-                <span className="text-xs text-gray-500">제안: </span>
+                <span className="text-xs text-gray-500">Suggestion: </span>
                 <span className="text-blue-600 font-medium">{item.suggestion}</span>
             </div>
         </div>
@@ -308,7 +308,7 @@ function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, c
             className={isSelected ? 'text-blue-600 border-blue-400' : ''}
           >
             <Check className="w-4 h-4 mr-2" />
-            {isSelected ? '선택됨' : '선택'}
+            {isSelected ? 'Selected' : 'Select'}
           </Button>
           <Button variant="ghost" size="icon" onClick={() => feedbackMutation.mutate({ feedback_value: 'good' })}>
             <ThumbsUp className="w-4 h-4 text-gray-500 hover:text-green-600" />
@@ -320,7 +320,7 @@ function SuggestionItem({ item, isSelected, onSelect, onApply, targetAudience, c
       </div>
       <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded-md">
         <Lightbulb className="w-4 h-4 inline-block mr-2 text-yellow-500" />
-        <strong>이유:</strong> {item.reason}
+        <strong>Reason:</strong> {item.reason}
       </div>
     </div>
   );

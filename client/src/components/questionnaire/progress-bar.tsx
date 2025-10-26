@@ -13,8 +13,8 @@ export default function ProgressBar({ currentQuestion, totalQuestions, progress 
       <CardContent className="pt-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">말투 프로필 수집</h2>
-            <p className="text-sm text-gray-600">당신만의 개성있는 말투를 분석해드려요</p>
+            <h2 className="text-lg font-semibold text-gray-900">Tone Profile Collection</h2>
+            <p className="text-sm text-gray-600">We analyze your unique tone of voice</p>
           </div>
           <div className="text-right">
             <span className="text-2xl font-bold text-blue-600">{currentQuestion}</span>
@@ -26,8 +26,8 @@ export default function ProgressBar({ currentQuestion, totalQuestions, progress 
         <div className="space-y-2">
           <Progress value={progress} size="lg" variant="primary" />
           <div className="flex justify-between text-sm text-gray-500">
-            <span>시작</span>
-            <span>완료</span>
+            <span>Start</span>
+            <span>Complete</span>
           </div>
         </div>
       </CardContent>

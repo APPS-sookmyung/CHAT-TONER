@@ -84,7 +84,7 @@ export default function QuestionCard({
             {question.allowMultiple && (
               <div className="flex items-center space-x-1 text-gray-400">
                 <Info className="w-4 h-4" />
-                <span className="text-xs">복수 선택 가능</span>
+                <span className="text-xs">Multiple selections possible</span>
               </div>
             )}
           </div>
@@ -94,7 +94,7 @@ export default function QuestionCard({
           <p className="text-gray-600">{question.description}</p>
         </div>
 
-        {/* 답 옵션들 */}
+        {/* Answer Options */}
         <div className="mb-6 space-y-3">
           {question.allowMultiple ? (
             // Multiple selection
@@ -165,13 +165,13 @@ export default function QuestionCard({
             <div className="flex items-center mb-2 space-x-2">
               <Plus className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium text-gray-700">
-                직접 입력
+                Direct Input
               </span>
             </div>
             <Input
               value={localCustomInput}
               onChange={(e) => handleCustomInputChange(e.target.value)}
-              placeholder="자주 사용하는 다른 표현이 있나요?"
+              placeholder="Are there any other expressions you use often?"
               className="border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
@@ -185,18 +185,18 @@ export default function QuestionCard({
             className="flex items-center space-x-2"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>이전</span>
+            <span>Previous</span>
           </Button>
 
           <Button
             onClick={() => {
-              console.log("버튼 클릭됨:", isLastQuestion ? "완료" : "다음");
+              console.log("Button clicked:", isLastQuestion ? "Complete" : "Next");
               onNext();
             }}
             disabled={false}
             className="flex items-center px-8 space-x-2"
           >
-            <span>{isLastQuestion ? "완료" : "다음"}</span>
+            <span>{isLastQuestion ? "Complete" : "Next"}</span>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>

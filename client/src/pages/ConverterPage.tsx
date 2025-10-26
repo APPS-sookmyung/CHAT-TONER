@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import type { UserProfile } from '@shared/schema';
-import ProfileSummary from '@/components/converter/profile-summary';
-import StyleConverter from '@/components/converter/style-converter';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import type { UserProfile } from "@shared/schema";
+import ProfileSummary from "@/components/converter/profile-summary";
+import StyleConverter from "@/components/converter/style-converter";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from 'lucide-react';
+import { Terminal } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 
 export default function ConverterPage() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,23 +27,29 @@ export default function ConverterPage() {
   }, []);
 
   if (isLoading) {
-    return <div className="text-center p-8">Loading profile...</div>;
+    return <div className="p-8 text-center">Loading profile...</div>;
   }
 
   if (!userProfile) {
     return (
-        <div className="max-w-2xl mx-auto mt-16 text-center">
-            <Alert>
-                <Terminal className="h-4 w-4" />
-                <AlertTitle>프로필을 찾을 수 없습니다!</AlertTitle>
-                <AlertDescription>
-                    <p>스타일 변환기를 사용하려면, 먼저 나만의 말투 프로필을 정의해야 합니다.</p>
-                    <Button onClick={() => setLocation('/style-definition')} className="mt-4">
-                        스타일 정의하러 가기
-                    </Button>
-                </AlertDescription>
-            </Alert>
-        </div>
+      <div className="max-w-2xl mx-auto mt-16 text-center">
+        <Alert>
+          <Terminal className="w-4 h-4" />
+          <AlertTitle>Profile not found!</AlertTitle>
+          <AlertDescription>
+            <p>
+              To use the style converter, you must first define your own tone
+              profile.
+            </p>
+            <Button
+              onClick={() => navigate(ROUTES.QUESTIONNAIRE)}
+              className="mt-4"
+            >
+              Go to Style Definition
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 

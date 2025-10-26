@@ -31,26 +31,26 @@ export default function WelcomeModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5 text-[#00C4B7]" />
-              프로필이 있으시군요!
+              You have a profile!
             </DialogTitle>
             <DialogDescription className="text-base">
-              기존에 설정한 말투 프로필을 발견했습니다.
+              We found your previously configured tone profile.
               <br />
               <span className="text-sm text-gray-500">
-                프로필을 수정하거나 그대로 사용하실 수 있습니다.
+                You can edit your profile or use it as is.
               </span>
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 mt-4">
             <Button onClick={onStartQuestionnaire} className="w-full">
-              프로필 수정하기 (설문)
+              Edit Profile (Survey)
             </Button>
             <Button
               variant="outline"
               onClick={onStartUpload}
               className="w-full"
             >
-              프로필 수정하기 (문서)
+              Edit Profile (Document)
             </Button>
           </div>
         </DialogContent>
@@ -65,11 +65,10 @@ export default function WelcomeModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-[#00C4B7]" />
-            환영합니다! 말투 프로필 만들기
+            Welcome! Create your tone profile
           </DialogTitle>
           <DialogDescription className="pt-2 text-base">
-            기업의 정체성을 담은 말투 프로필을 만들어 보세요. 두 가지 방법 중
-            하나를 선택할 수 있습니다.
+            Create a tone profile that reflects your company's identity. You can choose one of two methods.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
@@ -78,9 +77,9 @@ export default function WelcomeModal({
             className="flex flex-col items-start justify-start w-full h-auto gap-2 p-4"
             onClick={onStartQuestionnaire}
           >
-            <div className="text-lg font-bold">설문조사로 시작</div>
+            <div className="text-lg font-bold">Start with a survey</div>
             <p className="text-sm text-left text-gray-500 whitespace-normal">
-              몇 가지 질문에 답변하여 기업의 톤앤매너를 정의합니다.
+              Define your company's tone and manner by answering a few questions.
             </p>
           </Button>
           <Button
@@ -88,9 +87,9 @@ export default function WelcomeModal({
             className="flex flex-col items-start justify-start w-full h-auto gap-2 p-4"
             onClick={onStartUpload}
           >
-            <div className="text-lg font-bold">문서 업로드로 시작</div>
+            <div className="text-lg font-bold">Start with document upload</div>
             <p className="text-sm text-left text-gray-500 whitespace-normal">
-              기존 문서를 업로드하여 AI가 톤앤매너를 자동으로 학습합니다.
+              Upload existing documents and the AI will automatically learn the tone and manner.
             </p>
           </Button>
         </div>
