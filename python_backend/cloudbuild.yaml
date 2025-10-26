@@ -47,17 +47,17 @@ steps:
       - '--port'
       - '8080'
       - '--memory'
-      - '2Gi'
+      - '512Mi'
       - '--cpu'
-      - '2'
+      - '1'
       - '--timeout'
-      - '300'
+      - '60'
       - '--concurrency'
       - '80'
       - '--min-instances'
       - '0'
       - '--max-instances'
-      - '10'
+      - '3'
       - '--add-cloudsql-instances'
       - 'chattoner-project:asia-northeast3:chattoner'
       - '--vpc-connector'
@@ -78,6 +78,6 @@ timeout: '1200s'
 
 # Build options
 options:
-  machineType: 'E2_HIGHCPU_8'
-  diskSizeGb: 100
+  machineType: 'E2_HIGHCPU_4'
+  diskSizeGb: 50
   logging: CLOUD_LOGGING_ONLY
