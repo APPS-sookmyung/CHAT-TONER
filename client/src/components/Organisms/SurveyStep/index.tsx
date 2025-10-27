@@ -86,24 +86,24 @@ export const SurveyStep = ({
             <Button variant="secondary" size="sm" onClick={onPrev}>
               Previous
             </Button>
-            <div
+
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => {
-                if (isNextDisabled)
+                if (isNextDisabled) {
                   toast({
-                    title: "Please answer the current question.",
+                    title: "Please provide an answer before proceeding.",
                     variant: "destructive",
                   });
+                } else {
+                  onNext();
+                }
               }}
+              disabled={isNextDisabled}
             >
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={onNext}
-                disabled={isNextDisabled}
-              >
-                Next
-              </Button>
-            </div>
+              Next
+            </Button>
           </div>
         </div>
       </Card>

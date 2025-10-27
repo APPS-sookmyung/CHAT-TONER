@@ -66,10 +66,16 @@ export default function SurveyPage() {
       // Add company_name from responses to the UserProfile data
       const finalProfileData: UserProfile = {
         ...data,
-        company_name: responses['company_name'] || "N/A", // Assuming 'company_name' is the ID for the company name question
+        company_name: responses["company_name"] || "N/A", // Assuming 'company_name' is the ID for the company name question
       };
-      localStorage.setItem("chatToner_profile", JSON.stringify(finalProfileData));
-      toast({ title: "Success", description: "Your profile has been created." });
+      localStorage.setItem(
+        "chatToner_profile",
+        JSON.stringify(finalProfileData)
+      );
+      toast({
+        title: "Success",
+        description: "Your profile has been created.",
+      });
       navigate("/results");
     },
     onError: (error: Error) => {
@@ -100,24 +106,18 @@ export default function SurveyPage() {
     }
   };
 
+  const currentAnswer = rawQuestion ? (responses[rawQuestion.id] ?? "") : "";
+
+  const isNextDisabled = useMemo(() => {
+    if (!questionForStep) return true;
+    if (questionForStep.type === "text") return !currentAnswer.trim();
+    if (questionForStep.type === "choice") return !currentAnswer;
+    return false;
+  }, [currentAnswer, questionForStep]);
+
   if (!questionForStep) {
     return <div>Question not found for this step.</div>;
   }
-
-  const currentAnswer = responses[rawQuestion.id] || "";
-
-  // Calculate if the Next button should be disabled
-  const isNextDisabled = useMemo(() => {
-    // If the question is a text type, check if the answer is not empty
-    if (questionForStep.type === 'text') {
-      return !currentAnswer.trim();
-    }
-    // If the question is a choice type, check if an answer has been selected
-    if (questionForStep.type === 'choice') {
-      return !currentAnswer; // currentAnswer will be a string (value of selected option)
-    }
-    return false; // Default to not disabled
-  }, [currentAnswer, questionForStep.type]);
 
   return (
     <div className="flex justify-center py-8">

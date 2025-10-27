@@ -5,14 +5,12 @@ const meta: Meta<typeof Header> = {
   title: "Organisms/Header",
   component: Header,
   tags: ["autodocs"],
-  argTypes: {
-    isModalOpen: {
-      control: "boolean",
-      description: "모달이 열린 상태인지 여부",
-    },
-    onProfileClick: {
-      action: "onProfileClick",
-      description: "프로필 아이콘 클릭 이벤트 핸들러",
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Header component with integrated profile management. Manages modal state internally and handles user profile loading from localStorage.",
+      },
     },
   },
 };
@@ -20,14 +18,24 @@ const meta: Meta<typeof Header> = {
 export default meta;
 type Story = StoryObj<typeof Header>;
 
-export const ModalClosed: Story = {
-  args: {
-    isModalOpen: false,
+export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Default header with profile management functionality. Click the profile icon to toggle the dropdown modal.",
+      },
+    },
   },
 };
 
-export const ModalOpen: Story = {
-  args: {
-    isModalOpen: true,
+export const WithUserProfile: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Header when user profile data is available in localStorage. The profile dropdown will show actual user data.",
+      },
+    },
   },
 };

@@ -4,6 +4,7 @@ import { ChipGroup } from "@/components/Molecules/Chipgroup";
 import { Modal } from "@/components/Molecules/Modal";
 import { Button } from "@/components/Atoms/Button";
 import type { UserProfile } from "@shared/schema";
+import { PATH } from "@/constants/paths";
 
 export default function ChoicePage() {
   const navigate = useNavigate();
@@ -24,12 +25,12 @@ export default function ChoicePage() {
 
   const handleGoToSurvey = () => {
     setIsProfileModalOpen(false);
-    navigate("/survey/1"); // Navigate to the first step of the survey
+    navigate(PATH.SURVEY(1)); // Navigate to the first step of the survey
   };
 
   const handleGoToUpload = () => {
     setIsProfileModalOpen(false);
-    navigate("/upload"); // Navigate to the upload page
+    navigate(PATH.UPLOAD); // Navigate to the upload page
   };
 
   // Original page data...
@@ -66,7 +67,7 @@ export default function ChoicePage() {
         </div>
         <div className="flex flex-col gap-8">
           <Link
-            to="/transform-style"
+            to={PATH.TRANSFORM_STYLE}
             className="block transition-transform duration-200 ease-in-out hover:scale-105"
           >
             <ChipGroup
@@ -77,7 +78,7 @@ export default function ChoicePage() {
             />
           </Link>
           <Link
-            to="/analyze-quality"
+            to={PATH.ANALYZE_QUALITY}
             className="block transition-transform duration-200 ease-in-out hover:scale-105"
           >
             <ChipGroup

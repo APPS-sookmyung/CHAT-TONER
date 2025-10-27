@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Profile from "@/assets/icons/profile.svg?react";
 import ProfileDropdown from "@/components/Organisms/ProfileDropdown";
 import type { UserProfile } from "@shared/schema";
+import { PATH } from "@/constants/paths";
 
 export const Header = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null); // Add userProfile state
 
@@ -15,7 +18,7 @@ export const Header = () => {
   }, []);
 
   const handleHomeClick = () => {
-    window.location.href = "/";
+    navigate(PATH.HOME);
   };
 
   const handleProfileClick = () => {
