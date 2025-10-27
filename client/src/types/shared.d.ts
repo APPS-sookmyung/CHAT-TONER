@@ -4,6 +4,7 @@ declare module "@shared/schema" {
   // =======================================
   export type UserProfile = {
     id?: number;
+    company_name?: string;
     baseFormalityLevel: number;
     baseFriendlinessLevel: number;
     baseEmotionLevel: number;
@@ -14,6 +15,7 @@ declare module "@shared/schema" {
     sessionDirectnessLevel?: number;
     completedAt?: Date;
     responses?: UserResponses;
+    communication_style?: string;
   };
 
   export type UserResponses = {
