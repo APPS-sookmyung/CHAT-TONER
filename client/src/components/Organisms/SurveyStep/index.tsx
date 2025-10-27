@@ -3,6 +3,7 @@ import { ProgressBar } from "@/components/Atoms/ProgressBar";
 import { Input } from "@/components/Atoms/Input";
 import { ChoiceGroup } from "@/components/Molecules/ChoiceGroup";
 import { Button } from "@/components/Atoms/Button";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Question {
   number: number;
@@ -21,6 +22,7 @@ interface SurveyStepProps {
   onAnswerChange: (answer: string) => void;
   onNext: () => void;
   onPrev: () => void;
+  isNextDisabled: boolean;
 }
 
 export const SurveyStep = ({
@@ -30,7 +32,10 @@ export const SurveyStep = ({
   onAnswerChange,
   onNext,
   onPrev,
+  isNextDisabled,
 }: SurveyStepProps) => {
+  const { toast } = useToast();
+
   return (
     <div className="w-[880px] space-y-[39px]">
       <Card variant="secondary" size="small">
@@ -81,9 +86,24 @@ export const SurveyStep = ({
             <Button variant="secondary" size="sm" onClick={onPrev}>
               Previous
             </Button>
-            <Button variant="primary" size="sm" onClick={onNext}>
-              Next
-            </Button>
+            <div
+              onClick={() => {
+                if (isNextDisabled)
+                  toast({
+                    title: "Please answer the current question.",
+                    variant: "destructive",
+                  });
+              }}
+            >
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={onNext}
+                disabled={isNextDisabled}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
       </Card>

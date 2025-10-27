@@ -44,6 +44,8 @@ export default function SurveyPage() {
       const userId = getOrSetUserId();
       const tenantId = "default-tenant"; // Using a fixed tenant ID as discussed
 
+      // This endpoint is defined in `python_backend/api/v1/endpoints/surveys.py`.
+      // It uses the `run_profile_pipeline` to process the survey and generate a style profile.
       const response = await fetch("/api/onboarding-intake/responses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,7 +63,12 @@ export default function SurveyPage() {
       return response.json();
     },
     onSuccess: (data) => {
-      localStorage.setItem("chatToner_profile", JSON.stringify(data));
+      // Add company_name from responses to the UserProfile data
+      const finalProfileData: UserProfile = {
+        ...data,
+        company_name: responses['company_name'] || "N/A", // Assuming 'company_name' is the ID for the company name question
+      };
+      localStorage.setItem("chatToner_profile", JSON.stringify(finalProfileData));
       toast({ title: "Success", description: "Your profile has been created." });
       navigate("/results");
     },
@@ -99,6 +106,19 @@ export default function SurveyPage() {
 
   const currentAnswer = responses[rawQuestion.id] || "";
 
+  // Calculate if the Next button should be disabled
+  const isNextDisabled = useMemo(() => {
+    // If the question is a text type, check if the answer is not empty
+    if (questionForStep.type === 'text') {
+      return !currentAnswer.trim();
+    }
+    // If the question is a choice type, check if an answer has been selected
+    if (questionForStep.type === 'choice') {
+      return !currentAnswer; // currentAnswer will be a string (value of selected option)
+    }
+    return false; // Default to not disabled
+  }, [currentAnswer, questionForStep.type]);
+
   return (
     <div className="flex justify-center py-8">
       <SurveyStep
@@ -108,6 +128,7 @@ export default function SurveyPage() {
         onAnswerChange={handleAnswerChange}
         onNext={handleNext}
         onPrev={handlePrev}
+        isNextDisabled={isNextDisabled} // Pass the new prop
       />
     </div>
   );
