@@ -1,16 +1,19 @@
+// Backend API base URL for production
+const BACKEND_URL = 'https://chattoner-back-184664486594.asia-northeast3.run.app/api/v1';
+
 export const API = {
-  base: '/api',
-  conversion: '/api/conversion/convert',
+  base: `${BACKEND_URL}`,
+  conversion: `${BACKEND_URL}/conversion/convert`,
   finetune: {
-    convert: '/api/finetune/convert',
+    convert: `${BACKEND_URL}/finetune/convert`,
   },
   rag: {
-    ask: '/api/rag/ask',
-    analyzeGrammar: '/api/rag/analyze-grammar',
-    suggestExpressions: '/api/rag/suggest-expressions',
+    ask: `${BACKEND_URL}/rag/ask`,
+    analyzeGrammar: `${BACKEND_URL}/rag/analyze-grammar`,
+    suggestExpressions: `${BACKEND_URL}/rag/suggest-expressions`,
   },
   quality: {
-    analyze: '/api/quality/analyze',
+    analyze: `${BACKEND_URL}/quality/analyze`,
   },
-  profile: (id: string) => `/api/profile/${id}`,
+  profile: (id: string) => `${BACKEND_URL}/profile/${id}`,
 } as const;
