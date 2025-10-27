@@ -3,81 +3,81 @@
 
 steps:
   # Build Docker image
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: "gcr.io/cloud-builders/docker"
     args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA'
-      - '-f'
-      - 'Dockerfile'
-      - '.'
-    dir: 'python_backend'
-    id: 'build-backend-image'
+      - "build"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/chattoner-back:latest"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA"
+      - "-f"
+      - "Dockerfile"
+      - "."
+    dir: "python_backend"
+    id: "build-backend-image"
 
   # Push latest tag
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: "gcr.io/cloud-builders/docker"
     args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
-    id: 'push-backend-latest'
+      - "push"
+      - "gcr.io/$PROJECT_ID/chattoner-back:latest"
+    id: "push-backend-latest"
 
   # Push commit SHA tag
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: "gcr.io/cloud-builders/docker"
     args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA'
-    id: 'push-backend-sha'
+      - "push"
+      - "gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA"
+    id: "push-backend-sha"
 
   # Deploy to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     args:
-      - 'gcloud'
-      - 'run'
-      - 'deploy'
-      - 'chattoner-back'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
-      - '--region'
-      - 'asia-northeast3'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '8080'
-      - '--memory'
-      - '512Mi'
-      - '--cpu'
-      - '1'
-      - '--timeout'
-      - '60'
-      - '--concurrency'
-      - '80'
-      - '--min-instances'
-      - '0'
-      - '--max-instances'
-      - '3'
-      - '--add-cloudsql-instances'
-      - 'chattoner-project:asia-northeast3:chattoner'
-      - '--vpc-connector'
-      - 'run-to-db-connector'
-      - '--vpc-egress'
-      - 'private-ranges-only'
-      - '--update-env-vars'
-      - 'ENVIRONMENT=production,DB_HOST=10.118.192.2,DB_PORT=5432,DB_NAME=chattoner,DB_USER=chattoner-user,DB_PASS=Test123!,DATABASE_URL=postgresql://chattoner-user:Test123%21@10.118.192.2:5432/chattoner'
-    id: 'deploy-backend-cloudrun'
+      - "gcloud"
+      - "run"
+      - "deploy"
+      - "chattoner-back"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/chattoner-back:latest"
+      - "--region"
+      - "asia-northeast3"
+      - "--platform"
+      - "managed"
+      - "--allow-unauthenticated"
+      - "--port"
+      - "8080"
+      - "--memory"
+      - "512Mi"
+      - "--cpu"
+      - "1"
+      - "--timeout"
+      - "180"
+      - "--concurrency"
+      - "80"
+      - "--min-instances"
+      - "0"
+      - "--max-instances"
+      - "3"
+      - "--add-cloudsql-instances"
+      - "chattoner-project:asia-northeast3:chattoner"
+      - "--vpc-connector"
+      - "run-to-db-connector"
+      - "--vpc-egress"
+      - "private-ranges-only"
+      - "--update-env-vars"
+      - "ENVIRONMENT=production,DB_HOST=10.118.192.2,DB_PORT=5432,DB_NAME=chattoner,DB_USER=chattoner-user,DB_PASS=Test123!,DATABASE_URL=postgresql://chattoner-user:Test123%21@10.118.192.2:5432/chattoner"
+    id: "deploy-backend-cloudrun"
 
 # Images to be stored in Container Registry
 images:
-  - 'gcr.io/$PROJECT_ID/chattoner-back:latest'
-  - 'gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA'
+  - "gcr.io/$PROJECT_ID/chattoner-back:latest"
+  - "gcr.io/$PROJECT_ID/chattoner-back:$COMMIT_SHA"
 
 # Build timeout
-timeout: '1200s'
+timeout: "1200s"
 
 # Build options
 options:
-  machineType: 'E2_HIGHCPU_4'
-  diskSizeGb: 50
   logging: CLOUD_LOGGING_ONLY
+  pool: {}
+  dynamicSubstitutions: true
