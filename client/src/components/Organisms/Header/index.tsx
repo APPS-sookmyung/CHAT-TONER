@@ -5,6 +5,10 @@ import ProfileDropdown from "@/components/Organisms/ProfileDropdown";
 export const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const handleHomeClick = () => {
+    window.location.href = "/";
+  };
+
   const handleProfileClick = () => {
     setIsModalOpen(!isModalOpen);
   };
@@ -14,9 +18,12 @@ export const Header = () => {
   };
   return (
     <div className="flex justify-between px-[50px] py-[30px]">
-      <p className="justify-start text-3xl font-medium text-black">
+      <button
+        className="justify-start text-3xl font-medium text-black cursor-pointer"
+        onClick={handleHomeClick}
+      >
         Chat Toner
-      </p>
+      </button>
 
       <div className="relative justify-end">
         <button
