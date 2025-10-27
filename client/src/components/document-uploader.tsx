@@ -1,11 +1,11 @@
-
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, FileText, X, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Revert to ui/card
 import { useToast } from "@/hooks/use-toast";
+import { getOrSetCompanyId } from "@/lib/userId"; // Add this import
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -17,7 +17,8 @@ export default function DocumentUploader() {
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: any[]) => {
       const newFiles = acceptedFiles.filter(
-        (file) => !files.some((f) => f.name === file.name && f.size === file.size)
+        (file) =>
+          !files.some((f) => f.name === file.name && f.size === file.size)
       );
       setFiles((prevFiles) => [...prevFiles, ...newFiles]);
 
@@ -56,9 +57,8 @@ export default function DocumentUploader() {
       "application/pdf": [".pdf"],
       "text/plain": [".txt"],
       "text/markdown": [".md"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
-        ".docx",
-      ],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
     },
     maxSize: MAX_FILE_SIZE,
   });
@@ -79,8 +79,15 @@ export default function DocumentUploader() {
 
     setIsUploading(true);
     const formData = new FormData();
+
+    // Get company_id and document_id
+    const companyId = getOrSetCompanyId();
+    const documentId = files[0].name; // Parse from filename
+
+    formData.append("company_id", companyId);
+    formData.append("document_id", documentId);
     files.forEach((file) => {
-      formData.append("files", file);
+      formData.append("file", file);
     });
 
     try {
@@ -103,10 +110,12 @@ export default function DocumentUploader() {
             const errorData = await response.json();
             errorMessage = errorData.detail || JSON.stringify(errorData);
           } else {
-            errorMessage = await response.text();
+            errorMessage =
+              response.statusText || `HTTP error! status: ${response.status}`;
           }
         } catch (e) {
-          errorMessage = response.statusText || `HTTP error! status: ${response.status}`;
+          errorMessage =
+            response.statusText || `HTTP error! status: ${response.status}`;
         }
         toast({
           variant: "destructive",
@@ -126,7 +135,7 @@ export default function DocumentUploader() {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full ">
       <CardHeader>
         <CardTitle>Document Upload</CardTitle>
       </CardHeader>
@@ -141,11 +150,11 @@ export default function DocumentUploader() {
             }`}
         >
           <input {...getInputProps()} />
-          <Upload className="w-12 h-12 text-gray-400 mb-4" />
+          <Upload className="w-12 h-12 mb-4 text-gray-400" />
           <p className="text-center text-gray-500">
             Drag and drop files here, or click to select files.
           </p>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="mt-2 text-xs text-gray-400">
             (Supports PDF, TXT, MD, DOCX, Max 10MB)
           </p>
         </div>
@@ -187,7 +196,7 @@ export default function DocumentUploader() {
         >
           {isUploading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Uploading...
             </>
           ) : (
