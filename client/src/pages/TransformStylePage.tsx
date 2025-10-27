@@ -76,15 +76,15 @@ export default function TransformStylePage() {
         const result = await api.convertStyle({
           text,
           user_profile: userProfile ? {
-            baseFormalityLevel: userProfile.baseFormalityLevel,
-            baseFriendlinessLevel: userProfile.baseFriendlinessLevel,
-            baseEmotionLevel: userProfile.baseEmotionLevel,
-            baseDirectnessLevel: userProfile.baseDirectnessLevel,
+            baseFormalityLevel: Math.round(userProfile.baseFormalityLevel / 10),
+            baseFriendlinessLevel: Math.round(userProfile.baseFriendlinessLevel / 10),
+            baseEmotionLevel: Math.round(userProfile.baseEmotionLevel / 10),
+            baseDirectnessLevel: Math.round(userProfile.baseDirectnessLevel / 10),
           } : {
-            baseFormalityLevel: 75,
-            baseFriendlinessLevel: 60,
-            baseEmotionLevel: 50,
-            baseDirectnessLevel: 80,
+            baseFormalityLevel: 8,
+            baseFriendlinessLevel: 6,
+            baseEmotionLevel: 5,
+            baseDirectnessLevel: 8,
           },
           context: "general"
         });
