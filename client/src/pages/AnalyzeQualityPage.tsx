@@ -116,8 +116,8 @@ export default function AnalyzeQualityPage() {
           text,
           company_id: "test-company", // You might want to get this from context or props
           user_id: "test-user", // You might want to get this from context or props
-          target_audience: target || "팀동료",
-          context: situation || "보고서",
+          target_audience: target!,
+          context: situation!,
           detailed: true
         });
         
