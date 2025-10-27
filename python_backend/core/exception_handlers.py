@@ -31,11 +31,26 @@ def setup_exception_handlers(app: FastAPI):
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         """요청 검증 예외 핸들러"""
+        def serialize_error_details(errors):
+            """에러 세부사항을 JSON 직렬화 가능하도록 변환"""
+            serializable_errors = []
+            for error in errors:
+                serializable_error = {}
+                for key, value in error.items():
+                    if isinstance(value, bytes):
+                        serializable_error[key] = f"<bytes data: {len(value)} bytes>"
+                    elif hasattr(value, '__dict__'):
+                        serializable_error[key] = str(value)
+                    else:
+                        serializable_error[key] = value
+                serializable_errors.append(serializable_error)
+            return serializable_errors
+
         return JSONResponse(
             status_code=422,
             content={
                 "error": "Validation Error",
-                "details": exc.errors()
+                "details": serialize_error_details(exc.errors())
             }
         )
     
