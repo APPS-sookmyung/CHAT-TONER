@@ -28,7 +28,7 @@ export const AnalyzeQualityCard = () => {
   };
 
   return (
-    <div className="flex flex-row gap-[58px]">
+    <div className="flex flex-col items-center justify-center gap-8 lg:flex-row lg:gap-[58px]">
       <Card variant="primary" size="large">
         <div className="flex flex-col justify-between h-full">
           <div className="flex flex-col gap-4">

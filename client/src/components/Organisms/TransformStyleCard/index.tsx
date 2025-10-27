@@ -22,7 +22,7 @@ export const TransformStyleCard = () => {
   };
 
   return (
-    <div className="flex flex-row gap-[58px]">
+    <div className="flex flex-col items-center justify-center gap-8 lg:flex-row lg:gap-[58px]">
       <Card variant="primary" size="large">
         <div className="flex flex-col py-[9px] justify-between h-full">
           <Textarea

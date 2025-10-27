@@ -4,7 +4,7 @@ import ChevronDownIcon from "../../../assets/icons/chevron-down.svg?react";
 import { cn } from "@/lib/utils";
 
 const dropdownTriggerVariants = cva(
-  "text-left rounded-[20px] transition-colors flex items-center justify-between",
+  "w-full text-left rounded-[20px] transition-colors flex items-center justify-between",
   {
     variants: {
       variant: {
@@ -12,8 +12,8 @@ const dropdownTriggerVariants = cva(
         target: "p-4 bg-white border border-secondary",
       },
       size: {
-        default: "w-[299px] h-[63px]",
-        compact: "w-[164px] h-[63px]",
+        default: "h-[63px]",
+        compact: "h-[63px]",
       },
     },
     defaultVariants: {
