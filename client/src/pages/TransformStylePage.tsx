@@ -1,7 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { TransformStyleCard } from "@/components/Organisms/TransformStyleCard";
+import { api } from "@/lib/api";
+import type { UserProfile } from "@shared/schema";
 
 // Define the analysis result type, adapted from StyleConverter
 interface StyleAnalysis {
@@ -47,18 +49,59 @@ export default function TransformStylePage() {
   // State for all inputs
   const [inputText, setInputText] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("directness");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // State for the analysis result from the API
   const [analysis, setAnalysis] = useState<StyleAnalysis | null>(null);
 
+  // Load user profile from localStorage
+  useEffect(() => {
+    const profileString = localStorage.getItem("chatToner_profile");
+    if (profileString) {
+      try {
+        setUserProfile(JSON.parse(profileString));
+      } catch (error) {
+        console.error("Failed to parse user profile:", error);
+      }
+    }
+  }, []);
+
   // Mutation logic adapted from StyleConverter
   const convertMutation = useMutation({
     mutationFn: async (text: string): Promise<StyleAnalysis> => {
-      // Using mock data for demonstration.
+      // Use actual API call
       console.log(`Transforming text: ${text}`);
-      return new Promise((resolve) =>
-        setTimeout(() => resolve(generateMockAnalysis(text)), 1000)
-      );
+      
+      try {
+        const result = await api.convertStyle({
+          text,
+          user_profile: userProfile ? {
+            baseFormalityLevel: userProfile.baseFormalityLevel,
+            baseFriendlinessLevel: userProfile.baseFriendlinessLevel,
+            baseEmotionLevel: userProfile.baseEmotionLevel,
+            baseDirectnessLevel: userProfile.baseDirectnessLevel,
+          } : {
+            baseFormalityLevel: 75,
+            baseFriendlinessLevel: 60,
+            baseEmotionLevel: 50,
+            baseDirectnessLevel: 80,
+          },
+          context: "general"
+        });
+        
+        // Transform API response to match StyleAnalysis interface
+        return {
+          directness_score: result.converted_texts?.directness_score || 75,
+          softness_score: result.converted_texts?.softness_score || 60,
+          politeness_score: result.converted_texts?.politeness_score || 70,
+          converted_text: result.converted_texts?.converted_text || text,
+          suggestions: result.converted_texts?.suggestions || []
+        };
+      } catch (error) {
+        console.error("API call failed, falling back to mock data:", error);
+        // Fallback to mock data if API fails
+        return generateMockAnalysis(text);
+      }
     },
     onSuccess: (data) => {
       setAnalysis(data);

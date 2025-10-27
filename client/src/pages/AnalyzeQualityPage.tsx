@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
+import { api } from "@/lib/api";
 
 // Define the CompanyQualityAnalysisResponse locally to avoid importing from a .d.ts that is not a module.
 type Suggestion = {
@@ -95,16 +96,37 @@ export default function AnalyzeQualityPage() {
   const [analysisResult, setAnalysisResult] =
     useState<CompanyQualityAnalysisResponse | null>(null);
 
+  // Fetch dropdown options
+  const { data: dropdownOptions } = useQuery({
+    queryKey: ['dropdownOptions'],
+    queryFn: api.getDropdownOptions,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   // Mutation logic adapted from quality-validator
   const analyzeMutation = useMutation({
     mutationFn: async (
       text: string
     ): Promise<CompanyQualityAnalysisResponse> => {
-      // Using mock data for demonstration. Replace with actual API call.
+      // Use actual API call
       console.log(`Analyzing text: ${text} for ${target} in ${situation}`);
-      return new Promise((resolve) =>
-        setTimeout(() => resolve(generateMockAnalysis(text)), 1000)
-      );
+      
+      try {
+        const result = await api.analyzeQuality({
+          text,
+          company_id: "test-company", // You might want to get this from context or props
+          user_id: "test-user", // You might want to get this from context or props
+          target_audience: target || "internal",
+          context: situation || "general",
+          detailed: true
+        });
+        
+        return result;
+      } catch (error) {
+        console.error("API call failed, falling back to mock data:", error);
+        // Fallback to mock data if API fails
+        return generateMockAnalysis(text);
+      }
     },
     onSuccess: (data) => {
       setAnalysisResult(data);

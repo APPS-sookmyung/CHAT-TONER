@@ -9,6 +9,7 @@ import {
 import type { UserProfile } from "@shared/schema";
 import { getOrSetUserId } from "@/lib/userId";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 type SurveyResponses = Record<string, string>;
 
@@ -44,23 +45,19 @@ export default function SurveyPage() {
       const userId = getOrSetUserId();
       const tenantId = "default-tenant"; // Using a fixed tenant ID as discussed
 
-      // This endpoint is defined in `python_backend/api/v1/endpoints/surveys.py`.
-      // It uses the `run_profile_pipeline` to process the survey and generate a style profile.
-      const response = await fetch("/api/onboarding-intake/responses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        // Use the new API client
+        const result = await api.submitSurvey({
           tenant_id: tenantId,
           user_id: userId,
           answers: answers,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to submit survey.");
+        });
+        
+        return result;
+      } catch (error) {
+        console.error("Survey submission failed:", error);
+        throw new Error("Failed to submit survey. Please try again.");
       }
-      return response.json();
     },
     onSuccess: (data) => {
       // Add company_name from responses to the UserProfile data

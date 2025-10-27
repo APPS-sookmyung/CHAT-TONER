@@ -5,6 +5,7 @@ import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -77,50 +78,29 @@ export default function DocumentUploader() {
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
 
     try {
-      const response = await fetch("/api/v1/documents/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
+      const result = await api.uploadDocuments(files);
+      
+      if (result.success) {
         toast({
           title: "Upload successful",
-          description: `${files.length} files have been successfully uploaded.`,
+          description: `${files.length} files have been successfully uploaded and processed.`,
         });
         setFiles([]);
       } else {
-        let errorMessage = "An error occurred while uploading the file.";
-        try {
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const errorData = await response.json();
-            errorMessage = errorData.detail || JSON.stringify(errorData);
-          } else {
-            errorMessage =
-              response.statusText || `HTTP error! status: ${response.status}`;
-          }
-        } catch (e) {
-          errorMessage =
-            response.statusText || `HTTP error! status: ${response.status}`;
-        }
         toast({
           variant: "destructive",
           title: "Upload failed",
-          description: errorMessage,
+          description: result.error || "An error occurred while uploading the files.",
         });
       }
     } catch (error) {
+      console.error("Upload error:", error);
       toast({
         variant: "destructive",
-        title: "Network error",
-        description: "Could not connect to the server. Please try again later.",
+        title: "Upload failed",
+        description: "Could not upload files. Please try again later.",
       });
     } finally {
       setIsUploading(false);
