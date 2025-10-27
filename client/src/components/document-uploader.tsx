@@ -85,7 +85,7 @@ export default function DocumentUploader() {
       if (result.success) {
         toast({
           title: "Upload successful",
-          description: `${files.length} files have been successfully uploaded and processed.`,
+          description: `${result.uploaded || files.length} files uploaded. ${result.documents_processed || 0} documents processed.`,
         });
         setFiles([]);
       } else {
@@ -95,12 +95,12 @@ export default function DocumentUploader() {
           description: result.error || "An error occurred while uploading the files.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: "Could not upload files. Please try again later.",
+        description: error.response?.data?.detail || error.message || "Could not upload files. Please try again later.",
       });
     } finally {
       setIsUploading(false);
