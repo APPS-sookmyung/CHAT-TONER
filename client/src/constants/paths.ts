@@ -1,37 +1,40 @@
 export const PATH = {
-  // --- 1. 정적 경로 (주소가 고정된 페이지) ---
-
+  // --- 1st half existing paths ---
   /**
-   * @description 랜딩 페이지
+   * @description landing page
    * @path /
    */
   HOME: "/",
 
   /**
-   * @description 기능 선택 페이지
+   * @description feature selection page
    * @path /choice
    */
   CHOICE: "/choice",
 
   /**
-   * @description 스타일 변환 페이지
+   * @description style transformation page
    * @path /transform-style
    */
   TRANSFORM_STYLE: "/transform-style",
 
   /**
-   * @description 품질 분석 페이지
+   * @description quality analysis page
    * @path /analyze-quality
    */
   ANALYZE_QUALITY: "/analyze-quality",
 
-  // --- 2. 동적 경로 (주소에 변수가 포함된 페이지) ---
+  // --- 2nd half new paths ---
 
   /**
-   * @description 설문조사 페이지
-   * @param step - 설문 단계 (1, 2, ...)
+   * @description survey page
+   * @param step - survey step (1, 2, ...)
    * @path /survey/:step
    * @returns /survey/[step]
    */
   SURVEY: (step: number | string) => `/survey/${step}`,
+
+  RESULTS: "/results",
+
+  UPLOAD: "/upload",
 };
