@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/Atoms/Button";
 import { Textarea } from "@/components/Atoms/Textarea";
 import { Card } from "@/components/Molecules/Card";
@@ -10,28 +9,41 @@ const styleOptions = [
   { label: "Politeness", value: "politeness" },
 ];
 
-export const TransformStyleCard = () => {
-  const [inputText, setInputText] = useState("");
-  const [selectedStyle, setSelectedStyle] = useState(styleOptions[0].value);
-  const [outputText, setOutputText] = useState("");
+// Define the props for the controlled component
+interface TransformStyleCardProps {
+  inputValue: string;
+  onInputChange: (value: string) => void;
+  selectedStyleValue: string;
+  onSelectedStyleChange: (value: string) => void;
+  outputValue: string;
+  onTransformClick: () => void;
+  isTransformDisabled: boolean;
+}
 
-  const handleTransform = () => {
-    setOutputText(
-      `Transformed text for '${inputText}' with style '${selectedStyle}'`
-    );
-  };
-
+export const TransformStyleCard = ({
+  inputValue,
+  onInputChange,
+  selectedStyleValue,
+  onSelectedStyleChange,
+  outputValue,
+  onTransformClick,
+  isTransformDisabled,
+}: TransformStyleCardProps) => {
   return (
     <div className="flex flex-col items-center justify-center gap-8 lg:flex-row lg:gap-[58px]">
       <Card variant="primary" size="large">
         <div className="flex flex-col py-[9px] justify-between h-full">
           <Textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            value={inputValue}
+            onChange={(e) => onInputChange(e.target.value)}
             placeholder="Enter your text"
             rows={8}
           />
-          <Button size="xl" onClick={handleTransform}>
+          <Button
+            size="xl"
+            onClick={onTransformClick}
+            disabled={isTransformDisabled}
+          >
             Transform
           </Button>
         </div>
@@ -40,13 +52,13 @@ export const TransformStyleCard = () => {
       <div className="flex flex-col gap-13">
         <SegmentedControl
           options={styleOptions}
-          value={selectedStyle}
-          onChange={setSelectedStyle}
+          value={selectedStyleValue}
+          onChange={onSelectedStyleChange}
         />
         <Card variant="primary" size="medium">
           <div className="flex justify-center">
             <Textarea
-              value={outputText}
+              value={outputValue}
               placeholder="Transformed text will appear here"
               readOnly
               rows={8}
