@@ -113,8 +113,8 @@ from pydantic import BaseModel, Field
 
 class DocumentTextIngestRequest(BaseModel):
     content: str = Field(..., description="프로토콜 텍스트 본문")
-    title: str | None = Field(None, description="파일명으로 사용할 제목(선택)")
-    subdir: str | None = Field(None, description="저장할 하위 디렉터리(선택)")
+    title: Optional[str] = Field(None, description="파일명으로 사용할 제목(선택)")
+    subdir: Optional[str] = Field(None, description="저장할 하위 디렉터리(선택)")
 
 
 @router.post("/ingest-text")

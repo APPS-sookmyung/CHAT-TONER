@@ -1,29 +1,28 @@
 import { Routes, Route } from "react-router-dom";
-import { ROUTES } from "./constants/routes";
+import { PATH } from "@/constants/paths";
 
-// Import existing pages
-import HomePage from "@/pages/home";
-import QuestionnairePage from "@/pages/QuestionnairePage";
-import ResultsPage from "@/pages/ResultsPage";
-import ConverterPage from "@/pages/ConverterPage";
-import ValidatePage from "@/pages/ValidatePage";
-import UploadPage from "@/pages/UploadPage";
-import NotFound from "@/pages/not-found";
-import Layout from "@/pages/layout";
+import LandingPage from "./pages/LandingPage";
+import ChoicePage from "./pages/ChoicePage";
+import TransformStylePage from "./pages/TransformStylePage";
+import AnalyzeQualityPage from "./pages/AnalyzeQualityPage";
+import SurveyPage from "./pages/SurveyPage";
+import MainLayout from "./components/Templates/MainLayout";
+import ResultsPage from "./pages/ResultsPage";
+import UploadPage from "./pages/UploadPage";
 
 const Router = () => {
   return (
-    <Layout>
-      <Routes>
-        <Route path={ROUTES.HOME} element={<HomePage />} />
-        <Route path={ROUTES.QUESTIONNAIRE} element={<QuestionnairePage />} />
-        <Route path={ROUTES.UPLOAD} element={<UploadPage />} />
-        <Route path={ROUTES.RESULTS} element={<ResultsPage />} />
-        <Route path={ROUTES.CONVERTER} element={<ConverterPage />} />
-        <Route path={ROUTES.VALIDATE} element={<ValidatePage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Layout>
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path={PATH.HOME} element={<LandingPage />} />
+        <Route path={PATH.CHOICE} element={<ChoicePage />} />
+        <Route path={PATH.TRANSFORM_STYLE} element={<TransformStylePage />} />
+        <Route path={PATH.ANALYZE_QUALITY} element={<AnalyzeQualityPage />} />
+        <Route path={PATH.SURVEY(":step")} element={<SurveyPage />} />
+        <Route path={PATH.RESULTS} element={<ResultsPage />} />
+        <Route path={PATH.UPLOAD} element={<UploadPage />} />
+      </Route>
+    </Routes>
   );
 };
 

@@ -21,29 +21,29 @@ const cardVariants = cva("rounded-[30px]", {
     {
       variant: "primary",
       size: "small",
-      className: "w-[574px] h-[334px]",
+      className: "w-full max-w-xl h-[334px]",
     },
     {
       variant: "primary",
       size: "medium",
-      className: "w-[642px] h-[489px]",
+      className: "w-full max-w-2xl h-[489px]",
     },
     {
       variant: "primary",
       size: "large",
-      className: "w-[559px] h-[615px]",
+      className: "w-full max-w-xl h-[615px]",
     },
 
     // secondary variant
     {
       variant: "secondary",
       size: "small",
-      className: "w-[880px] h-[118px] border-1 border-secondary shadow-md",
+      className: "w-full max-w-4xl h-[118px] border-1 border-secondary shadow-md",
     },
     {
       variant: "secondary",
       size: "medium",
-      className: "w-[880px] h-[435px] border-1 border-secondary shadow-md",
+      className: "w-full max-w-4xl h-[435px] border-1 border-secondary shadow-md",
     },
   ],
 
