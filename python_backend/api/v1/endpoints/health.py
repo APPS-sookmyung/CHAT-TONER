@@ -6,7 +6,7 @@ Health Check Endpoint
 import os
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from core.config import get_settings
 from sqlalchemy import inspect #헬스체크 추가 api 
 from database.db import engine
@@ -73,9 +73,9 @@ class DBHealthResponse(BaseModel):
     """DB 상태 응답"""
     connected: bool
     dialect: str
-    database: str | None = None
-    tables: list[str] = []
-    error: str | None = None
+    database: Optional[str] = None
+    tables: List[str] = []
+    error: Optional[str] = None
 
 
 @router.get(
