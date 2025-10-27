@@ -28,7 +28,7 @@ const ChoicePage = () => {
   ];
 
   return (
-    <div className="flex items-center justify-center min-h-screen pt-24">
+    <div className="flex flex-grow items-center justify-center">
       <div className="flex flex-row items-center gap-20">
         <div className="pt-4">
           <h1 className="items-center font-bold leading-tight text-black text-7xl">
