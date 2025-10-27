@@ -68,7 +68,7 @@ export default function TransformStylePage() {
 
   // Mutation logic adapted from StyleConverter
   const convertMutation = useMutation({
-    mutationFn: async (text: string): Promise<StyleAnalysis> => {
+    mutationFn: async ({ text, style }: { text: string; style: string }): Promise<StyleAnalysis> => {
       // Use actual API call
       console.log(`Transforming text: ${text}`);
       
@@ -90,12 +90,29 @@ export default function TransformStylePage() {
         });
         
         // Transform API response to match StyleAnalysis interface
+        console.log("API Response:", result);
+        
+        // Get the appropriate converted text based on selected style
+        let convertedText = text;
+        if (result.converted_texts) {
+          if (style === "directness") {
+            convertedText = result.converted_texts.direct || text;
+          } else if (style === "softness") {
+            convertedText = result.converted_texts.gentle || text;
+          } else if (style === "politeness") {
+            convertedText = result.converted_texts.neutral || text;
+          } else {
+            // Fallback to any available converted text
+            convertedText = result.converted_texts.direct || result.converted_texts.gentle || result.converted_texts.neutral || text;
+          }
+        }
+        
         return {
-          directness_score: result.converted_texts?.directness_score || 75,
-          softness_score: result.converted_texts?.softness_score || 60,
-          politeness_score: result.converted_texts?.politeness_score || 70,
-          converted_text: result.converted_texts?.converted_text || text,
-          suggestions: result.converted_texts?.suggestions || []
+          directness_score: 75, // Mock scores since API doesn't return them
+          softness_score: 60,
+          politeness_score: 70,
+          converted_text: convertedText,
+          suggestions: [] // Mock suggestions since API doesn't return them
         };
       } catch (error) {
         console.error("API call failed, falling back to mock data:", error);
@@ -121,7 +138,7 @@ export default function TransformStylePage() {
 
   const handleTransformClick = () => {
     if (isTransformDisabled) return;
-    convertMutation.mutate(inputText);
+    convertMutation.mutate({ text: inputText, style: selectedStyle });
   };
 
   const isTransformDisabled = !inputText.trim() || convertMutation.isPending;
