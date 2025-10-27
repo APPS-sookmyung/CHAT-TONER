@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Building, CheckCircle, Info, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import type { UserProfile } from "@shared/schema";
 
 interface CompanyProfile {
   company_name?: string;
@@ -12,30 +13,53 @@ interface CompanyProfile {
   negative_prompts?: string[];
 }
 
-const MOCK_COMPANY_PROFILE: CompanyProfile = {
-  company_name: "ChatToner Company",
-  communication_style: "Concise and clear",
-  ready_for_analysis: true,
-  guidelines_count: 5,
-  negative_prompts: [
-    "Use 'Thank you' instead of 'Keep up the good work'",
-    "Avoid overly long introductions",
-  ],
+// Default profile if no userProfile is provided
+const MOCK_COMPANY_PROFILE_DEFAULT: CompanyProfile = {
+  company_name: "Guest Company",
+  communication_style: "Default Style",
+  ready_for_analysis: false,
+  guidelines_count: 0,
+  negative_prompts: [],
 };
 
 interface ProfileDropdownProps {
   open: boolean;
   onClose: () => void;
+  userProfile: UserProfile | null;
 }
 
 export default function ProfileDropdown({
   open,
   onClose,
+  userProfile,
 }: ProfileDropdownProps) {
   const { toast } = useToast();
-  const [profile, setProfile] = useState<CompanyProfile>(MOCK_COMPANY_PROFILE);
+  const [profile, setProfile] = useState<CompanyProfile>(() => {
+    if (userProfile) {
+      return {
+        company_name: userProfile.company_name || "N/A",
+        communication_style: userProfile.communication_style || "N/A",
+        ready_for_analysis: !!userProfile.completedAt,
+        negative_prompts: [], // Initialize empty, will be managed internally
+        guidelines_count: 0, // Initialize 0, will be managed internally
+      };
+    }
+    return MOCK_COMPANY_PROFILE_DEFAULT;
+  });
   const [newPrompt, setNewPrompt] = useState("");
   const [isComposing, setIsComposing] = useState(false);
+
+  // Update internal profile state when userProfile prop changes
+  useEffect(() => {
+    if (userProfile) {
+      setProfile((prevProfile) => ({
+        ...prevProfile,
+        company_name: userProfile.company_name || "N/A",
+        communication_style: userProfile.communication_style || "N/A",
+        ready_for_analysis: !!userProfile.completedAt,
+      }));
+    }
+  }, [userProfile]); // Depend on userProfile prop
 
   const handleAddPrompt = () => {
     if (newPrompt && !profile.negative_prompts?.includes(newPrompt)) {

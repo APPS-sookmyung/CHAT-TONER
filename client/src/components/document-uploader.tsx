@@ -3,9 +3,8 @@ import { useDropzone } from "react-dropzone";
 import { Upload, FileText, X, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Revert to ui/card
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getOrSetCompanyId } from "@/lib/userId"; // Add this import
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -80,14 +79,8 @@ export default function DocumentUploader() {
     setIsUploading(true);
     const formData = new FormData();
 
-    // Get company_id and document_id
-    const companyId = getOrSetCompanyId();
-    const documentId = files[0].name; // Parse from filename
-
-    formData.append("company_id", companyId);
-    formData.append("document_id", documentId);
     files.forEach((file) => {
-      formData.append("file", file);
+      formData.append("files", file);
     });
 
     try {

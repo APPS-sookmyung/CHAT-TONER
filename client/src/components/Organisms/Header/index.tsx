@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Profile from "@/assets/icons/profile.svg?react";
 import ProfileDropdown from "@/components/Organisms/ProfileDropdown";
+import type { UserProfile } from "@shared/schema";
 
 export const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null); // Add userProfile state
+
+  useEffect(() => {
+    const profileString = localStorage.getItem("chatToner_profile");
+    if (profileString) {
+      setUserProfile(JSON.parse(profileString));
+    }
+  }, []);
 
   const handleHomeClick = () => {
     window.location.href = "/";
@@ -36,8 +45,11 @@ export const Header = () => {
           <Profile />
         </button>
 
-        {/* 4. isModalOpen이 true일 때만 모달 렌더링 */}
-        <ProfileDropdown open={isModalOpen} onClose={handleCloseModal} />
+        <ProfileDropdown
+          open={isModalOpen}
+          onClose={handleCloseModal}
+          userProfile={userProfile}
+        />
       </div>
     </div>
   );
