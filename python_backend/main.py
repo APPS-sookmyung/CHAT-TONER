@@ -50,7 +50,8 @@ def create_app() -> FastAPI:
         "api.v1.endpoints.feedback",
         "api.v1.endpoints.rag",
         "api.v1.endpoints.quality",
-        "api.v1.endpoints.company"
+        "api.v1.endpoints.company",
+        "api.company_survey"
         # @@ quality와 company는 langgraph/enterprise 의존성 문제로 제외됨. 추가 필요!!!
     ])
     
