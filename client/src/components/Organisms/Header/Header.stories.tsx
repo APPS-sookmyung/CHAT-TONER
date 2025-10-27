@@ -1,9 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { MemoryRouter } from "react-router-dom";
 import { Header } from "./index";
 
 const meta: Meta<typeof Header> = {
   title: "Organisms/Header",
   component: Header,
+  decorators: [
+    (Story) => (
+      <MemoryRouter initialEntries={["/"]}>
+        <Story />
+      </MemoryRouter>
+    ),
+  ],
   tags: ["autodocs"],
   parameters: {
     docs: {
@@ -14,8 +22,8 @@ const meta: Meta<typeof Header> = {
     },
   },
 };
-
 export default meta;
+
 type Story = StoryObj<typeof Header>;
 
 export const Default: Story = {
@@ -30,6 +38,20 @@ export const Default: Story = {
 };
 
 export const WithUserProfile: Story = {
+  decorators: [
+    (Story) => {
+      localStorage.setItem(
+        "chatToner_profile",
+        JSON.stringify({
+          id: "demo",
+          name: "Chat Toner User",
+          email: "chattoner@example.com",
+          avatarUrl: "",
+        })
+      );
+      return <Story />;
+    },
+  ],
   parameters: {
     docs: {
       description: {
