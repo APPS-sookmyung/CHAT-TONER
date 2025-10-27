@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any
 from core.config import get_settings
 from sqlalchemy import inspect #헬스체크 추가 api 
-from database.models import engine, create_database_engine
+from database.db import engine
 
 router = APIRouter()
 
@@ -86,8 +86,7 @@ class DBHealthResponse(BaseModel):
 )
 async def db_health() -> DBHealthResponse:
     try:
-        # 환경설정 기반 엔진 사용 (이미 초기화된 전역 엔진 우선)
-        db_engine = engine if engine is not None else create_database_engine()
+        db_engine = engine
         with db_engine.connect() as conn:
             insp = inspect(conn)
             tables = insp.get_table_names()
@@ -100,7 +99,7 @@ async def db_health() -> DBHealthResponse:
             )
     except Exception as e:
         try:
-            url = (engine.url if engine is not None else create_database_engine().url)
+            url = engine.url
             dialect = url.get_backend_name()
             database = url.database
         except Exception:

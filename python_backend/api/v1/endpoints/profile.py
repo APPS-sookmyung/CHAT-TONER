@@ -8,12 +8,8 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 from services.user_preferences import UserPreferencesService
-from database.storage import DatabaseStorage
-from sqlalchemy.orm import Session
 from typing import List
-# from schemas.feedback import NegativePromptUpdate  # 스키마 파일이 존재하지 않음
-# from core.db import get_db  # 모듈이 존재하지 않음
-# from models.user import UserProfile as UserProfileModel  # 모듈이 존재하지 않음
+from api.v1.dependencies import get_user_preferences_service
 
 router = APIRouter()
 
@@ -79,15 +75,6 @@ class ProfileResponse(BaseModel):
             }
         }
 
-# Dependency injection
-def get_database_storage():
-    return DatabaseStorage()
-
-def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_storage)):
-    from services.openai_services import OpenAIService
-    openai_service = OpenAIService()
-    return UserPreferencesService(db, openai_service)
-
 @router.get("/{user_id}", response_model=ProfileResponse, summary="사용자 프로필 조회", description="사용자의 개인화 설정을 조회합니다.")
 async def get_user_profile(
     user_id: str,
@@ -106,7 +93,7 @@ async def get_user_profile(
 
         # 데이터베이스 응답을 API 응답 모델(ProfileResponse)에 맞게 매핑합니다.
         return ProfileResponse(
-            id=profile_data.get("id", 1),  # 'id'가 없으므로 임시 ID 사용
+            id=profile_data.get("id"),
             userId=profile_data.get("userId"),
             baseFormalityLevel=profile_data.get("baseFormalityLevel"),
             baseFriendlinessLevel=profile_data.get("baseFriendlinessLevel"),
@@ -148,21 +135,27 @@ async def save_user_profile(
         if not was_saved:
             raise HTTPException(status_code=400, detail="Failed to save profile.")
 
-        # 저장된 프로필 정보를 다시 조회하여 반환
-        # 요청된 데이터를 기반으로 응답 생성
+        # 저장된 프로필 정보를 DB에서 실제로 조회하여 반환
+        profile_data = user_service.get_user_profile(profile.userId)
+
+        if not profile_data:
+            raise HTTPException(status_code=500, detail="Profile was saved but could not be retrieved.")
+
+        # 데이터베이스 응답을 API 응답 모델(ProfileResponse)에 맞게 매핑합니다.
         return ProfileResponse(
-            id=1, # 임시 ID
-            userId=profile.userId,
-            baseFormalityLevel=profile.baseFormalityLevel,
-            baseFriendlinessLevel=profile.baseFriendlinessLevel,
-            baseEmotionLevel=profile.baseEmotionLevel,
-            baseDirectnessLevel=profile.baseDirectnessLevel,
-            sessionFormalityLevel=profile.sessionFormalityLevel or profile.baseFormalityLevel,
-            sessionFriendlinessLevel=profile.sessionFriendlinessLevel or profile.baseFriendlinessLevel,
-            sessionEmotionLevel=profile.sessionEmotionLevel or profile.baseEmotionLevel,
-            sessionDirectnessLevel=profile.sessionDirectnessLevel or profile.baseDirectnessLevel,
-            responses=profile.responses or {},
-            completedAt="2025-08-10T00:00:00Z" # 임시 시간
+            id=profile_data.get("id"),
+            userId=profile_data.get("userId"),
+            baseFormalityLevel=profile_data.get("baseFormalityLevel"),
+            baseFriendlinessLevel=profile_data.get("baseFriendlinessLevel"),
+            baseEmotionLevel=profile_data.get("baseEmotionLevel"),
+            baseDirectnessLevel=profile_data.get("baseDirectnessLevel"),
+            # 세션 값이 없으면 기본값을 사용합니다.
+            sessionFormalityLevel=profile_data.get("sessionFormalityLevel") or profile_data.get("baseFormalityLevel"),
+            sessionFriendlinessLevel=profile_data.get("sessionFriendlinessLevel") or profile_data.get("baseFriendlinessLevel"),
+            sessionEmotionLevel=profile_data.get("sessionEmotionLevel") or profile_data.get("baseEmotionLevel"),
+            sessionDirectnessLevel=profile_data.get("sessionDirectnessLevel") or profile_data.get("baseDirectnessLevel"),
+            responses=profile_data.get("questionnaireResponses", {}),
+            completedAt=profile_data.get("updatedAt") or profile_data.get("createdAt")
         )
     except HTTPException:
         raise

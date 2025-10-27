@@ -176,52 +176,9 @@ class RAGQueryHistory(Base):
     # 메타데이터
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# 데이터베이스 엔진 및 세션 설정
-def create_database_engine():
-    """데이터베이스 엔진 생성"""
-    # DATABASE_URL이 제공되면 그것을 사용, 아니면 개별 환경 변수로 구성
-    database_url = os.getenv("DATABASE_URL")
-
-    if not database_url:
-        # 개별 환경 변수로부터 DATABASE_URL 구성
-        db_user = os.getenv("DB_USER", "")
-        db_pass = os.getenv("DB_PASS", "")
-        db_host = os.getenv("DB_HOST", "")
-        db_port = os.getenv("DB_PORT", "5432")
-        db_name = os.getenv("DB_NAME", "")
-
-        if db_user and db_host and db_name:
-            from urllib.parse import quote_plus
-            # 비밀번호 URL 인코딩
-            encoded_pass = quote_plus(db_pass) if db_pass else ""
-            database_url = f"postgresql://{db_user}:{encoded_pass}@{db_host}:{db_port}/{db_name}"
-        else:
-            # fallback to SQLite
-            database_url = "sqlite:///./chat_toner.db"
-
-    if database_url.startswith("sqlite"):
-        engine = create_engine(
-            database_url, connect_args={"check_same_thread": False}
-        )
-    else:
-        engine = create_engine(database_url)
-
-    return engine
-
-# 글로벌 엔진 및 세션 생성
-engine = create_database_engine()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# 테이블 생성 - 이제 Alembic으로 관리합니다.
-# Base.metadata.create_all(bind=engine)
-
-def get_db():
-    """데이터베이스 세션 의존성"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# 데이터베이스 엔진 및 세션은 database/db.py에서 관리합니다.
+# 중복을 피하기 위해 이 파일에서는 모델만 정의하고,
+# 실제 엔진/세션은 db.py에서 가져옵니다.
 
 class CompanyProfile(Base):
     """기업 프로필 모델"""

@@ -6,11 +6,15 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 import hashlib
+import logging
 from sqlalchemy.orm import Session
+from .db import SessionLocal
 from .models import (
-    SessionLocal, UserProfile, ConversionHistory,
+    UserProfile, ConversionHistory,
     NegativePreferences, User, VectorDocumentMetadata, RAGQueryHistory
 )
+
+logger = logging.getLogger('chattoner.storage')
 
 class DatabaseStorage:
     """데이터베이스 CRUD 작업을 위한 스토리지 클래스"""
@@ -22,7 +26,9 @@ class DatabaseStorage:
         """사용자 프로필 조회"""
         with self.session_factory() as db:
             try:
-                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+                # user_id를 int로 변환 (DB 모델이 Integer 타입)
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_int).first()
                 if not profile:
                     return None
                 
@@ -41,15 +47,18 @@ class DatabaseStorage:
                     "updatedAt": profile.updated_at.isoformat() if profile.updated_at is not None else None
                 }
             except Exception as e:
-                print(f"사용자 프로필 조회 오류: {e}")
+                logger.error(f"사용자 프로필 조회 오류: {e}", exc_info=True)
                 return None
 
     def save_user_profile(self, user_id: str, profile_data: Dict[str, Any]) -> bool:
         """사용자 프로필 저장"""
         with self.session_factory() as db:
             try:
+                # user_id를 int로 변환
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+
                 # 기존 프로필 조회
-                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_int).first()
                 
                 if profile:
                     # 기존 프로필 업데이트
@@ -72,7 +81,7 @@ class DatabaseStorage:
                 else:
                     # 새 프로필 생성
                     profile = UserProfile(
-                        user_id=user_id,
+                        user_id=user_id_int,
                         base_formality_level=profile_data.get('baseFormalityLevel', 3),
                         base_friendliness_level=profile_data.get('baseFriendlinessLevel', 3),
                         base_emotion_level=profile_data.get('baseEmotionLevel', 3),
@@ -90,15 +99,16 @@ class DatabaseStorage:
                 
             except Exception as e:
                 db.rollback()
-                print(f"사용자 프로필 저장 오류: {e}")
+                logger.error(f"사용자 프로필 저장 오류: {e}", exc_info=True)
                 return False
 
     def save_conversion(self, user_id: str, conversion_data: Dict[str, Any]) -> Optional[ConversionHistory]:
         """변환 기록 저장"""
         with self.session_factory() as db:
             try:
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
                 conversion = ConversionHistory(
-                    user_id=user_id,
+                    user_id=user_id_int,
                     original_text=conversion_data.get('original_text', ''),
                     converted_texts=conversion_data.get('converted_texts', {}),
                     context=conversion_data.get('context', 'personal'),
@@ -117,7 +127,7 @@ class DatabaseStorage:
                 
             except Exception as e:
                 db.rollback()
-                print(f"변환 기록 저장 오류: {e}")
+                logger.error(f"변환 기록 저장 오류: {e}", exc_info=True)
                 return None
 
     def update_conversion_feedback(self, feedback_data: Dict[str, Any]) -> Optional[ConversionHistory]:
@@ -143,15 +153,16 @@ class DatabaseStorage:
 
             except Exception as e:
                 db.rollback()
-                print(f"피드백 업데이트 오류: {e}")
+                logger.error(f"피드백 업데이트 오류: {e}", exc_info=True)
                 return None
 
     def get_conversion_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
         """사용자 변환 기록 조회"""
         with self.session_factory() as db:
             try:
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
                 conversions = db.query(ConversionHistory)\
-                    .filter(ConversionHistory.user_id == user_id)\
+                    .filter(ConversionHistory.user_id == user_id_int)\
                     .order_by(ConversionHistory.created_at.desc())\
                     .limit(limit).all()
                 
@@ -171,15 +182,16 @@ class DatabaseStorage:
                 ]
                 
             except Exception as e:
-                print(f"변환 기록 조회 오류: {e}")
+                logger.error(f"변환 기록 조회 오류: {e}", exc_info=True)
                 return []
 
     def get_negative_preferences(self, user_id: str) -> Optional[Dict[str, Any]]:
         """사용자 네거티브 선호도 조회"""
         with self.session_factory() as db:
             try:
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
                 prefs = db.query(NegativePreferences)\
-                    .filter(NegativePreferences.user_id == user_id).first()
+                    .filter(NegativePreferences.user_id == user_id_int).first()
                 
                 if not prefs:
                     return None
@@ -196,16 +208,17 @@ class DatabaseStorage:
                 }
                 
             except Exception as e:
-                print(f"네거티브 선호도 조회 오류: {e}")
+                logger.error(f"네거티브 선호도 조회 오류: {e}", exc_info=True)
                 return None
 
     def save_negative_preferences(self, user_id: str, preferences: Dict[str, Any]) -> bool:
         """사용자 네거티브 선호도 저장"""
         with self.session_factory() as db:
             try:
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
                 # 기존 선호도 조회
                 prefs = db.query(NegativePreferences)\
-                    .filter(NegativePreferences.user_id == user_id).first()
+                    .filter(NegativePreferences.user_id == user_id_int).first()
                 
                 if prefs:
                     # 기존 선호도 업데이트
@@ -220,7 +233,7 @@ class DatabaseStorage:
                 else:
                     # 새 선호도 생성
                     prefs = NegativePreferences(
-                        user_id=user_id,
+                        user_id=user_id_int,
                         avoid_flowery_language=preferences.get('avoidFloweryLanguage', 'moderate'),
                         avoid_repetitive_words=preferences.get('avoidRepetitiveWords', 'moderate'),
                         comma_usage_style=preferences.get('commaUsageStyle', 'moderate'),
@@ -236,7 +249,7 @@ class DatabaseStorage:
                 
             except Exception as e:
                 db.rollback()
-                print(f"네거티브 선호도 저장 오류: {e}")
+                logger.error(f"네거티브 선호도 저장 오류: {e}", exc_info=True)
                 return False
 
     # RAG 벡터 메타데이터 관련 메소드들
@@ -280,7 +293,7 @@ class DatabaseStorage:
 
             except Exception as e:
                 db.rollback()
-                print(f"벡터 문서 메타데이터 저장 오류: {e}")
+                logger.error(f"벡터 문서 메타데이터 저장 오류: {e}", exc_info=True)
                 return False
 
     def get_vector_document_metadata(self, document_hash: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -318,18 +331,19 @@ class DatabaseStorage:
                 ]
 
             except Exception as e:
-                print(f"벡터 문서 메타데이터 조회 오류: {e}")
+                logger.error(f"벡터 문서 메타데이터 조회 오류: {e}", exc_info=True)
                 return []
 
     def save_rag_query(self, user_id: str, query_data: Dict[str, Any]) -> bool:
         """RAG 질의 기록 저장"""
         with self.session_factory() as db:
             try:
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
                 # 질의 해시 생성
                 query_hash = hashlib.sha256(query_data['query_text'].encode()).hexdigest()
 
                 rag_query = RAGQueryHistory(
-                    user_id=user_id,
+                    user_id=user_id_int,
                     query_text=query_data['query_text'],
                     query_hash=query_hash,
                     context_type=query_data.get('context_type', 'general'),
@@ -351,15 +365,16 @@ class DatabaseStorage:
 
             except Exception as e:
                 db.rollback()
-                print(f"RAG 질의 기록 저장 오류: {e}")
+                logger.error(f"RAG 질의 기록 저장 오류: {e}", exc_info=True)
                 return False
 
     def get_rag_query_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
         """RAG 질의 기록 조회"""
         with self.session_factory() as db:
             try:
+                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
                 queries = db.query(RAGQueryHistory)\
-                    .filter(RAGQueryHistory.user_id == user_id)\
+                    .filter(RAGQueryHistory.user_id == user_id_int)\
                     .order_by(RAGQueryHistory.created_at.desc())\
                     .limit(limit).all()
 
@@ -385,7 +400,7 @@ class DatabaseStorage:
                 ]
 
             except Exception as e:
-                print(f"RAG 질의 기록 조회 오류: {e}")
+                logger.error(f"RAG 질의 기록 조회 오류: {e}", exc_info=True)
                 return []
 
     def update_vector_document_access(self, document_hash: str) -> bool:
@@ -404,5 +419,5 @@ class DatabaseStorage:
 
             except Exception as e:
                 db.rollback()
-                print(f"벡터 문서 접근 시간 업데이트 오류: {e}")
+                logger.error(f"벡터 문서 접근 시간 업데이트 오류: {e}", exc_info=True)
                 return False

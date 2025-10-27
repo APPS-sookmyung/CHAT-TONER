@@ -4,91 +4,116 @@ OpenAI API 서비스
 """
 
 import os
+import logging
 from typing import Dict, List, Any
-from openai import OpenAI
+from openai import OpenAI, OpenAIError, APIError, APIConnectionError, RateLimitError
 import json
+
+logger = logging.getLogger('chattoner.openai_service')
 
 class OpenAIService:
     """OpenAI API 호출 관리 클래스"""
-    
+
     def __init__(self, api_key=None, model=None):
         # 설정에서 API 키를 가져오거나 직접 환경변수에서 가져옴
         from core.config import get_settings
         settings = get_settings()
         self.api_key = api_key or settings.OPENAI_API_KEY
         self.model = model or settings.OPENAI_MODEL
-        
+        self.logger = logger
+
         # API 키가 없거나 placeholder인 경우 Mock 모드로 동작
         if not self.api_key or self.api_key == "your-openai-api-key-here":
-            print("WARNING: OpenAI API key not found. Running in mock mode.")
+            self.logger.warning("OpenAI API key not found. Running in mock mode.")
             self.client = None
             self.mock_mode = True
         else:
             try:
                 self.client = OpenAI(api_key=self.api_key)
                 self.mock_mode = False
+                self.logger.info(f"OpenAI client initialized successfully with model: {self.model}")
             except Exception as e:
-                print(f"WARNING: OpenAI client initialization failed: {e}. Running in mock mode.")
+                self.logger.error(f"OpenAI client initialization failed: {e}. Running in mock mode.", exc_info=True)
                 self.client = None
                 self.mock_mode = True
-    #3가지 스타일(direct, gentle, neutral)을 변환하는 메인 함수.
-    def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
+    async def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
         """
         입력 텍스트를 3가지 스타일로 변환
-        
+
         Args:
             input_text: 변환할 원본 텍스트
             prompts: 각 스타일별 프롬프트 딕셔너리
-        
+
         Returns:
             3가지 스타일 변환 결과 딕셔너리
+
+        Raises:
+            ValueError: 입력값이 유효하지 않은 경우
+            RuntimeError: OpenAI API 호출 실패 시
         """
+        # 입력 검증
+        if not input_text or not input_text.strip():
+            raise ValueError("입력 텍스트가 비어있습니다")
+
+        if not prompts:
+            raise ValueError("프롬프트가 제공되지 않았습니다")
+
         results = {}
-        
+
         try:
+            self.logger.info(f"스타일 변환 시작: {len(prompts)}개 스타일")
+
             # Direct 스타일 변환
             if 'direct' in prompts:
-                results['direct'] = self._convert_single_style(
-                    input_text, prompts['direct']
+                results['direct'] = await self._convert_single_style(
+                    input_text, prompts['direct'], 'direct'
                 )
-            
+
             # Gentle 스타일 변환
             if 'gentle' in prompts:
-                results['gentle'] = self._convert_single_style(
-                    input_text, prompts['gentle']
+                results['gentle'] = await self._convert_single_style(
+                    input_text, prompts['gentle'], 'gentle'
                 )
-            
+
             # Neutral 스타일 변환
             if 'neutral' in prompts:
-                results['neutral'] = self._convert_single_style(
-                    input_text, prompts['neutral']
+                results['neutral'] = await self._convert_single_style(
+                    input_text, prompts['neutral'], 'neutral'
                 )
-            
+
+            self.logger.info(f"스타일 변환 완료: {len(results)}개 결과")
             return results
-            
+
+        except (ValueError, RuntimeError):
+            # 예상된 에러는 재발생
+            raise
+
         except Exception as e:
-            print(f"OpenAI API 호출 오류: {e}")
-            # 오류 시 원본 텍스트 반환
-            return {
-                'direct': input_text,
-                'gentle': input_text,
-                'neutral': input_text
-            }
+            self.logger.critical(f"예상치 못한 스타일 변환 오류: {e}", exc_info=True)
+            raise RuntimeError(f"스타일 변환 중 내부 오류 발생: {str(e)}")
     
-    # 단일 스타일 변환을 수행하는 헬퍼 함수
-    # 바로 위 함수는 내부적으로 _convert_single_style() 함수를 호출하여 각각 변환.
-    def _convert_single_style(self, input_text: str, prompt: str) -> str:
+    async def _convert_single_style(self, input_text: str, prompt: str, style_name: str = "unknown") -> str:
         """
         단일 스타일 변환 수행
-        
+
         Args:
             input_text: 변환할 텍스트
             prompt: 변환에 사용할 프롬프트
-        
+            style_name: 스타일 이름 (로깅용)
+
         Returns:
             변환된 텍스트
+
+        Raises:
+            RuntimeError: API 호출 실패 시
         """
+        if self.mock_mode:
+            self.logger.debug(f"Mock mode: {style_name} 스타일 변환 스킵")
+            return f"[Mock] {input_text}"
+
         try:
+            self.logger.debug(f"{style_name} 스타일 변환 시작")
+
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -104,13 +129,26 @@ class OpenAIService:
                 max_tokens=1500,
                 temperature=0.7
             )
-            
+
             converted_text = response.choices[0].message.content.strip()
+            self.logger.debug(f"{style_name} 스타일 변환 완료: {len(converted_text)}자")
             return converted_text
-            
+
+        except RateLimitError as e:
+            self.logger.error(f"OpenAI API 요청 한도 초과 ({style_name}): {e}")
+            raise RuntimeError(f"API 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.")
+
+        except APIConnectionError as e:
+            self.logger.error(f"OpenAI API 연결 실패 ({style_name}): {e}")
+            raise RuntimeError(f"API 서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.")
+
+        except APIError as e:
+            self.logger.error(f"OpenAI API 오류 ({style_name}): {e}", exc_info=True)
+            raise RuntimeError(f"API 서버 오류가 발생했습니다: {str(e)}")
+
         except Exception as e:
-            print(f"단일 스타일 변환 오류: {e}")
-            return input_text
+            self.logger.critical(f"{style_name} 스타일 변환 중 예상치 못한 오류: {e}", exc_info=True)
+            raise RuntimeError(f"텍스트 변환 중 내부 오류 발생: {str(e)}")
     
     #사용자 텍스트의 감정을 수치화 (15점, 신뢰도 01).
     #결과는 JSON 형태로 요청하고, 이를 파싱하여 반환.

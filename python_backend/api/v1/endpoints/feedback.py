@@ -1,6 +1,7 @@
 """
 Feedback Endpoints
 피드백 처리 엔드포인트
+get_feedback_stats 함수에 누락된 user_service 의존성 주입 파라미터 추가
 """
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -8,8 +9,8 @@ from typing import Dict, Any
 from pydantic import BaseModel
 
 from services.user_preferences import UserPreferencesService
-from database.storage import DatabaseStorage
 from typing import List
+from api.v1.dependencies import get_user_preferences_service
 
 router = APIRouter()
 
@@ -26,15 +27,6 @@ class FeedbackResponse(BaseModel):
     message: str
     feedbackId: int
     timestamp: str
-
-# Dependency injection
-def get_database_storage():
-    return DatabaseStorage()
-
-def get_user_preferences_service(db: DatabaseStorage = Depends(get_database_storage)):
-    from services.openai_services import OpenAIService
-    openai_service = OpenAIService()
-    return UserPreferencesService(db, openai_service)
 
 @router.post("", response_model=FeedbackResponse)
 async def submit_feedback(
@@ -62,7 +54,10 @@ async def submit_feedback(
         raise HTTPException(status_code=500, detail=f"피드백 처리 실패: {str(e)}")
 
 @router.get("/stats/{user_id}")
-async def get_feedback_stats(user_id: str) -> Dict[str, Any]:
+async def get_feedback_stats(
+    user_id: str,
+    user_service: UserPreferencesService = Depends(get_user_preferences_service)
+) -> Dict[str, Any]:
     """사용자의 피드백 통계 조회"""
     try:
         # 실제 통계 조회 (활성화됨)

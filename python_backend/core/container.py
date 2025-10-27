@@ -42,10 +42,12 @@ class Container(containers.DeclarativeContainer):
         api_key=config.OPENAI_API_KEY,
         model=config.OPENAI_MODEL
     )
-    
+
+    database_storage = providers.Singleton(DatabaseStorage)
+
     user_preferences_service = providers.Singleton(
         UserPreferencesService,
-        storage=DatabaseStorage,
+        storage=database_storage,
         openai_service=openai_service
     )
     
