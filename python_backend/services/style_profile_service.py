@@ -163,11 +163,93 @@ def _generate_profile_prompt(features: StyleFeatures, traits: Dict[str, Any]) ->
 def extract_style_features_from_survey(survey_data: Dict[str, Any]) -> StyleFeatures:
     """설문조사 데이터에서 스타일 특성 추출"""
 
-    # 설문 응답을 특성으로 매핑
+    # 프론트엔드 5문항 형식 확인 및 처리
+    if _is_frontend_5_questions_format(survey_data):
+        return _extract_from_frontend_5_questions(survey_data)
+
+    # 기존 백엔드 형식 처리
     formality = _map_survey_to_scale(survey_data.get('q_formality'), 'formality')
     friendliness = _map_survey_to_scale(survey_data.get('q_friendliness'), 'friendliness')
     emotiveness = _map_survey_to_scale(survey_data.get('q_emotion'), 'emotiveness')
     directness = _map_survey_to_scale(survey_data.get('q_directness'), 'directness')
+
+    return StyleFeatures(
+        formality=formality,
+        friendliness=friendliness,
+        emotiveness=emotiveness,
+        directness=directness
+    )
+
+
+def _is_frontend_5_questions_format(survey_data: Dict[str, Any]) -> bool:
+    """프론트엔드 5문항 형식인지 확인"""
+    frontend_keys = ['company_name', 'team_size', 'communication_style', 'internal_communication_tool', 'main_audience']
+    return any(key in survey_data for key in frontend_keys)
+
+
+def _extract_from_frontend_5_questions(survey_data: Dict[str, Any]) -> StyleFeatures:
+    """프론트엔드 5문항 설문조사에서 스타일 특성 추출"""
+
+    # 1. communication_style 기반 매핑
+    comm_style = survey_data.get('communication_style', '').lower()
+
+    # 기본값
+    formality = 5.0
+    friendliness = 5.0
+    emotiveness = 5.0
+    directness = 5.0
+
+    # communication_style에 따른 매핑
+    if 'formal' in comm_style:
+        formality = 8.0
+        friendliness = 6.0
+        emotiveness = 4.0
+        directness = 7.0
+    elif 'friendly' in comm_style:
+        formality = 4.0
+        friendliness = 8.0
+        emotiveness = 7.0
+        directness = 6.0
+    elif 'strictly' in comm_style or 'strict' in comm_style:
+        formality = 9.0
+        friendliness = 3.0
+        emotiveness = 3.0
+        directness = 9.0
+
+    # 2. team_size 기반 조정 (큰 팀일수록 더 격식적)
+    team_size = str(survey_data.get('team_size', '')).lower()
+    if any(large_indicator in team_size for large_indicator in ['large', '큰', '대규모', '100', '50']):
+        formality += 1.0
+        directness += 0.5
+    elif any(small_indicator in team_size for small_indicator in ['small', '작은', '소규모', '10', '5']):
+        friendliness += 1.0
+        emotiveness += 0.5
+
+    # 3. internal_communication_tool 기반 조정
+    comm_tool = str(survey_data.get('internal_communication_tool', '')).lower()
+    if any(formal_tool in comm_tool for formal_tool in ['email', '이메일', 'formal']):
+        formality += 0.5
+        directness += 0.5
+    elif any(casual_tool in comm_tool for casual_tool in ['slack', 'chat', '채팅', 'messenger']):
+        friendliness += 1.0
+        emotiveness += 0.5
+        formality -= 0.5
+
+    # 4. main_audience 기반 조정
+    main_audience = str(survey_data.get('main_audience', '')).lower()
+    if any(external in main_audience for external in ['client', 'customer', '고객', 'external']):
+        formality += 1.0
+        directness += 0.5
+        emotiveness -= 0.5
+    elif any(internal in main_audience for internal in ['team', '팀', 'internal', 'colleague']):
+        friendliness += 0.5
+        emotiveness += 0.5
+
+    # 값 범위 제한 (1-10)
+    formality = max(1.0, min(10.0, formality))
+    friendliness = max(1.0, min(10.0, friendliness))
+    emotiveness = max(1.0, min(10.0, emotiveness))
+    directness = max(1.0, min(10.0, directness))
 
     return StyleFeatures(
         formality=formality,
