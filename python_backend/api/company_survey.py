@@ -37,14 +37,12 @@ def submit_company_survey(company_id: str, payload: CompanySurveyRequest, db: Se
         # 새 프로필 생성 - id는 자동 증가이므로 설정하지 않음
         profile = CompanyProfile(
             company_name=payload.company_name,
-            survey_data=payload.model_dump(),
             updated_at=datetime.utcnow(),
         )
         db.add(profile)
     else:
         # 기존 프로필 업데이트
         profile.company_name = payload.company_name
-        profile.survey_data = payload.model_dump()
         profile.updated_at = datetime.utcnow()
 
     db.commit()
@@ -52,6 +50,6 @@ def submit_company_survey(company_id: str, payload: CompanySurveyRequest, db: Se
     return {
         "company_id": profile.id,  # integer id 반환
         "company_name": profile.company_name,
-        "survey_data": profile.survey_data,
         "id": profile.id,
+        "message": "Company survey submitted successfully"
     }
