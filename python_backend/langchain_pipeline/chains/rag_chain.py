@@ -24,10 +24,10 @@ sys.path.insert(0, str(project_root))
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import PGVector
 from dotenv import load_dotenv
 from core.config import get_settings 
-from langchain_pipeline.retriever.vector_db import ingest_documents_from_folder, FAISS_INDEX_PATH, get_embedding
+from langchain_pipeline.retriever.vector_db import ingest_documents_from_folder, get_vector_store, get_vector_store_stats, get_embedding
 settings = get_settings()
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ class RAGChain:
 답변:
 """)
         
-        # 자동 초기화 시도
+        # PGVector 스토어 로드 시도
         self._load_vectorstore()
     
     def _check_services_availability(self):
@@ -127,23 +127,18 @@ class RAGChain:
             logger.error(f"{service_name} 로드 실패: {e}")
             return None
     
-    def _load_vectorstore(self):
-        """기존 인덱스 로드 (보안 강화)"""
+    def _load_vectorstore(self) -> bool:
+        """PGVector 스토어를 로드합니다."""
         try:
-            # vector_db.py의 안전한 로드 함수 사용
-            from langchain_pipeline.retriever.vector_db import load_vector_store
-
-            self.vectorstore = load_vector_store(FAISS_INDEX_PATH)
-
-            if self.vectorstore:
-                self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
-                self.is_initialized = True
-                logger.info(f"RAG Chain 안전하게 준비 완료: {self.vectorstore.index.ntotal}개 문서")
-            else:
-                logger.warning("벡터 저장소 로드 실패 - 인덱스가 없거나 신뢰할 수 없습니다")
-
+            self.vectorstore = get_vector_store()
+            self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
+            self.is_initialized = True
+            logger.info("RAG Chain with PGVector is ready.")
+            return True
         except Exception as e:
-            logger.warning(f"기존 인덱스 로드 실패: {e}")
+            logger.warning(f"Failed to load PGVector store: {e}")
+            self.is_initialized = False
+            return False
     
     def ingest_documents(self, folder_path: str) -> Dict:
         """문서 폴더에서 벡터 DB 생성"""
@@ -261,7 +256,7 @@ class RAGChain:
                 result["sources"] = sources
                 result["rag_context"] = retrieved_docs[:300] + "..." if len(retrieved_docs) > 300 else retrieved_docs
                 result["metadata"]["documents_retrieved"] = len(docs)
-                result["metadata"]["model_used"] = "gpt-4o + faiss"
+                result["metadata"]["model_used"] = "gpt-4o + pgvector"
             
             return result
             
@@ -328,8 +323,14 @@ class RAGChain:
             
     def get_status(self) -> Dict:
         """상태 정보"""
-        return {
-            "rag_status": "ready" if self.is_initialized else "not_ready",
-            "doc_count": self.vectorstore.index.ntotal if self.is_initialized else 0,
-            "services_available": self.services_available
-        }
+        if not self.is_initialized:
+            return {
+                "rag_status": "not_ready",
+                "doc_count": 0,
+                "services_available": self.services_available
+            }
+        
+        stats = get_vector_store_stats()
+        stats["rag_status"] = "ready" if stats["status"] == "ready" else "not_ready"
+        stats["services_available"] = self.services_available
+        return stats

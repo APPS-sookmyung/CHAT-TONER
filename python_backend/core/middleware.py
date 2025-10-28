@@ -32,7 +32,13 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
             # 응답 헤더에 성능 정보 추가
             response.headers["X-Process-Time"] = str(process_time)
 
-            # 성능 로깅
+            # 항상 기본 액세스 로그 1줄 출력 (메소드, 경로, 상태코드, 처리시간)
+            logger.info(
+                f"{request.method} {request.url.path} -> {getattr(response, 'status_code', 'NA')} "
+                f"({process_time:.3f}s)"
+            )
+
+            # 추가 성능 로깅 (임계치 기반)
             if process_time > 5.0:
                 logger.warning(f"느린 API 호출: {request.method} {request.url.path} - {process_time:.2f}s")
             elif process_time > 2.0:
@@ -105,25 +111,19 @@ def setup_middleware(app: FastAPI, settings):
     )
 
     # --- 로깅 설정 ---
-    if settings.DEBUG:
-        # "api.access" 로거를 직접 설정하여 uvicorn의 로거와 분리합니다.
-        logger = logging.getLogger("api.access")
-        logger.setLevel(logging.INFO)
-
-        # 핸들러 및 포맷터 설정
+    # "api.access" 로거를 uvicorn과 별도로 stdout으로 항상 설정
+    access_logger = logging.getLogger("api.access")
+    if not access_logger.handlers:
         handler = logging.StreamHandler()
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
+        access_logger.addHandler(handler)
+    # 기본 레벨은 INFO (환경에 따라 DEBUG로 조정)
+    access_logger.setLevel(logging.DEBUG if getattr(settings, 'DEBUG', False) else logging.INFO)
+    access_logger.propagate = False
 
-        # 중복 로깅을 방지하기 위해 기존 핸들러를 제거하고 새로 추가합니다.
-        if logger.hasHandlers():
-            logger.handlers.clear()
-        logger.addHandler(handler)
-
-        # 루트 로거로의 전파를 막아 독립적으로 동작하도록 합니다.
-        logger.propagate = False
-
-        # 디버그 모드일 때만 상세 로깅 미들웨어 추가 (성능상 맨 마지막)
+    # 디버그 모드일 때만 상세 로깅 미들웨어 추가 (요청/응답 본문)
+    if settings.DEBUG:
         app.add_middleware(BaseHTTPMiddleware, dispatch=log_requests_middleware)
 
     logging.getLogger("chattoner").info("성능 최적화 미들웨어 설정 완료")

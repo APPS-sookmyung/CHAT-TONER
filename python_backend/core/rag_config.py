@@ -17,9 +17,28 @@ logger = logging.getLogger(__name__)
 class RAGConfig:
     """RAG 관련 경로/모델/청킹 설정을 제공"""
 
-    # 단일 회사(stand-alone) 기준 고정 경로
-    faiss_index_path: Path = Path("/tmp/langchain_pipeline/data/faiss_index")
-    documents_path: Path = Path("/tmp/langchain_pipeline/data/documents")
+    def __init__(self):
+        # 로컬 개발 환경에서는 현재 작업 디렉토리 기준으로 상대 경로 사용
+        import os
+        from pathlib import Path
+
+        # 현재 작업 디렉토리 기준으로 설정
+        current_dir = Path.cwd()
+
+        # 로컬 개발 환경 vs 컨테이너 환경 구분
+        if str(current_dir).endswith('python_backend'):
+            # python_backend 디렉토리에서 실행되는 경우
+            base_path = current_dir / "langchain_pipeline/data"
+        else:
+            # 프로젝트 루트에서 실행되는 경우
+            base_path = current_dir / "python_backend/langchain_pipeline/data"
+
+        self.faiss_index_path: Path = base_path / "faiss_index"
+        self.documents_path: Path = base_path / "documents"
+
+        print(f"RAG Config: Current dir: {current_dir}")
+        print(f"RAG Config: Documents path: {self.documents_path}")
+        print(f"RAG Config: Index path: {self.faiss_index_path}")
 
     # 임베딩/청킹 설정
     _embedding_model: str = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")

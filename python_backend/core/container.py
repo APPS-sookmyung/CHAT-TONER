@@ -12,6 +12,7 @@ from services.user_preferences import UserPreferencesService
 from services.document_service import DocumentService
 from services.rag_service import RAGService
 from services.profile_generator import ProfileGeneratorService # Added import
+from services.user_service import UserService
 
 # 선택적 import (의존성이 있을 때만)
 try:
@@ -50,6 +51,9 @@ class Container(containers.DeclarativeContainer):
         storage=database_storage,
         openai_service=openai_service
     )
+
+    # User service
+    user_service = providers.Singleton(UserService)
     
     # 메인 변환 서비스
     conversion_service = providers.Singleton(
