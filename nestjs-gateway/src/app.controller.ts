@@ -30,7 +30,7 @@ export class AppController {
   constructor(private readonly httpService: HttpService) {
     // @@ 환경변수 BACKEND_API_URL 설정 필수 (production에서)
     this.fastApiBaseUrl =
-      process.env.BACKEND_API_URL || 'http://127.0.0.1:5001';
+      process.env.BACKEND_API_URL || 'http://127.0.0.1:8080';
   }
 
   @Get()
@@ -87,6 +87,25 @@ export class AppController {
   //     );
   //   }
   // }
+
+  @Get('quality/company/options')
+  async getQualityCompanyOptions() {
+    try {
+      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/options`;
+      const response = await firstValueFrom(
+        this.httpService.get(fastApiUrl),
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw new HttpException(
+        '옵션 조회 중 오류 발생',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   @Post('quality/company/analyze')
   async analyzeCompanyTextQuality(
