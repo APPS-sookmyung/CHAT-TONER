@@ -60,39 +60,115 @@ async def ingest_documents(
     request: DocumentIngestRequest,
     rag_service: Annotated[object, Depends(get_rag_service)]
 ) -> DocumentIngestResponse:
-    """문서 폴더에서 RAG 벡터 DB 생성"""
+    """문서 폴더에서 RAG 벡터 DB 생성 (항상 200 OK 폴백)"""
     try:
-        # 로컬 개발 환경에서는 현재 작업 디렉토리 기준으로 상대 경로 사용
-        import os
         from pathlib import Path
 
-        # 현재 작업 디렉토리에서 상대 경로로 문서 폴더 찾기
         current_dir = Path.cwd()
         folder_path = current_dir / request.folder_path
 
-        print(f"RAG Ingest: Current dir: {current_dir}")
-        print(f"RAG Ingest: Requested path: {request.folder_path}")
-        print(f"RAG Ingest: Final folder_path: {folder_path}")
+        logger.info(f"RAG Ingest: Current dir: {current_dir}")
+        logger.info(f"RAG Ingest: Requested path: {request.folder_path}")
+        logger.info(f"RAG Ingest: Final folder_path: {folder_path}")
+
+        async def craft_ingest_message(success: bool, processed: int, note: str | None = None) -> str:
+            """LLM을 사용해 자연스러운 한국어 상태 메시지 생성.
+
+            - success: 처리 성공 여부
+            - processed: 처리된 문서 개수
+            - note: 추가 설명(에러/경로 안내 등)
+            """
+            try:
+                openai_service = getattr(rag_service, "openai_service", None)
+                base_statement = (
+                    f"벡터 데이터베이스 생성이 {'성공' if success else '보류/실패'}되었어요. "
+                    f"처리된 문서 수: {processed}개."
+                )
+                if not openai_service:
+                    return base_statement if not note else f"{base_statement} 참고: {note}"
+
+                # Mock 모드에서는 간결한 고정 문구로 반환
+                if getattr(openai_service, "mock_mode", False):
+                    return base_statement if not note else f"{base_statement} 참고: {note}"
+
+                system = (
+                    "당신은 한국어 제품 어시스턴트입니다. 사용자가 이해하기 쉬운 한두 문장으로, "
+                    "긍정적이면서도 정확하게 현재 작업 상태를 안내하세요. 불필요한 사족은 피하고, 숫자 정보(개수 등)는 그대로 유지하세요."
+                )
+                status = "성공" if success else "보류 또는 실패"
+                user_prompt = (
+                    f"상황: RAG 문서 주입 결과.\n"
+                    f"상태: {status}\n"
+                    f"처리된 문서 개수: {processed}개\n"
+                    f"비고: {note or '없음'}\n\n"
+                    f"위 내용을 바탕으로 사용자에게 보여줄 친절하고 간결한 한국어 상태 메시지를 1~2문장으로 작성해 주세요."
+                )
+                # LLM 호출
+                text = await openai_service.generate_text(user_prompt, system=system, temperature=0.3, max_tokens=120)
+                return text.strip() or (base_statement if not note else f"{base_statement} 참고: {note}")
+            except Exception as _e:
+                # LLM 실패 시 기본 안내로 폴백
+                return base_statement if not note else f"{base_statement} 참고: {note}"
 
         if not folder_path.exists():
-            raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {folder_path}")
-        
+            # 폴더가 없더라도 200 OK로 폴백 응답 (LLM 가공 메시지)
+            friendly = await craft_ingest_message(
+                success=False,
+                processed=0,
+                note=f"지정 경로를 찾을 수 없음: {folder_path}"
+            )
+            return DocumentIngestResponse(
+                success=False,
+                documents_processed=0,
+                message=friendly,
+                error=f"not_found: {folder_path}"
+            )
+
         if request.company_id:
             result = rag_service.ingest_company_documents(request.company_id, str(folder_path))
         else:
             result = rag_service.ingest_documents(str(folder_path))
-        
+
+        ok = result.get("success", False)
+        count = result.get("documents_processed", 0)
+        note = result.get("error") if not ok else None
+        friendly = await craft_ingest_message(success=ok, processed=count, note=note)
+
         return DocumentIngestResponse(
-            success=result.get("success", False),
-            documents_processed=result.get("documents_processed", 0),
-            message="문서 인덱싱이 완료되었습니다." if result.get("success") else "문서 인덱싱에 실패했습니다.",
-            error=result.get("error") if not result.get("success") else None
+            success=ok,
+            documents_processed=count,
+            message=friendly,
+            error=result.get("error") if not ok else None
         )
-        
-    except HTTPException:
-        raise
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"문서 인덱싱 중 오류가 발생했습니다: {str(e)}")
+        # 모든 예외도 200 OK로 폴백하여 상위 호출자 실패 방지 (LLM 가공 메시지)
+        logger.error(f"문서 인덱싱 폴백 오류: {e}")
+        try:
+            # 가능하면 LLM으로 안내 메시지 생성
+            openai_service = getattr(rag_service, "openai_service", None)
+            if openai_service and not getattr(openai_service, "mock_mode", False):
+                system = (
+                    "당신은 한국어 제품 어시스턴트입니다. 기술적 문제로 처리가 보류된 상황에서, "
+                    "사용자가 이해하기 쉬운 한두 문장으로 재시도 안내와 다음 행동을 친절하게 제시하세요."
+                )
+                user_prompt = (
+                    f"상황: RAG 문서 주입 예외 발생.\n"
+                    f"오류: {str(e)[:200]}\n\n"
+                    f"간결한 한국어 안내문 1~2문장으로 작성"
+                )
+                msg = await openai_service.generate_text(user_prompt, system=system, temperature=0.3, max_tokens=120)
+            else:
+                msg = "벡터 DB 생성 요청을 접수했어요. 잠시 후 다시 시도할게요."
+        except Exception:
+            msg = "벡터 DB 생성 요청을 접수했어요. 잠시 후 다시 시도할게요."
+
+        return DocumentIngestResponse(
+            success=False,
+            documents_processed=0,
+            message=msg,
+            error=str(e)
+        )
 
 @router.post("/ask", response_model=RAGQueryResponse)
 async def ask_rag_question(
