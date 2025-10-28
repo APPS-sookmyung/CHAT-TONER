@@ -509,10 +509,15 @@ async def generate_final_integrated_text(
         )
         
     except Exception as e:
+        # 폴백: 원문을 그대로 반환하고 실행 가능한 안내 메시지를 포함
         logger.error(f"최종 통합본 생성 중 오류: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"최종 통합본 생성 중 서버 오류 발생: {e}"
+        return FinalTextGenerationResponse(
+            success=False,
+            finalText=request.original_text,
+            appliedSuggestions={'grammarCount': 0, 'protocolCount': 0, 'totalApplied': 0},
+            originalLength=len(request.original_text),
+            finalLength=len(request.original_text),
+            message="최종 통합본 생성이 지연되어 원문을 반환했습니다. 선택 항목을 줄이거나 다시 시도해 주세요."
         )
 
 
