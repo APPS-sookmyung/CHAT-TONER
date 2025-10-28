@@ -185,13 +185,13 @@ class CompanyProfile(Base):
     __tablename__ = "company_profiles"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    
+    company_name = Column(String, index=True)  # name -> company_name으로 수정
+
     # 설문조사 원본 응답 저장
     survey_data = Column(JSON, nullable=True)
-    
+
     # 생성한 프로필 텍스트 저장
     generated_profile = Column(Text, nullable=True)
-    
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

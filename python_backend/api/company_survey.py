@@ -29,16 +29,23 @@ def submit_company_survey(
         raise HTTPException(status_code=500, detail="커뮤니케이션 프로필 생성에 실패했습니다.")
     profile_service.vectorize_and_save(company_id, profile_text)
     
-    # DB에서 해당 company_id를 가진 회사 프로필 탐색
+    # DB에서 해당 company_id를 가진 회사 프로필 탐색 또는 생성
     company_profile = db.query(CompanyProfile).filter(CompanyProfile.id == company_id).first()
-    
-    # 만약 회사 프로필이 존재하지 않으면 404 에러 발생
+
     if not company_profile:
-        raise HTTPException(status_code=404, detail=f"ID가 {company_id}인 회사를 찾을 수 없습니다.")
-    
-    # 찾은 회사 프로필 객체의 필드 업데이트
-    company_profile.survey_data = survey_data.model_dump()
-    company_profile.generated_profile = profile_text
+        # 회사 프로필이 없으면 새로 생성
+        company_profile = CompanyProfile(
+            id=company_id,
+            company_name=survey_data.company_name,  # 설문조사에서 회사명 가져오기
+            survey_data=survey_data.model_dump(),
+            generated_profile=profile_text
+        )
+        db.add(company_profile)
+    else:
+        # 기존 회사 프로필 업데이트
+        company_profile.company_name = survey_data.company_name
+        company_profile.survey_data = survey_data.model_dump()
+        company_profile.generated_profile = profile_text
     
     # 변경 내용을 데이터베이스에 최종 저장
     db.commit()
