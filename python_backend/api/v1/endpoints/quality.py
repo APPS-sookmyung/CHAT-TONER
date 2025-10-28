@@ -6,7 +6,7 @@ Service Layer를 통한 명확한 계층 구조
 import json
 import logging
 import time
-from typing import Annotated, Dict, Any
+from typing import Annotated, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from services.rag_service import RAGService
 from services.rewrite_service import rewrite_text
