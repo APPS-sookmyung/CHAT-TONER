@@ -1,38 +1,48 @@
-import openai
 from api.v1.schemas.survey import CompanySurvey
+from services.openai_services import OpenAIService # Added import
+import logging
+
+logger = logging.getLogger('chattoner.profile_generator') # Added logger
 
 class ProfileGeneratorService:
-    def __init__(self):
-         # Set openai.api_key
-        pass
+    def __init__(self, openai_service: OpenAIService): # Modified to inject OpenAIService
+        self.openai_service = openai_service
 
-    def create_profile_from_survey(self, survey_data: CompanySurvey) -> str:
+    async def create_profile_from_survey(self, survey_data: CompanySurvey) -> str: # Made async
         """Generate communication profile text by calling LLM based on survey data"""
-        
-        prompt = f"""
-        다음은 '{survey_data.company_name}' 회사의 커뮤니케이션 스타일 설문조사 결과입니다.
-        - 팀 인원: {survey_data.team_size}명
-        - 주된 소통 성격: {survey_data.communication_style}
-        - 주 소통 채널: {survey_data.main_channel}
-        - 주 커뮤니케이션 대상: {', '.join(survey_data.main_target)}
 
-        이 정보를 바탕으로, 이 회사의 신입사원이 따라야 할 커뮤니케이션 스타일 프로필을
-        핵심 원칙 2~3가지로 요약해서 생성해줘.
+        channels = ", ".join(survey_data.main_channel)
+        targets = ", ".join(survey_data.main_target)
+
+        prompt = f"""
+        다음은 '{survey_data.company_name}' 회사의 커뮤니케이션 설문 요약입니다.
+        - 산업 분야: {survey_data.industry}
+        - 주요 사업: {survey_data.primary_business}
+        - 팀 인원: {survey_data.team_size}명
+        - 주 소통 성격: {survey_data.communication_style}
+        - 주 소통 채널: {channels}
+        - 주요 대상: {targets}
+
+        위 특성을 고려하여, 신입사원이 바로 적용할 수 있는 회사 맞춤 커뮤니케이션 프로필을 작성하세요.
+        - 항목 수: 2~4개 핵심 원칙
+        - 형식: 번호 목록, 각 항목 1문장
+        - 톤: 명확·실무적, 불필요한 수사는 지양
+        - 준수사항: 기업 맥락/대상/채널에 맞는 예시 용어와 포맷 언급 가능
         """
         
-        print(f"--- LLM에 전달할 프롬프트 ---\n{prompt}")
+        logger.info(f"--- LLM에 전달할 프롬프트 ---\n{prompt}") # Changed print to logger
+        
         # Actual OpenAI API call
-        profile_text = (
-            f"1. 친근하고 수평적인 소통을 지향하며, 주로 Slack을 통해 신속하게 의견을 교환합니다.\n"
-            f"2. 내부 동료 및 타 부서와의 협업이 중요하므로, 명확하고 간결한 커뮤니케이션을 추구합니다."
-        )
-        
-        return profile_text.strip()
+        try:
+            profile_text = await self.openai_service.generate_text(prompt) # Actual LLM call
+            logger.info("기업 프로필 LLM 생성 완료")
+            return profile_text.strip()
+        except Exception as e:
+            logger.error(f"기업 프로필 LLM 생성 실패: {e}")
+            # Fallback to a generic profile if LLM call fails
+            return (
+                "1. 핵심 메시지를 먼저 전달하고, 필요 시 근거와 예시를 덧붙입니다.\n"
+                "2. 합의된 채널과 포맷을 준수하며, 대상에 맞춘 격식과 어조를 유지합니다."
+            ).strip()
 
-    def vectorize_and_save(self, company_id: int, profile_text: str):
-        """Vectorize generated profile text and store in vector DB"""
-        
-        print(f"--- 벡터화 및 저장 ---\nCompany ID: {company_id}\nProfile: {profile_text[:50]}...")
-        print(f"Company ID {company_id}의 프로필 벡터 저장 완료")
-        
-        return True
+    # vectorize_and_save was removed; vectorization handled elsewhere
