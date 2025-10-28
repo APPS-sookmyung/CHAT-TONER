@@ -13,6 +13,7 @@ from services.rewrite_service import rewrite_text
 from api.v1.schemas.quality import (
     CompanyQualityAnalysisRequest,
     CompanyQualityAnalysisResponse,
+    DetailedCompanyQualityResponse,
     UserFeedbackRequest,
     UserFeedbackResponse,
     FinalTextGenerationRequest,
@@ -91,7 +92,7 @@ async def get_dropdown_options() -> DropdownOptions:
     return DropdownOptions()
 
 
-@router.post("/company/analyze", response_model=CompanyQualityAnalysisResponse)
+@router.post("/company/analyze", response_model=DetailedCompanyQualityResponse)
 async def analyze_company_text_quality(
     request: CompanyQualityAnalysisRequest,
     service: Annotated[OptimizedEnterpriseQualityService, Depends(get_enterprise_quality_service)],
@@ -212,6 +213,42 @@ async def analyze_company_text_quality(
             )
         )
         
+        # Optional: LLM 가공 요약/권고 생성 (detailed일 때만)
+        if request.detailed:
+            try:
+                # 간결한 액션아이템 2~4개 생성
+                from services.openai_services import OpenAIService
+                oai = OpenAIService()
+                # grammar/protocol 요약을 LLM에 전달
+                g_count = len(response.grammarSection.suggestions)
+                p_count = len(response.protocolSection.suggestions)
+                sample_items = []
+                for s in (response.grammarSection.suggestions[:2] + response.protocolSection.suggestions[:2]):
+                    sample_items.append(f"- 원문: {s.original}\n- 제안: {s.suggestion}\n- 사유: {s.reason}")
+                sample_text = "\n\n".join(sample_items) if sample_items else "(제안 없음)"
+                # 회사 맥락/톤을 반영한 업무 중심 가공 프롬프트
+                comp_style = response.companyAnalysis.communicationStyle
+                prompt = (
+                    "아래 분석 결과를 바탕으로 회사 맥락에 맞춘 실무형 가이드라인을 작성하세요.\n"
+                    "- 목적: 품질 향상, 기업 맞춤, 협업 도구(온보딩 포함)에 적합\n"
+                    "- 톤: 업무적·명확·간결, 신입도 이해 가능\n"
+                    "- 형식: 2~4개의 Action Item(실행 지향) 중심으로 한 문장씩\n"
+                    "- 회사 커뮤니케이션 스타일을 반영: " + comp_style + "\n"
+                    "- 대상: " + request.target_audience.value + ", 맥락: " + request.context.value + "\n"
+                    f"- 문법 제안: {g_count}개, 프로토콜 제안: {p_count}개\n\n"
+                    "예시 제안 일부:\n" + sample_text + "\n\n"
+                    "위 조건을 충족하는 Action Item만 불릿 없이 각 줄에 한 문장으로 출력."
+                )
+                rec_text = await oai.generate_text(prompt, temperature=0.25, max_tokens=240)
+                # 줄 단위로 분해하여 리스트 구성
+                lines = [ln.strip("- ").strip() for ln in rec_text.splitlines() if ln.strip()]
+                # 응답에 usageRecommendations 필드를 추가적으로 포함하려면 상세 스키마 사용 필요
+                response = DetailedCompanyQualityResponse(**response.model_dump())
+                response.usageRecommendations = {"actionItems": lines[:6]}
+            except Exception as _e:
+                # LLM 실패 시 무시하고 기본 응답 유지
+                pass
+
         # Performance logging
         execution_time = time.time() - start_time
         logger.info(
