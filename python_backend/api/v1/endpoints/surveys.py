@@ -7,6 +7,7 @@ from datetime import datetime # Added import
 from services.profile_pipeline import run_profile_pipeline
 from services.vector_store_pg import VectorStorePG
 from api.dependencies import try_get_vector_store
+from services.openai_services import OpenAIService
 from services.style_profile_service import extract_style_features_from_survey
 
 logger = logging.getLogger('chattoner.surveys')
@@ -57,6 +58,19 @@ async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStor
 
         # Map the profile features to the desired response format
         features = profile_result["features"]
+        # LLM 가공 온보딩 메시지 (선택)
+        try:
+            oai = OpenAIService()
+            ob_msg = await oai.generate_text(
+                (
+                    "온보딩 설문 응답을 바탕으로 커뮤니케이션 프로필을 설정했어요."
+                    " 협업에서 바로 활용할 수 있는 1~2개의 짧은 팁을 한 문장씩 제시하세요."
+                ),
+                temperature=0.3,
+                max_tokens=120,
+            )
+        except Exception:
+            ob_msg = None
         return {
             "id": 1, # This ID is not used in the pipeline, can be generated or fetched if needed
             "userId": req.user_id,
@@ -76,7 +90,8 @@ async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStor
                 "directness": float(features["directness"]),
             },
             "responses": req.answers,
-            "completedAt": datetime.now().isoformat() + "Z" # Use current time
+            "completedAt": datetime.now().isoformat() + "Z", # Use current time
+            "message": ob_msg
         }
     except Exception as e:
         # 폴백: 파이프라인 실패 시에도 200 OK로 유효 응답 반환
@@ -89,6 +104,19 @@ async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStor
         except Exception:
             features = {"formality": 5.0, "friendliness": 5.0, "emotiveness": 5.0, "directness": 5.0}
 
+        # 폴백 경로: LLM 가공 안내문 추가
+        try:
+            oai = OpenAIService()
+            ob_msg = await oai.generate_text(
+                (
+                    "설정 저장은 완료되었어요. 프로젝트 협업에서 유용한 톤 사용 팁을"
+                    " 1~2문장으로 간결하게 제시하세요. 신입도 이해 가능한 수준으로."
+                ),
+                temperature=0.3,
+                max_tokens=120,
+            )
+        except Exception:
+            ob_msg = None
         return {
             "id": 1,
             "userId": req.user_id,
@@ -109,6 +137,7 @@ async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStor
             },
             "responses": req.answers,
             "completedAt": datetime.now().isoformat() + "Z",
+            "message": ob_msg
         }
 
 
