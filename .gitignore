@@ -68,3 +68,7 @@ setup-cloud-build-triggers.sh
 
 *storybook.log
 storybook-static
+
+# Build outputs
+client/dist/
+nestjs-gateway/dist/
