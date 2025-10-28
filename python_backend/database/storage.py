@@ -26,9 +26,9 @@ class DatabaseStorage:
         """사용자 프로필 조회"""
         with self.session_factory() as db:
             try:
-                # user_id를 int로 변환 (DB 모델이 Integer 타입)
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
-                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_int).first()
+                # user_id를 문자열로 처리 (문자열 ID 허용)
+                user_id_str = str(user_id)
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_str).first()
                 if not profile:
                     return None
                 
@@ -55,10 +55,10 @@ class DatabaseStorage:
         with self.session_factory() as db:
             try:
                 # user_id를 int로 변환
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                user_id_str = str(user_id)
 
                 # 기존 프로필 조회
-                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_int).first()
+                profile = db.query(UserProfile).filter(UserProfile.user_id == user_id_str).first()
                 
                 if profile:
                     # 기존 프로필 업데이트
@@ -81,7 +81,7 @@ class DatabaseStorage:
                 else:
                     # 새 프로필 생성
                     profile = UserProfile(
-                        user_id=user_id_int,
+                        user_id=user_id_str,
                         base_formality_level=profile_data.get('baseFormalityLevel', 3),
                         base_friendliness_level=profile_data.get('baseFriendlinessLevel', 3),
                         base_emotion_level=profile_data.get('baseEmotionLevel', 3),
@@ -106,9 +106,9 @@ class DatabaseStorage:
         """변환 기록 저장"""
         with self.session_factory() as db:
             try:
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                user_id_str = str(user_id)
                 conversion = ConversionHistory(
-                    user_id=user_id_int,
+                    user_id=user_id_str,
                     original_text=conversion_data.get('original_text', ''),
                     converted_texts=conversion_data.get('converted_texts', {}),
                     context=conversion_data.get('context', 'personal'),
@@ -160,9 +160,9 @@ class DatabaseStorage:
         """사용자 변환 기록 조회"""
         with self.session_factory() as db:
             try:
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                user_id_str = str(user_id)
                 conversions = db.query(ConversionHistory)\
-                    .filter(ConversionHistory.user_id == user_id_int)\
+                    .filter(ConversionHistory.user_id == user_id_str)\
                     .order_by(ConversionHistory.created_at.desc())\
                     .limit(limit).all()
                 
@@ -189,9 +189,9 @@ class DatabaseStorage:
         """사용자 네거티브 선호도 조회"""
         with self.session_factory() as db:
             try:
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                user_id_str = str(user_id)
                 prefs = db.query(NegativePreferences)\
-                    .filter(NegativePreferences.user_id == user_id_int).first()
+                    .filter(NegativePreferences.user_id == user_id_str).first()
                 
                 if not prefs:
                     return None
@@ -215,10 +215,10 @@ class DatabaseStorage:
         """사용자 네거티브 선호도 저장"""
         with self.session_factory() as db:
             try:
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                user_id_str = str(user_id)
                 # 기존 선호도 조회
                 prefs = db.query(NegativePreferences)\
-                    .filter(NegativePreferences.user_id == user_id_int).first()
+                    .filter(NegativePreferences.user_id == user_id_str).first()
                 
                 if prefs:
                     # 기존 선호도 업데이트
@@ -233,7 +233,7 @@ class DatabaseStorage:
                 else:
                     # 새 선호도 생성
                     prefs = NegativePreferences(
-                        user_id=user_id_int,
+                        user_id=user_id_str,
                         avoid_flowery_language=preferences.get('avoidFloweryLanguage', 'moderate'),
                         avoid_repetitive_words=preferences.get('avoidRepetitiveWords', 'moderate'),
                         comma_usage_style=preferences.get('commaUsageStyle', 'moderate'),
@@ -338,12 +338,12 @@ class DatabaseStorage:
         """RAG 질의 기록 저장"""
         with self.session_factory() as db:
             try:
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                user_id_str = str(user_id)
                 # 질의 해시 생성
                 query_hash = hashlib.sha256(query_data['query_text'].encode()).hexdigest()
 
                 rag_query = RAGQueryHistory(
-                    user_id=user_id_int,
+                    user_id=user_id_str,
                     query_text=query_data['query_text'],
                     query_hash=query_hash,
                     context_type=query_data.get('context_type', 'general'),
@@ -372,9 +372,9 @@ class DatabaseStorage:
         """RAG 질의 기록 조회"""
         with self.session_factory() as db:
             try:
-                user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+                user_id_str = str(user_id)
                 queries = db.query(RAGQueryHistory)\
-                    .filter(RAGQueryHistory.user_id == user_id_int)\
+                    .filter(RAGQueryHistory.user_id == user_id_str)\
                     .order_by(RAGQueryHistory.created_at.desc())\
                     .limit(limit).all()
 
