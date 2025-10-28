@@ -56,16 +56,13 @@ async def ingest_documents(
 ) -> DocumentIngestResponse:
     """문서 폴더에서 RAG 벡터 DB 생성"""
     try:
-        folder_path = Path(request.folder_path)
-        
-        # 상대 경로인 경우, 프로젝트 루트 기준으로 절대 경로로 변환
-        if not folder_path.is_absolute():
-            project_root = Path(__file__).resolve().parents[4]  # 2025-CHATTONER-Server
-            folder_path = project_root / folder_path
-            
-            
+        # 컨테이너 내부의 절대 경로를 기준으로 폴더 경로 구성
+        # Dockerfile에서 WORKDIR /app으로 설정했으므로 /app이 기준
+        base_path = Path("/app")
+        folder_path = base_path / request.folder_path
+
         if not folder_path.exists():
-            raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {request.folder_path} (resolved: {folder_path})")
+            raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {folder_path}")
         
         result = rag_service.ingest_documents(str(folder_path))
         
