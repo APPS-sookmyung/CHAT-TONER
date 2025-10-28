@@ -11,6 +11,12 @@ interface StyleAnalysis {
   softness_score: number;
   politeness_score: number;
   converted_text: string;
+  converted_texts?: {
+    // Store all converted texts
+    direct: string;
+    gentle: string;
+    neutral: string;
+  };
   suggestions: Array<{
     type: "directness" | "softness" | "politeness";
     original: string;
@@ -26,6 +32,11 @@ const generateMockAnalysis = (text: string): StyleAnalysis => {
     softness_score: Math.floor(Math.random() * 50) + 50,
     politeness_score: Math.floor(Math.random() * 50) + 50,
     converted_text: text + " (style converted)",
+    converted_texts: {
+      direct: text + " (direct)",
+      gentle: text + " (gentle)",
+      neutral: text + " (neutral)",
+    },
     suggestions: [
       {
         type: "directness",
@@ -68,51 +79,79 @@ export default function TransformStylePage() {
 
   // Mutation logic adapted from StyleConverter
   const convertMutation = useMutation({
-    mutationFn: async ({ text, style }: { text: string; style: string }): Promise<StyleAnalysis> => {
+    mutationFn: async ({
+      text,
+      style,
+    }: {
+      text: string;
+      style: string;
+    }): Promise<StyleAnalysis> => {
       // Use actual API call
       console.log(`Transforming text: ${text}`);
-      
+
       try {
         const result = await api.convertStyle({
           text,
-          user_profile: userProfile ? {
-            baseFormalityLevel: Math.round(userProfile.baseFormalityLevel / 10),
-            baseFriendlinessLevel: Math.round(userProfile.baseFriendlinessLevel / 10),
-            baseEmotionLevel: Math.round(userProfile.baseEmotionLevel / 10),
-            baseDirectnessLevel: Math.round(userProfile.baseDirectnessLevel / 10),
-          } : {
-            baseFormalityLevel: 8,
-            baseFriendlinessLevel: 6,
-            baseEmotionLevel: 5,
-            baseDirectnessLevel: 8,
-          },
-          context: "general"
+          user_profile: userProfile
+            ? {
+                baseFormalityLevel: Math.round(
+                  userProfile.baseFormalityLevel / 10
+                ),
+                baseFriendlinessLevel: Math.round(
+                  userProfile.baseFriendlinessLevel / 10
+                ),
+                baseEmotionLevel: Math.round(userProfile.baseEmotionLevel / 10),
+                baseDirectnessLevel: Math.round(
+                  userProfile.baseDirectnessLevel / 10
+                ),
+              }
+            : {
+                baseFormalityLevel: 8,
+                baseFriendlinessLevel: 6,
+                baseEmotionLevel: 5,
+                baseDirectnessLevel: 8,
+              },
+          context: "general",
         });
-        
+
         // Transform API response to match StyleAnalysis interface
         console.log("API Response:", result);
-        
-        // Get the appropriate converted text based on selected style
+        console.log("API Response converted_texts:", result.converted_texts);
+
+        // Store all converted texts from API
+        const allConvertedTexts = result.converted_texts || {};
+
+        // Get the default converted text based on selected style for initial display
         let convertedText = text;
-        if (result.converted_texts) {
+        if (allConvertedTexts && typeof allConvertedTexts === "object") {
           if (style === "directness") {
-            convertedText = result.converted_texts.direct || text;
+            convertedText = allConvertedTexts.direct || text;
           } else if (style === "softness") {
-            convertedText = result.converted_texts.gentle || text;
+            convertedText = allConvertedTexts.gentle || text;
           } else if (style === "politeness") {
-            convertedText = result.converted_texts.neutral || text;
+            convertedText = allConvertedTexts.neutral || text;
           } else {
-            // Fallback to any available converted text
-            convertedText = result.converted_texts.direct || result.converted_texts.gentle || result.converted_texts.neutral || text;
+            convertedText =
+              allConvertedTexts.direct ||
+              allConvertedTexts.gentle ||
+              allConvertedTexts.neutral ||
+              text;
           }
+        } else {
+          console.warn(
+            "No converted_texts in API response, using original text"
+          );
         }
-        
+
+        console.log("Final converted text:", convertedText);
+
         return {
           directness_score: 75, // Mock scores since API doesn't return them
           softness_score: 60,
           politeness_score: 70,
           converted_text: convertedText,
-          suggestions: [] // Mock suggestions since API doesn't return them
+          converted_texts: allConvertedTexts, // Store all converted texts
+          suggestions: [], // Mock suggestions since API doesn't return them
         };
       } catch (error) {
         console.error("API call failed, falling back to mock data:", error);
@@ -148,26 +187,44 @@ export default function TransformStylePage() {
     if (convertMutation.isPending) return "Transforming...";
     if (!analysis) return "Transformed text will appear here";
 
+    // Get the converted text based on selected style
+    let displayText = analysis.converted_text;
+
+    if (analysis.converted_texts) {
+      if (selectedStyle === "directness" && analysis.converted_texts.direct) {
+        displayText = analysis.converted_texts.direct;
+      } else if (
+        selectedStyle === "softness" &&
+        analysis.converted_texts.gentle
+      ) {
+        displayText = analysis.converted_texts.gentle;
+      } else if (
+        selectedStyle === "politeness" &&
+        analysis.converted_texts.neutral
+      ) {
+        displayText = analysis.converted_texts.neutral;
+      }
+    }
+
     const outputLines = [];
     outputLines.push(`[Converted Text]`);
-    outputLines.push(analysis.converted_text);
-    outputLines.push(''); // Blank line
+    outputLines.push(displayText);
 
     const relevantSuggestions = analysis.suggestions.filter(
       (s) => s.type === selectedStyle
     );
 
+    // Only show suggestions section if there are actual suggestions
     if (relevantSuggestions.length > 0) {
+      outputLines.push("");
       outputLines.push(`[Suggestions for ${selectedStyle}]`);
       const suggestionLines = relevantSuggestions.map(
         (s) => `- "${s.original}" -> "${s.suggestion}" (${s.reason})`
       );
       outputLines.push(...suggestionLines);
-    } else {
-      outputLines.push(`No specific suggestions for ${selectedStyle}.`);
     }
 
-    return outputLines.join('\n');
+    return outputLines.join("\n");
   }, [analysis, selectedStyle, convertMutation.isPending]);
 
   return (
