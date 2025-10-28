@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, conint
 from database.db import get_db
 from database.models import CompanyProfile
 
-router = APIRouter(prefix="/api/v1/surveys", tags=["surveys"])
+router = APIRouter(prefix="/surveys", tags=["surveys"])
 
 class CompanySurveyRequest(BaseModel):
     communication_style: str

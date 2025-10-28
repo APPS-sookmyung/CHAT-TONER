@@ -3,10 +3,10 @@ from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 import logging
 
-# Temporarily disable these imports to avoid dependency issues
-# from services.profile_pipeline import run_profile_pipeline
-# from services.vector_store_pg import VectorStorePG
-# from api.dependencies import get_vector_store
+from datetime import datetime # Added import
+from services.profile_pipeline import run_profile_pipeline
+from services.vector_store_pg import VectorStorePG
+from api.dependencies import get_vector_store
 
 logger = logging.getLogger('chattoner.surveys')
 
@@ -42,26 +42,90 @@ class SubmitRequest(BaseModel):
 
 
 @router.post("/{key}/responses")
-async def submit_survey(key: str, req: SubmitRequest):
+async def submit_survey(key: str, req: SubmitRequest, store: VectorStorePG = Depends(get_vector_store)):
     if key != "onboarding-intake":
         raise HTTPException(404, "unknown survey key")
     try:
-        # Temporarily return mock data
+        profile_result = await run_profile_pipeline(
+            tenant_id=req.tenant_id,
+            user_id=req.user_id,
+            survey_answers=req.answers,
+            store=store,
+            store_vector=True
+        )
+
+        # Map the profile features to the desired response format
+        features = profile_result["features"]
         return {
-            "id": 1,
+            "id": 1, # This ID is not used in the pipeline, can be generated or fetched if needed
             "userId": req.user_id,
-            "baseFormalityLevel": 75,
-            "baseFriendlinessLevel": 60,
-            "baseEmotionLevel": 50,
-            "baseDirectnessLevel": 80,
-            "sessionFormalityLevel": 75,
-            "sessionFriendlinessLevel": 60,
-            "sessionEmotionLevel": 50,
-            "sessionDirectnessLevel": 80,
+            "baseFormalityLevel": int(features["formality"] * 10), # Scale 1-10 to 1-100 and convert to int
+            "baseFriendlinessLevel": int(features["friendliness"] * 10),
+            "baseEmotionLevel": int(features["emotiveness"] * 10),
+            "baseDirectnessLevel": int(features["directness"] * 10),
+            "sessionFormalityLevel": int(features["formality"] * 10), # For now, session levels are same as base
+            "sessionFriendlinessLevel": int(features["friendliness"] * 10),
+            "sessionEmotionLevel": int(features["emotiveness"] * 10),
+            "sessionDirectnessLevel": int(features["directness"] * 10),
             "responses": req.answers,
-            "completedAt": "2024-01-01T00:00:00Z"
+            "completedAt": datetime.now().isoformat() + "Z" # Use current time
         }
     except Exception as e:
         logger.error(f"설문 처리 중 오류 발생: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred during survey processing.")
 
+
+from api.v1.schemas.survey import CompanySurvey # Added import
+from services.enterprise_db_service import EnterpriseDBService # Added import
+from services.profile_generator import ProfileGeneratorService # Added import
+from dependency_injector.wiring import inject, Provide # Added import
+from core.container import Container # Added import
+
+
+@router.post("/company/{company_id}/responses")
+@inject
+async def submit_company_survey(
+    company_id: str,
+    survey_data: CompanySurvey,
+    db_service: EnterpriseDBService = Depends(Provide[Container.enterprise_db_service]),
+    profile_generator: ProfileGeneratorService = Depends(Provide[Container.profile_generator_service])
+):
+    """
+    기업 설문조사 응답을 제출하고 기업 프로필을 생성 및 저장합니다.
+    - company_id: 기업의 고유 ID (Path Parameter)
+    """
+    
+    # 1. company_id 존재 여부 확인 (Pre-condition)
+    existing_profile = await db_service.get_company_profile(company_id)
+    if not existing_profile:
+        # If company_id does not exist, you might choose to create it or raise an error.
+        # For now, let's create it implicitly via upsert.
+        logger.info(f"Company ID {company_id} not found, proceeding with creation/upsert.")
+
+    # 2. AI 기반 기업 프로필 텍스트 생성
+    generated_profile_text = await profile_generator.create_profile_from_survey(survey_data)
+
+    # 3. 설문 데이터와 생성된 프로필을 DB에 저장 (upsert)
+    success = await db_service.upsert_company_profile(
+        company_id=company_id,
+        company_name=survey_data.company_name,
+        industry=survey_data.industry,
+        team_size=survey_data.team_size,
+        primary_business=survey_data.primary_business,
+        communication_style=survey_data.communication_style,
+        main_channels=survey_data.main_channel, # Now List[str]
+        target_audience=survey_data.main_target,
+        generated_profile=generated_profile_text,
+        survey_data=survey_data.dict()
+    )
+
+    if not success:
+        logger.error(f"기업 프로필 저장/업데이트 실패: {company_id}")
+        raise HTTPException(status_code=500, detail="기업 프로필 저장에 실패했습니다.")
+
+    return {
+        "message": "기업 프로필이 성공적으로 생성 및 저장되었습니다.",
+        "company_id": company_id,
+        "generated_profile_text": generated_profile_text,
+        "survey_data": survey_data.dict()
+    }
