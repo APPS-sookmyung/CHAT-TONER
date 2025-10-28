@@ -1,62 +1,63 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from api.v1.schemas.survey import CompanySurvey
-from services.profile_generator import ProfileGeneratorService
+from datetime import datetime
+from pydantic import BaseModel, Field, conint
 from database.db import get_db
 from database.models import CompanyProfile
 
-router = APIRouter(
-    prefix="/surveys",
-    tags=["Company Survey"]
-)
+router = APIRouter(prefix="/api/v1/surveys", tags=["surveys"])
+
+class CompanySurveyRequest(BaseModel):
+    communication_style: str
+    company_name: str
+    main_channel: str                 # 단일 문자열
+    main_target: list[str] = Field(default_factory=list)  # 리스트
+    team_size: conint(ge=1)
 
 @router.post("/company/{company_id}")
-def submit_company_survey(
-    company_id: int,
-    survey_data: CompanySurvey,
-    profile_service: ProfileGeneratorService = Depends(),
-    db: Session = Depends(get_db)
-):
+def submit_company_survey(company_id: str, payload: CompanySurveyRequest, db: Session = Depends(get_db)):
     """
     기업용 설문조사를 제출받아 처리하는 엔드포인트입니다.
-    1. 설문 응답을 기반으로 커뮤니케이션 프로필을 생성합니다.
-    2. 생성된 프로필을 벡터화하여 Vector DB에 저장합니다.
-    3. 설문 원본 데이터와 생성된 프로필을 RDB에 저장합니다.
+    company_id는 문자열 키로 받아 조회합니다.
     """
-    # 프로필 생성 및 벡터화 로직
-    profile_text = profile_service.create_profile_from_survey(survey_data)
-    if "실패" in profile_text:
-        raise HTTPException(status_code=500, detail="커뮤니케이션 프로필 생성에 실패했습니다.")
-    profile_service.vectorize_and_save(company_id, profile_text)
-    
-    # DB에서 해당 company_id를 가진 회사 프로필 탐색 또는 생성
-    company_profile = db.query(CompanyProfile).filter(CompanyProfile.id == company_id).first()
+    # 1) company_id는 문자열 키이므로 company_id 컬럼으로 조회
+    profile = (
+        db.query(CompanyProfile)
+        .filter(CompanyProfile.company_id == company_id)
+        .first()
+    )
 
-    if not company_profile:
-        # 회사 프로필이 없으면 새로 생성
-        company_profile = CompanyProfile(
-            id=company_id,
-            company_name=survey_data.company_name,  # 설문조사에서 회사명 가져오기
-            survey_data=survey_data.model_dump(),
-            generated_profile=profile_text
+    if profile is None:
+        # 2) 스키마 필드명과 DB 컬럼 정확히 매핑
+        profile = CompanyProfile(
+            company_id=company_id,
+            company_name=payload.company_name,
+            team_size=payload.team_size,
+            communication_style=payload.communication_style,
+            main_channels=[payload.main_channel],     # 단일 → 리스트로 저장
+            target_audience=payload.main_target,
+            survey_data=payload.model_dump(),  # 기존 호환성
+            updated_at=datetime.utcnow(),
         )
-        db.add(company_profile)
+        db.add(profile)
     else:
-        # 기존 회사 프로필 업데이트
-        company_profile.company_name = survey_data.company_name
-        company_profile.survey_data = survey_data.model_dump()
-        company_profile.generated_profile = profile_text
-    
-    # 변경 내용을 데이터베이스에 최종 저장
-    db.commit()
-    # DB에 저장된 최신 정보로 현재 객체 업데이트
-    db.refresh(company_profile)
+        # 업데이트 경로
+        profile.company_name = payload.company_name
+        profile.team_size = payload.team_size
+        profile.communication_style = payload.communication_style
+        profile.main_channels = [payload.main_channel]
+        profile.target_audience = payload.main_target
+        profile.survey_data = payload.model_dump()  # 기존 호환성
+        profile.updated_at = datetime.utcnow()
 
+    db.commit()
+    db.refresh(profile)
     return {
-        "message": "설문조사가 성공적으로 처리 및 저장되었습니다.",
-        "company_id": company_id,
-        "saved_data": {
-            "survey": company_profile.survey_data,
-            "profile": company_profile.generated_profile
-        }
+        "company_id": profile.company_id,
+        "company_name": profile.company_name,
+        "team_size": profile.team_size,
+        "communication_style": profile.communication_style,
+        "main_channels": profile.main_channels,
+        "target_audience": profile.target_audience,
+        "id": profile.id,
     }

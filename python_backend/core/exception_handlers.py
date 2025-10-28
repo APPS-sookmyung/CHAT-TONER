@@ -32,13 +32,22 @@ def setup_exception_handlers(app: FastAPI):
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         """요청 검증 예외 핸들러 - jsonable_encoder 사용"""
-        # bytes -> "<N bytes>"로 안전 변환
-        details = jsonable_encoder(
-            exc.errors(),
-            custom_encoder={
-                bytes: lambda b: f"<{len(b)} bytes>"
-            },
-        )
+        try:
+            # bytes -> str 디코딩 시도
+            details = jsonable_encoder(
+                exc.errors(),
+                custom_encoder={
+                    bytes: lambda b: b.decode('utf-8', errors='replace')
+                },
+            )
+        except Exception:
+            # 디코딩 실패 시 안전한 형태로 변환
+            details = jsonable_encoder(
+                exc.errors(),
+                custom_encoder={
+                    bytes: lambda b: f"<{len(b)} bytes>"
+                },
+            )
         return JSONResponse(
             status_code=422,
             content={"error": "Validation Error", "details": details},
