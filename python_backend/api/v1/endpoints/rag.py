@@ -80,10 +80,12 @@ async def ingest_documents(
             """
             try:
                 openai_service = getattr(rag_service, "openai_service", None)
-                base_statement = (
-                    f"벡터 데이터베이스 생성이 {'성공' if success else '보류/실패'}되었어요. "
-                    f"처리된 문서 수: {processed}개."
-                )
+                # 성공 시에는 고정 문구로 완료 메시지를 보장
+                if success:
+                    return f"벡터 데이터베이스 생성이 완료되었습니다. 처리된 문서 수: {processed}개."
+
+                # 실패/보류 시 기본 안내 문구
+                base_statement = f"벡터 데이터베이스 생성이 보류/실패되었어요. 처리된 문서 수: {processed}개."
                 if not openai_service:
                     return base_statement if not note else f"{base_statement} 참고: {note}"
 
@@ -95,7 +97,7 @@ async def ingest_documents(
                     "당신은 한국어 제품 어시스턴트입니다. 사용자가 이해하기 쉬운 한두 문장으로, "
                     "긍정적이면서도 정확하게 현재 작업 상태를 안내하세요. 불필요한 사족은 피하고, 숫자 정보(개수 등)는 그대로 유지하세요."
                 )
-                status = "성공" if success else "보류 또는 실패"
+                status = "보류 또는 실패"
                 user_prompt = (
                     f"상황: RAG 문서 주입 결과.\n"
                     f"상태: {status}\n"
