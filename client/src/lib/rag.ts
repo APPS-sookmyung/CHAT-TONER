@@ -2,8 +2,8 @@
 import { RagResponse } from "@/types/rag";
 
 const API = {
-  analyzeGrammar: "/api/rag/analyze-grammar",
-  suggestExpressions: "/api/rag/suggest-expressions",
+  analyzeGrammar: "/api/v1/rag/analyze-grammar",
+  suggestExpressions: "/api/v1/rag/suggest-expressions",
 } as const;
 
 type CommonBody = {
