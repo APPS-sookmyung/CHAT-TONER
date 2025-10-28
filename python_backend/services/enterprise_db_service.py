@@ -77,17 +77,18 @@ class EnterpriseDBService:
         """Query company profile"""
         if not self.pool:
             await self.initialize()
-            
         async with self.pool.acquire() as conn:
             try:
-                row = await conn.fetchrow("""
-                    SELECT company_id, company_name, industry, team_size, 
-                           primary_business, communication_style, main_channels, 
-                           target_audience, generated_profile, created_at
-                    FROM company_profiles 
+                row = await conn.fetchrow(
+                    """
+                    SELECT company_id, company_name, industry, team_size,
+                           primary_business, communication_style, main_channels,
+                           target_audience, generated_profile, created_at, survey_data
+                    FROM company_profiles
                     WHERE company_id = $1
-                """, company_id)
-                
+                    """,
+                    company_id,
+                )
                 if row:
                     return {
                         'company_id': row['company_id'],
@@ -99,14 +100,67 @@ class EnterpriseDBService:
                         'main_channels': json.loads(row['main_channels']) if row['main_channels'] else [],
                         'target_audience': json.loads(row['target_audience']) if row['target_audience'] else [],
                         'generated_profile': row['generated_profile'],
-                        'created_at': row['created_at']
+                        'created_at': row['created_at'],
+                        'survey_data': json.loads(row['survey_data']) if row['survey_data'] else {},
                     }
                 return None
-                
             except Exception as e:
                 logger.error(f"기업 프로필 조회 실패 ({company_id}): {e}")
                 return None
     
+    async def upsert_company_profile(
+        self,
+        company_id: str,
+        company_name: str,
+        industry: str,
+        team_size: int,
+        primary_business: str,
+        communication_style: str,
+        main_channels: List[str],
+        target_audience: List[str],
+        generated_profile: str,
+        survey_data: Dict[str, Any] # Store original survey data
+    ) -> bool:
+        """Insert or update company profile"""
+        if not self.pool:
+            await self.initialize()
+            
+        async with self.pool.acquire() as conn:
+            try:
+                await conn.execute("""
+                    INSERT INTO company_profiles 
+                    (company_id, company_name, industry, team_size, primary_business,
+                     communication_style, main_channels, target_audience, generated_profile, survey_data)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10::jsonb)
+                    ON CONFLICT (company_id) DO UPDATE SET
+                        company_name = EXCLUDED.company_name,
+                        industry = EXCLUDED.industry,
+                        team_size = EXCLUDED.team_size,
+                        primary_business = EXCLUDED.primary_business,
+                        communication_style = EXCLUDED.communication_style,
+                        main_channels = EXCLUDED.main_channels,
+                        target_audience = EXCLUDED.target_audience,
+                        generated_profile = EXCLUDED.generated_profile,
+                        survey_data = EXCLUDED.survey_data,
+                        updated_at = now()
+                """,
+                    company_id,
+                    company_name,
+                    industry,
+                    team_size,
+                    primary_business,
+                    communication_style,
+                    json.dumps(main_channels),
+                    json.dumps(target_audience),
+                    generated_profile,
+                    json.dumps(survey_data)
+                )
+                logger.info(f"기업 프로필 저장/업데이트 완료: {company_id}")
+                return True
+            except Exception as e:
+                logger.error(f"기업 프로필 저장/업데이트 실패 ({company_id}): {e}")
+                return False
+
     async def get_company_guidelines(self, company_id: str) -> List[Dict[str, Any]]:
         """Query company guideline documents"""
         if not self.pool:
