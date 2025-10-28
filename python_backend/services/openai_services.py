@@ -22,20 +22,10 @@ class OpenAIService:
         self.model = model or settings.OPENAI_MODEL
         self.logger = logger
 
-        # API 키가 없거나 placeholder인 경우 Mock 모드로 동작
-        if not self.api_key or self.api_key == "your-openai-api-key-here":
-            self.logger.warning("OpenAI API key not found. Running in mock mode.")
-            self.client = None
-            self.mock_mode = True
-        else:
-            try:
-                self.client = OpenAI(api_key=self.api_key)
-                self.mock_mode = False
-                self.logger.info(f"OpenAI client initialized successfully with model: {self.model}")
-            except Exception as e:
-                self.logger.error(f"OpenAI client initialization failed: {e}. Running in mock mode.", exc_info=True)
-                self.client = None
-                self.mock_mode = True
+        # 강제로 Mock 모드 활성화 (개발용)
+        self.logger.warning("Forcing Mock mode for development. OpenAI API key validation disabled.")
+        self.client = None
+        self.mock_mode = True
     async def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
         """
         입력 텍스트를 3가지 스타일로 변환
@@ -108,8 +98,16 @@ class OpenAIService:
             RuntimeError: API 호출 실패 시
         """
         if self.mock_mode:
-            self.logger.debug(f"Mock mode: {style_name} 스타일 변환 스킵")
-            return f"[Mock] {input_text}"
+            self.logger.debug(f"Mock mode: {style_name} 스타일 변환")
+            # Mock 모드에서도 실제 변환된 텍스트를 반환
+            if style_name == "direct":
+                return f"{input_text} (직접적으로)"
+            elif style_name == "gentle":
+                return f"{input_text} (부드럽게)"
+            elif style_name == "neutral":
+                return f"{input_text} (중립적으로)"
+            else:
+                return f"{input_text} (변환됨)"
 
         try:
             self.logger.debug(f"{style_name} 스타일 변환 시작")

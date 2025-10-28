@@ -65,7 +65,8 @@ class ConversionService:
                     enterprise_context=enterprise_context,
                     negative_preferences=negative_preferences
                 )
-                self.logger.debug(f"프롬프트 생성 완료: {list(prompts.keys())}")
+                self.logger.info(f"프롬프트 생성 완료: {list(prompts.keys())}")
+                self.logger.info(f"프롬프트 개수: {len(prompts)}")
             except Exception as e:
                 self.logger.error(f"프롬프트 생성 실패: {e}", exc_info=True)
                 raise ValueError(f"프롬프트 생성 중 오류 발생: {str(e)}")
