@@ -18,46 +18,40 @@ class CompanySurveyRequest(BaseModel):
 def submit_company_survey(company_id: str, payload: CompanySurveyRequest, db: Session = Depends(get_db)):
     """
     기업용 설문조사를 제출받아 처리하는 엔드포인트입니다.
-    company_id는 문자열 키로 받아 조회합니다.
+    company_id를 정수로 변환해서 기존 id 컬럼과 비교합니다.
     """
-    # 1) company_id는 문자열 키이므로 company_id 컬럼으로 조회
+    try:
+        # company_id를 정수로 변환
+        company_id_int = int(company_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="company_id must be a valid integer")
+
+    # 기존 id 컬럼으로 조회
     profile = (
         db.query(CompanyProfile)
-        .filter(CompanyProfile.company_id == company_id)
+        .filter(CompanyProfile.id == company_id_int)
         .first()
     )
 
     if profile is None:
-        # 2) 스키마 필드명과 DB 컬럼 정확히 매핑
+        # 새 프로필 생성 - id는 자동 증가이므로 설정하지 않음
         profile = CompanyProfile(
-            company_id=company_id,
             company_name=payload.company_name,
-            team_size=payload.team_size,
-            communication_style=payload.communication_style,
-            main_channels=[payload.main_channel],     # 단일 → 리스트로 저장
-            target_audience=payload.main_target,
-            survey_data=payload.model_dump(),  # 기존 호환성
+            survey_data=payload.model_dump(),
             updated_at=datetime.utcnow(),
         )
         db.add(profile)
     else:
-        # 업데이트 경로
+        # 기존 프로필 업데이트
         profile.company_name = payload.company_name
-        profile.team_size = payload.team_size
-        profile.communication_style = payload.communication_style
-        profile.main_channels = [payload.main_channel]
-        profile.target_audience = payload.main_target
-        profile.survey_data = payload.model_dump()  # 기존 호환성
+        profile.survey_data = payload.model_dump()
         profile.updated_at = datetime.utcnow()
 
     db.commit()
     db.refresh(profile)
     return {
-        "company_id": profile.company_id,
+        "company_id": profile.id,  # integer id 반환
         "company_name": profile.company_name,
-        "team_size": profile.team_size,
-        "communication_style": profile.communication_style,
-        "main_channels": profile.main_channels,
-        "target_audience": profile.target_audience,
+        "survey_data": profile.survey_data,
         "id": profile.id,
     }
