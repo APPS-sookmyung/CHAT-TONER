@@ -54,8 +54,8 @@ def create_app() -> FastAPI:
         "api.v1.endpoints.profile",
         "api.v1.endpoints.feedback",
         "api.v1.endpoints.rag",
-        "api.v1.endpoints.surveys"   # 의존성 문제 해결됨
-        # "api.v1.endpoints.quality",  # langgraph 의존성 문제로 제외
+        "api.v1.endpoints.surveys",   # 의존성 문제 해결됨
+        "api.v1.endpoints.quality"   # 폴백 방식으로 활성화
         # "api.v1.endpoints.company"   # langgraph 의존성 문제로 제외
     ])
     
