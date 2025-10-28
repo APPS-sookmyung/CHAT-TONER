@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ResultsSummary from "@/components/questionnaire/results-summary";
 import type { UserProfile } from "@shared/schema";
 import { useNavigate } from "react-router-dom";
+import { PATH } from "@/constants/paths";
 
 // Mock user profile for development when localStorage is empty
 const createMockProfile = (): UserProfile => ({
@@ -45,7 +46,7 @@ export default function ResultsPage() {
       <ResultsSummary
         userProfile={profile}
         completionRate={100}
-        onStartConversion={() => navigate("/validate")}
+        onStartConversion={() => navigate(PATH.CHOICE)}
         onExportData={() => {
           const dataStr = JSON.stringify(profile, null, 2);
           const url = URL.createObjectURL(
