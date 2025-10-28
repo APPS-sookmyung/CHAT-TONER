@@ -1,0 +1,7 @@
+OPENAI_API_KEY: "sk-***"
+DB_HOST: "10.118.192.2"
+DB_PORT: "5432"
+DB_NAME: "chattoner-db"
+DB_USER: "chattoner-user"
+DB_PASS: "r~o+^[uD @6+p,kby"
+DATABASE_URL: "postgresql://chattoner-user:r~o%2B%5E%5BuD%406%2Bp%2Ckby@10.118.192.2:5432/chattoner-db"
