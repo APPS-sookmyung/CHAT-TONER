@@ -1,6 +1,6 @@
 """
-1. fastapi 인스턴스 생성 
-2. cors 설정 
+1. fastapi 인스턴스 생성
+2. cors 설정
 3. 라우터 등록
 4. 루트 health 체크 엔드포인트
 5. uvicorn 실행
@@ -9,8 +9,14 @@ Chat Toner FastAPI Main Application
 간소화된 메인 애플리케이션 엔트리포인트
 """
 
+# .env 파일 명시적 로드 (설정 로드 전에 수행)
+from dotenv import load_dotenv
+from pathlib import Path
+env_path = Path(__file__).resolve().parent.parent / '.env'
+load_dotenv(env_path)
 
 import logging
+logging.basicConfig(level=logging.INFO)
 logger= logging.getLogger('chattoner')
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +27,7 @@ from core.container import Container
 from core.middleware import setup_middleware
 from core.exception_handlers import setup_exception_handlers
 from api.v1.router import api_router
-from starlette.middleware.sessions import SessionMiddleware
+# from starlette.middleware.sessions import SessionMiddleware
 from api import feedback
 
 FRONT_ORIGINS = [
@@ -41,17 +47,16 @@ def create_app() -> FastAPI:
     #container.config.from_dict(settings.dict())
     container.config.from_dict(settings.model_dump())
 
-    # @@ 주의: 전체 모듈 와이어링 시 순환 참조 및 의존성 오류 발생 가능
     # 와이어링 추가 (의존성 문제 있는 모듈 제외)
     container.wire(modules=[
         "api.v1.endpoints.conversion",
         "api.v1.endpoints.health",
         "api.v1.endpoints.profile",
         "api.v1.endpoints.feedback",
-        "api.v1.endpoints.rag",
-        "api.v1.endpoints.quality",
-        "api.v1.endpoints.company"
-        # @@ quality와 company는 langgraph/enterprise 의존성 문제로 제외됨. 추가 필요!!!
+        "api.v1.endpoints.rag"
+        # "api.v1.endpoints.surveys"   # user_service 의존성 문제로 제외
+        # "api.v1.endpoints.quality",  # langgraph 의존성 문제로 제외
+        # "api.v1.endpoints.company"   # langgraph 의존성 문제로 제외
     ])
     
     # FastAPI 앱 생성
@@ -107,6 +112,7 @@ if __name__ == "__main__":
         "main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.DEBUG,
-        access_log=settings.DEBUG
+        reload=False,
+        access_log=settings.DEBUG,
+        log_level="info"
     )

@@ -3,17 +3,22 @@ RAG (Retrieval-Augmented Generation) Endpoints
 문서 기반 질의응답 및 텍스트 품질 분석 엔드포인트
 """
 
+import logging # Added import
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, Optional, List, Annotated
 from pydantic import BaseModel
 from api.v1.schemas.conversion import UserProfile
 from pathlib import Path
+from core.config import get_settings # Added import
+
+logger = logging.getLogger('chattoner.rag_endpoints') # Added logger
 
 router = APIRouter()
 
 # Request/Response Models
 class DocumentIngestRequest(BaseModel):
     folder_path: str = "python_backend/langchain_pipeline/data/documents"
+    company_id: Optional[str] = None
 
 class DocumentIngestResponse(BaseModel):
     success: bool
@@ -26,6 +31,7 @@ class RAGQueryRequest(BaseModel):
     context: Optional[str] = None
     use_styles: bool = False
     user_profile: Optional[UserProfile] = None
+    company_id: Optional[str] = None
 
 class RAGQueryResponse(BaseModel):
     success: bool
@@ -56,15 +62,25 @@ async def ingest_documents(
 ) -> DocumentIngestResponse:
     """문서 폴더에서 RAG 벡터 DB 생성"""
     try:
-        # 컨테이너 내부의 절대 경로를 기준으로 폴더 경로 구성
-        # Dockerfile에서 WORKDIR /app으로 설정했으므로 /app이 기준
-        base_path = Path("/app")
-        folder_path = base_path / request.folder_path
+        # 로컬 개발 환경에서는 현재 작업 디렉토리 기준으로 상대 경로 사용
+        import os
+        from pathlib import Path
+
+        # 현재 작업 디렉토리에서 상대 경로로 문서 폴더 찾기
+        current_dir = Path.cwd()
+        folder_path = current_dir / request.folder_path
+
+        print(f"RAG Ingest: Current dir: {current_dir}")
+        print(f"RAG Ingest: Requested path: {request.folder_path}")
+        print(f"RAG Ingest: Final folder_path: {folder_path}")
 
         if not folder_path.exists():
             raise HTTPException(status_code=404, detail=f"문서 폴더를 찾을 수 없습니다: {folder_path}")
         
-        result = rag_service.ingest_documents(str(folder_path))
+        if request.company_id:
+            result = rag_service.ingest_company_documents(request.company_id, str(folder_path))
+        else:
+            result = rag_service.ingest_documents(str(folder_path))
         
         return DocumentIngestResponse(
             success=result.get("success", False),
@@ -108,7 +124,8 @@ async def ask_rag_question(
             # 단일 답변
             result = await rag_service.ask_question(
                 query=request.query,
-                context=request.context
+                context=request.context,
+                company_id=request.company_id
             )
             
             return RAGQueryResponse(
@@ -130,12 +147,14 @@ async def get_rag_status(rag_service: Annotated[object, Depends(get_rag_service)
     try:
         status = rag_service.get_status()
         
+        from core.rag_config import get_rag_config
+        cfg = get_rag_config()
         return RAGStatusResponse(
             rag_status=status.get("rag_status", "unknown"),
             doc_count=status.get("doc_count", 0),
             services_available=status.get("services_available", False),
-            documents_path="python_backend/langchain_pipeline/data/documents",
-            index_path="python_backend/langchain_pipeline/data/faiss_index"
+            documents_path=str(cfg.documents_path),
+            index_path=str(cfg.faiss_index_path)
         )
         
     except Exception as e:
