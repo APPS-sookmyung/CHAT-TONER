@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8080",
+        target: "https://chattoner-back-184664486594.asia-northeast3.run.app",
         changeOrigin: true,
         rewrite: (path) => path,
         configure: (proxy, _options) => {
