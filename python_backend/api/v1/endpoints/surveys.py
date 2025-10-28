@@ -68,6 +68,13 @@ async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStor
             "sessionFriendlinessLevel": int(features["friendliness"] * 10),
             "sessionEmotionLevel": int(features["emotiveness"] * 10),
             "sessionDirectnessLevel": int(features["directness"] * 10),
+            # 사용자 성향 점수(1-10 스케일, 소수 포함 가능)
+            "traitScores": {
+                "formality": float(features["formality"]),
+                "friendliness": float(features["friendliness"]),
+                "emotiveness": float(features["emotiveness"]),
+                "directness": float(features["directness"]),
+            },
             "responses": req.answers,
             "completedAt": datetime.now().isoformat() + "Z" # Use current time
         }
@@ -93,6 +100,13 @@ async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStor
             "sessionFriendlinessLevel": int(features["friendliness"] * 10),
             "sessionEmotionLevel": int(features["emotiveness"] * 10),
             "sessionDirectnessLevel": int(features["directness"] * 10),
+            # 사용자 성향 점수(1-10 스케일)
+            "traitScores": {
+                "formality": float(features["formality"]),
+                "friendliness": float(features["friendliness"]),
+                "emotiveness": float(features["emotiveness"]),
+                "directness": float(features["directness"]),
+            },
             "responses": req.answers,
             "completedAt": datetime.now().isoformat() + "Z",
         }
@@ -110,8 +124,8 @@ from core.container import Container # Added import
 async def submit_company_survey(
     company_id: str,
     survey_data: CompanySurvey,
-    db_service: EnterpriseDBService = Provide[Container.enterprise_db_service],
-    profile_generator: ProfileGeneratorService = Provide[Container.profile_generator_service]
+    db_service = Provide[Container.enterprise_db_service],
+    profile_generator = Provide[Container.profile_generator_service]
 ):
     """
     기업 설문조사 응답을 제출하고 기업 프로필을 생성 및 저장합니다.
@@ -121,9 +135,8 @@ async def submit_company_survey(
     # 1. company_id 존재 여부 확인 (Pre-condition)
     existing_profile = await db_service.get_company_profile(company_id)
     if not existing_profile:
-        # If company_id does not exist, you might choose to create it or raise an error.
-        # For now, let's create it implicitly via upsert.
-        logger.info(f"Company ID {company_id} not found, proceeding with creation/upsert.")
+        # Pre-condition enforced: company_id must exist in DB
+        raise HTTPException(status_code=404, detail=f"company_id '{company_id}' not found")
 
     # 2. AI 기반 기업 프로필 텍스트 생성
     generated_profile_text = await profile_generator.create_profile_from_survey(survey_data)
