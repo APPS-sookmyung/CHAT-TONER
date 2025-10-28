@@ -11,7 +11,7 @@ class CompanySurvey(BaseModel):
 
     class Config:
         # 예시 데이터를 Swagger UI에 표시
-        json_schema_extra = {
+        json_json_schema_extra = {
             "example": {
                 "company_name": "ChatToner Corp",
                 "team_size": 20,

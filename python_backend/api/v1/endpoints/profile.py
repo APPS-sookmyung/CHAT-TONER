@@ -27,7 +27,7 @@ class ProfileRequest(BaseModel):
     responses: Optional[Dict[str, Any]] = Field(default_factory=dict, description="추가 응답 데이터")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "userId": "user456",
                 "baseFormalityLevel": 4,
@@ -58,7 +58,7 @@ class ProfileResponse(BaseModel):
     negativePrompts: List[str] = []
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "userId": "user456",
