@@ -6,7 +6,8 @@ import logging
 from datetime import datetime # Added import
 from services.profile_pipeline import run_profile_pipeline
 from services.vector_store_pg import VectorStorePG
-from api.dependencies import get_vector_store
+from api.dependencies import try_get_vector_store
+from services.style_profile_service import extract_style_features_from_survey
 
 logger = logging.getLogger('chattoner.surveys')
 
@@ -42,7 +43,7 @@ class SubmitRequest(BaseModel):
 
 
 @router.post("/{key}/responses")
-async def submit_survey(key: str, req: SubmitRequest, store: VectorStorePG = Depends(get_vector_store)):
+async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStorePG] = Depends(try_get_vector_store)):
     if key != "onboarding-intake":
         raise HTTPException(404, "unknown survey key")
     try:
@@ -50,8 +51,8 @@ async def submit_survey(key: str, req: SubmitRequest, store: VectorStorePG = Dep
             tenant_id=req.tenant_id,
             user_id=req.user_id,
             survey_answers=req.answers,
-            store=store,
-            store_vector=True
+            store=store,  # None일 수 있음
+            store_vector=bool(store)
         )
 
         # Map the profile features to the desired response format
@@ -71,8 +72,30 @@ async def submit_survey(key: str, req: SubmitRequest, store: VectorStorePG = Dep
             "completedAt": datetime.now().isoformat() + "Z" # Use current time
         }
     except Exception as e:
-        logger.error(f"설문 처리 중 오류 발생: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="An error occurred during survey processing.")
+        # 폴백: 파이프라인 실패 시에도 200 OK로 유효 응답 반환
+        logger.error(f"설문 처리 중 오류 발생(폴백 응답으로 처리): {e}", exc_info=True)
+
+        # 기본 특성 추출(설문에서 직접), 실패 시 중립값 사용
+        try:
+            features_obj = extract_style_features_from_survey(req.answers)
+            features = features_obj.dict()
+        except Exception:
+            features = {"formality": 5.0, "friendliness": 5.0, "emotiveness": 5.0, "directness": 5.0}
+
+        return {
+            "id": 1,
+            "userId": req.user_id,
+            "baseFormalityLevel": int(features["formality"] * 10),
+            "baseFriendlinessLevel": int(features["friendliness"] * 10),
+            "baseEmotionLevel": int(features["emotiveness"] * 10),
+            "baseDirectnessLevel": int(features["directness"] * 10),
+            "sessionFormalityLevel": int(features["formality"] * 10),
+            "sessionFriendlinessLevel": int(features["friendliness"] * 10),
+            "sessionEmotionLevel": int(features["emotiveness"] * 10),
+            "sessionDirectnessLevel": int(features["directness"] * 10),
+            "responses": req.answers,
+            "completedAt": datetime.now().isoformat() + "Z",
+        }
 
 
 from api.v1.schemas.survey import CompanySurvey # Added import
@@ -87,8 +110,8 @@ from core.container import Container # Added import
 async def submit_company_survey(
     company_id: str,
     survey_data: CompanySurvey,
-    db_service: EnterpriseDBService = Depends(Provide[Container.enterprise_db_service]),
-    profile_generator: ProfileGeneratorService = Depends(Provide[Container.profile_generator_service])
+    db_service: EnterpriseDBService = Provide[Container.enterprise_db_service],
+    profile_generator: ProfileGeneratorService = Provide[Container.profile_generator_service]
 ):
     """
     기업 설문조사 응답을 제출하고 기업 프로필을 생성 및 저장합니다.

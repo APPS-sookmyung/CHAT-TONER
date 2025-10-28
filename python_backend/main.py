@@ -47,14 +47,14 @@ def create_app() -> FastAPI:
     #container.config.from_dict(settings.dict())
     container.config.from_dict(settings.model_dump())
 
-    # 와이어링 추가 (의존성 문제 있는 모듈 제외)
+    # 와이어링 추가 (의존성 문제 해결된 모듈 추가)
     container.wire(modules=[
         "api.v1.endpoints.conversion",
         "api.v1.endpoints.health",
         "api.v1.endpoints.profile",
         "api.v1.endpoints.feedback",
-        "api.v1.endpoints.rag"
-        # "api.v1.endpoints.surveys"   # user_service 의존성 문제로 제외
+        "api.v1.endpoints.rag",
+        "api.v1.endpoints.surveys"   # 의존성 문제 해결됨
         # "api.v1.endpoints.quality",  # langgraph 의존성 문제로 제외
         # "api.v1.endpoints.company"   # langgraph 의존성 문제로 제외
     ])
