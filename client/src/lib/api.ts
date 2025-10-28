@@ -1,9 +1,10 @@
 // src/lib/api.ts
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.PROD 
+  ? (import.meta.env.VITE_API_URL || '') 
+  : '';
 
-// Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
