@@ -88,8 +88,8 @@ def create_app() -> FastAPI:
     setup_middleware(app, settings)
 
     # 세션 미들웨어 추가 - secret_key .env 설정 파일에서 관리
-    # Temporarily disabled - SessionMiddleware requires additional setup
-    # app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+    from starlette.middleware.sessions import SessionMiddleware
+    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
     # 예외 핸들러 설정
     setup_exception_handlers(app)
