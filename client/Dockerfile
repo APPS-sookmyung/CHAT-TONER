@@ -9,6 +9,9 @@ RUN npm ci
 # Copy source files
 COPY . .
 
+# Fix permissions for vite binary
+RUN chmod +x node_modules/.bin/vite
+
 # (선택) 빌드 시 API URL 주입: import.meta.env.VITE_API_URL 로 사용
 ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}

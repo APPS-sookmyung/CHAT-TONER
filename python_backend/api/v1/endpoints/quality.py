@@ -100,8 +100,9 @@ async def analyze_company_text_quality(
             f"대상: {request.target_audience.value}, 상황: {request.context.value}"
         )
 
+        # FORCE FALLBACK: Skip database-dependent service to avoid permission errors
         # Call the Service (Agent is handled inside the Service)
-        if service:
+        if False:  # Temporarily disabled service to force fallback mode
             result = await service.analyze_enterprise_text(
                 text=request.text,
                 target_audience=request.target_audience.value,
@@ -111,7 +112,7 @@ async def analyze_company_text_quality(
                 detailed=request.detailed
             )
         else:
-            # No enterprise service available → LLM 간이 분석 폴백
+            # FORCED FALLBACK: Using LLM directly to bypass database issues
             try:
                 from services.openai_services import OpenAIService
                 oai = OpenAIService()

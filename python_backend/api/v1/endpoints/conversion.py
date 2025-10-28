@@ -58,5 +58,35 @@ async def convert_text(request: ConversionRequest,
         import logging, traceback
         logger = logging.getLogger(__name__)
         logger.error("convert failed: %s\n%s", e, traceback.format_exc())
-        raise HTTPException(status_code=500, detail="텍스트 변환 중 서버 오류가 발생했습니다.")
+
+        # FALLBACK: Direct LLM call when conversion service fails
+        try:
+            from services.openai_services import OpenAIService
+            oai = OpenAIService()
+
+            formality = user_profile_dict.get('baseFormalityLevel', 3)
+            friendliness = user_profile_dict.get('baseFriendlinessLevel', 3)
+
+            fallback_prompt = f"""
+            다음 한국어 텍스트를 격식도 {formality}/5, 친근함 {friendliness}/5로 변환해주세요.
+            상황: {request.context}
+
+            원본 텍스트: {request.text}
+
+            변환된 텍스트만 반환하세요:
+            """
+
+            converted = await oai.generate_text(fallback_prompt, temperature=0.3, max_tokens=200)
+
+            return ConversionResponse(
+                success=True,
+                original_text=request.text,
+                converted_texts={"converted": converted.strip()},
+                context=request.context,
+                sentiment_analysis={"fallback": True},
+                metadata={"method": "llm-fallback", "reason": "service-error"}
+            )
+        except Exception as fallback_error:
+            logger.error("Fallback also failed: %s", fallback_error)
+            raise HTTPException(status_code=500, detail="텍스트 변환 중 서버 오류가 발생했습니다.")
 

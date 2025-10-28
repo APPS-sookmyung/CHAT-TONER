@@ -194,3 +194,43 @@ async def submit_company_survey(
         "generated_profile_text": generated_profile_text,
         "survey_data": survey_data.dict()
     }
+
+# Alias endpoint to match spec: POST /api/v1/surveys/company/{company_id}
+@router.post("/company/{company_id}")
+@inject
+async def submit_company_survey_alias(
+    company_id: str,
+    survey_data: CompanySurvey,
+    db_service = Provide[Container.enterprise_db_service],
+    profile_generator = Provide[Container.profile_generator_service]
+):
+    # 동일 로직 재사용
+    existing_profile = await db_service.get_company_profile(company_id)
+    if not existing_profile:
+        raise HTTPException(status_code=404, detail=f"company_id '{company_id}' not found")
+
+    generated_profile_text = await profile_generator.create_profile_from_survey(survey_data)
+
+    success = await db_service.upsert_company_profile(
+        company_id=company_id,
+        company_name=survey_data.company_name,
+        industry=survey_data.industry,
+        team_size=survey_data.team_size,
+        primary_business=survey_data.primary_business,
+        communication_style=survey_data.communication_style,
+        main_channels=survey_data.main_channel,
+        target_audience=survey_data.main_target,
+        generated_profile=generated_profile_text,
+        survey_data=survey_data.dict()
+    )
+
+    if not success:
+        logger.error(f"기업 프로필 저장/업데이트 실패: {company_id}")
+        raise HTTPException(status_code=500, detail="기업 프로필 저장에 실패했습니다.")
+
+    return {
+        "message": "기업 프로필이 성공적으로 생성 및 저장되었습니다.",
+        "company_id": company_id,
+        "generated_profile_text": generated_profile_text,
+        "survey_data": survey_data.dict()
+    }
