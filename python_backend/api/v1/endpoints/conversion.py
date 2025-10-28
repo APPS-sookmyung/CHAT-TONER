@@ -30,21 +30,21 @@ async def test_endpoint():
     return {"message": "테스트 성공", "status": "ok"}
 
 @router.post("/convert")
-async def convert_text(request: ConversionRequest, 
+async def convert_text(request: ConversionRequest,
                       conversion_service: ConversionService = Depends(get_conversion_service)):
     """Text style conversion using actual AI service"""
     try:
         # Use the actual ConversionService with camelCase preservation
         user_profile_dict = request.user_profile.model_dump(by_alias=True, exclude_none=True)
         negative_preferences_dict = request.negative_preferences.model_dump(by_alias=True, exclude_none=True) if request.negative_preferences else None
-        
+
         result = await conversion_service.convert_text(
             input_text=request.text,
             user_profile=user_profile_dict,
             context=request.context,
             negative_preferences=negative_preferences_dict
         )
-        
+
         return ConversionResponse(
             success=result.get("success", True),
             original_text=request.text,
@@ -53,7 +53,7 @@ async def convert_text(request: ConversionRequest,
             sentiment_analysis=result.get("sentiment_analysis"),
             metadata=result.get("metadata", {})
         )
-        
+
     except Exception as e:
         import logging, traceback
         logger = logging.getLogger(__name__)
