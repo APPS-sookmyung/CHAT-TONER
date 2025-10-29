@@ -100,6 +100,7 @@ export default function AnalyzeQualityPage() {
   // State for the analysis result from the API
   const [analysisResult, setAnalysisResult] =
     useState<CompanyQualityAnalysisResponse | null>(null);
+  const [finalText, setFinalText] = useState<string>("");
 
   // Fetch dropdown options
   const { data: dropdownOptions } = useQuery({
@@ -153,6 +154,37 @@ export default function AnalyzeQualityPage() {
     if (isAnalyzeDisabled) return;
     analyzeMutation.mutate(inputText);
   };
+
+  // Generate final text via LLM by aggregating all suggestions
+  const generateFinalMutation = useMutation({
+    mutationFn: async () => {
+      if (!analysisResult) return;
+      const g = analysisResult.grammarSection?.suggestions || [];
+      const p = analysisResult.protocolSection?.suggestions || [];
+      const selectedGrammarIds = g.map((s) => s.id).filter(Boolean);
+      const selectedProtocolIds = p.map((s) => s.id).filter(Boolean);
+      return api.generateFinalText({
+        original_text: inputText,
+        grammar_suggestions: g as any[],
+        protocol_suggestions: p as any[],
+        selected_grammar_ids: selectedGrammarIds,
+        selected_protocol_ids: selectedProtocolIds,
+        user_id: "test-user",
+        company_id: "test-company",
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data?.finalText) {
+        setFinalText(data.finalText);
+        toast({ title: "최종 글 생성 완료", description: "전체 제안을 반영해 생성했습니다." });
+      } else {
+        toast({ title: "생성 결과 없음", description: "응답에 최종 글이 없습니다.", variant: "destructive" });
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "최종 글 생성 실패", description: error.message, variant: "destructive" });
+    },
+  });
 
   const isAnalyzeDisabled =
     !inputText.trim() || !target || !situation || analyzeMutation.isPending;
@@ -225,6 +257,31 @@ ${
           onAnalyzeClick={handleAnalyzeClick}
         />
       </div>
+
+      {/* Small glowing generate button under the analysis output */}
+      {analysisResult && (
+        <div className="mt-6 flex flex-col items-center gap-4">
+          <Button
+            size="sm"
+            className="rounded-full ring-1 ring-primary shadow-[0_0_12px_rgba(59,130,246,0.65)] hover:shadow-[0_0_16px_rgba(59,130,246,0.85)]"
+            disabled={generateFinalMutation.isPending}
+            onClick={() => generateFinalMutation.mutate()}
+          >
+            Generate Final Text
+          </Button>
+
+          {finalText && (
+            <div className="w-full max-w-4xl">
+              <h2 className="mb-2 text-xl font-semibold">최종 글</h2>
+              <textarea
+                className="w-full border rounded-lg p-4 min-h-[160px]"
+                readOnly
+                value={finalText}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

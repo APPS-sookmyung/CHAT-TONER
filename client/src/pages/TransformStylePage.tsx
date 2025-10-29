@@ -70,6 +70,9 @@ export default function TransformStylePage() {
   // State for the analysis result from the API
   const [analysis, setAnalysis] = useState<StyleAnalysis | null>(null);
 
+  // State for feedback selection animation
+  const [selectedFeedback, setSelectedFeedback] = useState<string | null>(null);
+
   // Load user profile from localStorage
   useEffect(() => {
     const profileString = localStorage.getItem("chatToner_profile");
@@ -185,6 +188,23 @@ export default function TransformStylePage() {
     convertMutation.mutate({ text: inputText, style: selectedStyle });
   };
 
+  const handleFeedbackSelect = (styleType: string) => {
+    // Set animation state
+    setSelectedFeedback(styleType);
+
+    // Show success toast
+    toast({
+      title: "피드백 추가됨",
+      description: "사용자의 피드백에 추가되었습니다",
+      duration: 2000,
+    });
+
+    // Clear animation after 1 second
+    setTimeout(() => {
+      setSelectedFeedback(null);
+    }, 1000);
+  };
+
   const isTransformDisabled = !inputText.trim() || convertMutation.isPending;
 
   // Logic to format the output text based on the selected style
@@ -259,6 +279,67 @@ export default function TransformStylePage() {
           isTransformDisabled={isTransformDisabled}
         />
       </div>
+
+      {/* Three style result cards */}
+      {analysis && analysis.converted_texts && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-center mb-8">
+            선호하는 스타일을 선택해주세요
+          </h2>
+          <div className="flex justify-center gap-6">
+            {/* Direct Card */}
+            <div
+              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
+                selectedFeedback === "direct"
+                  ? "border-blue-400 bg-blue-50 shadow-lg animate-pulse"
+                  : "border-gray-200 hover:border-blue-300 hover:shadow-md"
+              }`}
+              onClick={() => handleFeedbackSelect("direct")}
+            >
+              <h3 className="font-semibold text-lg mb-3 text-blue-600">
+                Direct
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {analysis.converted_texts.direct || "결과가 없습니다"}
+              </p>
+            </div>
+
+            {/* Gentle Card */}
+            <div
+              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
+                selectedFeedback === "gentle"
+                  ? "border-green-400 bg-green-50 shadow-lg animate-pulse"
+                  : "border-gray-200 hover:border-green-300 hover:shadow-md"
+              }`}
+              onClick={() => handleFeedbackSelect("gentle")}
+            >
+              <h3 className="font-semibold text-lg mb-3 text-green-600">
+                Gentle
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {analysis.converted_texts.gentle || "결과가 없습니다"}
+              </p>
+            </div>
+
+            {/* Neutral Card */}
+            <div
+              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
+                selectedFeedback === "neutral"
+                  ? "border-purple-400 bg-purple-50 shadow-lg animate-pulse"
+                  : "border-gray-200 hover:border-purple-300 hover:shadow-md"
+              }`}
+              onClick={() => handleFeedbackSelect("neutral")}
+            >
+              <h3 className="font-semibold text-lg mb-3 text-purple-600">
+                Neutral
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {analysis.converted_texts.neutral || "결과가 없습니다"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,12 +9,13 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://chattoner-back-184664486594.asia-northeast3.run.app",
+        // Dev: point to local FastAPI so LLM-only logic is used
+        target: process.env.VITE_PROXY_TARGET || "http://127.0.0.1:8080",
         changeOrigin: true,
         rewrite: (path) => path,
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Proxying:', req.method, req.url);
+            console.log('Proxying:', req.method, req.url, '->', process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:8080');
           });
         },
       },

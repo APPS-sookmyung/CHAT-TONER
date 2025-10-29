@@ -108,6 +108,20 @@ export const api = {
   getDropdownOptions: async () => {
     const response = await apiClient.get('/api/v1/quality/company/options');
     return response.data;
+  },
+
+  // Generate Final Text (LLM-based integration)
+  generateFinalText: async (data: {
+    original_text: string;
+    grammar_suggestions: any[];
+    protocol_suggestions: any[];
+    selected_grammar_ids: string[];
+    selected_protocol_ids: string[];
+    user_id: string;
+    company_id: string;
+  }) => {
+    const response = await apiClient.post('/api/v1/quality/company/generate-final', data);
+    return response.data;
   }
 };
 
