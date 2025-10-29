@@ -493,7 +493,7 @@ async def save_user_feedback(
                         "success": {
                             "summary": "성공 - 제안 적용됨",
                             "value": {
-                                "success": true,
+                                "success": True,
                                 "finalText": "최종 통합본 텍스트입니다.",
                                 "appliedSuggestions": {
                                     "grammarCount": 2,
@@ -508,7 +508,7 @@ async def save_user_feedback(
                         "no_selection": {
                             "summary": "선택된 제안 없음",
                             "value": {
-                                "success": true,
+                                "success": True,
                                 "finalText": "원본 텍스트입니다.",
                                 "appliedSuggestions": {
                                     "grammarCount": 0,
