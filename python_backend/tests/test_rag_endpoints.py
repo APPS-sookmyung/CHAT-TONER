@@ -57,7 +57,8 @@ class TestRAGEndpoints:
         data = response.json()
         assert data["success"] is True
         assert data["documents_processed"] == 5
-        assert data["message"] == "문서 인덱싱이 완료되었습니다."
+        # 메시지는 벡터 DB 생성 완료 문구를 포함하도록 변경됨
+        assert "벡터 데이터베이스 생성이 완료되었습니다" in data["message"]
         assert data["error"] is None
         
         # 서비스 호출 확인

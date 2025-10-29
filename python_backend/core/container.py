@@ -10,8 +10,9 @@ from services.prompt_engineering import PromptEngineer
 from services.openai_services import OpenAIService
 from services.user_preferences import UserPreferencesService
 from services.document_service import DocumentService
-# from services.document_service import DocumentService  # pypdf 의존성 문제로 주석 처리
 from services.rag_service import RAGService
+from services.profile_generator import ProfileGeneratorService # Added import
+from services.user_service import UserService
 
 # 선택적 import (의존성이 있을 때만)
 try:
@@ -50,6 +51,9 @@ class Container(containers.DeclarativeContainer):
         storage=database_storage,
         openai_service=openai_service
     )
+
+    # User service
+    user_service = providers.Singleton(UserService)
     
     # 메인 변환 서비스
     conversion_service = providers.Singleton(
@@ -68,6 +72,12 @@ class Container(containers.DeclarativeContainer):
 
     # RAG 서비스 (싱글톤으로 한번만 초기화)
     rag_service = providers.Singleton(RAGService)
+
+    # 프로필 생성 서비스 (OpenAIService 주입)
+    profile_generator_service = providers.Singleton(
+        ProfileGeneratorService,
+        openai_service=openai_service
+    )
 
     # 기업용 기능들 (의존성이 있을 때만 활성화)
     if ENTERPRISE_FEATURES_AVAILABLE:

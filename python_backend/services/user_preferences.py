@@ -8,6 +8,7 @@ import logging
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Any, Optional
 from enum import Enum
+from fastapi import HTTPException
 
 from .base_service import BaseService
 from database.storage import DatabaseStorage
@@ -399,3 +400,28 @@ class UserPreferencesService(BaseService):
         except Exception as e:
             self.logger.error(f"사용자 {user_id} 프로필 동기화 실패: {e}")
             return False
+
+    def get_feedback_stats(self, user_id: str) -> Dict[str, Any]:
+        """사용자 피드백 통계 조회"""
+        try:
+            # 임시 구현: 기본 통계 반환
+            return {
+                "user_id": user_id,
+                "total_conversions": 0,
+                "feedback_count": 0,
+                "average_rating": 0.0,
+                "preferred_styles": {
+                    "direct": 0,
+                    "gentle": 0,
+                    "neutral": 0
+                },
+                "style_satisfaction": {
+                    "direct": 0.0,
+                    "gentle": 0.0,
+                    "neutral": 0.0
+                },
+                "message": "기본 통계 데이터 (구현 예정)"
+            }
+        except Exception as e:
+            self.logger.error(f"피드백 통계 조회 실패: {e}")
+            raise HTTPException(status_code=500, detail=f"통계 조회 실패: {str(e)}")

@@ -6,14 +6,14 @@ Main API Router
 from fastapi import APIRouter
 
 # 개별 엔드포인트 라우터들 import
-from .endpoints import conversion, health, profile, feedback, rag, documents
+from .endpoints import conversion, health, profile, feedback, rag, documents, quality
 
 
-from .endpoints import quality, company
+# from .endpoints import quality, company  # Temporarily disabled due to langgraph dependency
 # 새로운 엔드포인트들 조건부 import
 try:
-    from .endpoints import surveys, kb, suggest
-    NEW_ENDPOINTS_AVAILABLE = True
+    from .endpoints import surveys, kb, suggest # Uncommented
+    NEW_ENDPOINTS_AVAILABLE = True # Changed to True
 except ImportError:
     NEW_ENDPOINTS_AVAILABLE = False
 
@@ -28,11 +28,11 @@ api_router.include_router(health.router, tags=["health"])
 # API v1 엔드포인트들 (중복된 "/api" 프리픽스 제거)
 api_router.include_router(conversion.router, prefix="/conversion", tags=["conversion"])
 api_router.include_router(profile.router, prefix="/profile", tags=["profile"])
-api_router.include_router(quality.router, prefix="/quality", tags=["quality"])
+api_router.include_router(quality.router, prefix="/quality", tags=["quality"])  # enabled with LLM fallbacks
 api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
 api_router.include_router(rag.router, prefix="/rag", tags=["rag"])
 
-api_router.include_router(company.router, prefix="/company", tags=["company"])
+# api_router.include_router(company.router, prefix="/company", tags=["company"])  # Temporarily disabled
 api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
 api_router.include_router(company_survey_router, tags=["company_survey"])
 

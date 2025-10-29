@@ -22,7 +22,7 @@ class HealthResponse(BaseModel):
     features: Dict[str, bool] = Field(..., description="사용 가능한 기능들")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "status": "ok",
                 "service": "chat-toner-fastapi",

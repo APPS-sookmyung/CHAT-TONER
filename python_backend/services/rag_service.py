@@ -7,7 +7,9 @@ ConversionService와 동일한 패턴으로 구현
 import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
+from core.rag_config import get_rag_config
 from datetime import datetime
+from core.rag_config import get_rag_config
 
 logger = logging.getLogger('chattoner')
 
@@ -92,7 +94,8 @@ class RAGService:
                 return
             
             # 새로 생성
-            docs_path = Path("langchain_pipeline/data/documents")
+            cfg = get_rag_config()
+            docs_path = Path(cfg.documents_path)
             if create_embeddings_from_documents(docs_path) and self.simple_embedder.load():
                 logger.info("Simple Text Embedder 생성 및 로드 완료")
             else:
@@ -106,7 +109,8 @@ class RAGService:
     def _load_documents(self) -> list:
         """문서 로드 공통 함수"""
         from pathlib import Path
-        docs_path = Path("langchain_pipeline/data/documents")
+        cfg = get_rag_config()
+        docs_path = Path(cfg.documents_path)
         documents = []
         
         if not docs_path.exists():
@@ -178,10 +182,36 @@ class RAGService:
                 "error": f"문서 인덱싱 중 서버 오류가 발생했습니다: {str(e)}",
                 "documents_processed": 0
             }
+
+    def ingest_company_documents(self, company_id: str, folder_path: str) -> Dict[str, Any]:
+        """특정 기업용 문서를 인덱싱하여 기업 전용 벡터 스토어로 저장"""
+        try:
+            from langchain_pipeline.retriever.vector_db import ingest_documents_from_folder
+            cfg = get_rag_config()
+            company_index_path = Path(cfg.faiss_index_path) / company_id
+            company_index_path.mkdir(parents=True, exist_ok=True)
+            logger.info(f"기업 인덱싱 요청: company={company_id}, folder={folder_path}, index={company_index_path}")
+
+            vectorstore, docs = ingest_documents_from_folder(Path(folder_path), save_path=company_index_path)
+            if vectorstore is not None:
+                # 기업 전용 벡터 스토어 재적용(체인 사용 시)
+                if self.rag_chain:
+                    try:
+                        self.rag_chain.vectorstore = vectorstore
+                        self.rag_chain.retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+                        self.rag_chain.is_initialized = True
+                    except Exception as e:
+                        logger.warning(f"RAGChain에 기업 벡터스토어 적용 실패: {e}")
+                return {"success": True, "documents_processed": len(docs)}
+            return {"success": False, "error": "문서 처리 실패", "documents_processed": 0}
+        except Exception as e:
+            logger.error(f"기업 문서 인덱싱 중 오류: {e}")
+            return {"success": False, "error": str(e), "documents_processed": 0}
     
     async def ask_question(self, 
                           query: str, 
-                          context: Optional[str] = None) -> Dict[str, Any]:
+                          context: Optional[str] = None,
+                          company_id: Optional[str] = None) -> Dict[str, Any]:
         """
         단일 질의응답 (Simple Embedder 또는 RAG Chain 사용)
         
@@ -214,7 +244,21 @@ class RAGService:
             if result:
                 return result
             
-            # RAG Chain 백업 사용
+            # RAG Chain 백업 사용 (기업별 인덱스 우선 적용)
+            if self.rag_chain and company_id:
+                try:
+                    from langchain_pipeline.retriever.vector_db import load_vector_store
+                    cfg = get_rag_config()
+                    company_index_path = Path(cfg.faiss_index_path) / company_id
+                    vs = load_vector_store(company_index_path)
+                    if vs:
+                        self.rag_chain.vectorstore = vs
+                        self.rag_chain.retriever = vs.as_retriever(search_kwargs={"k": 5})
+                        self.rag_chain.is_initialized = True
+                        logger.info(f"기업 전용 벡터스토어 사용: {company_index_path}")
+                except Exception as e:
+                    logger.warning(f"기업 전용 벡터스토어 로드 실패(기본 인덱스로 진행): {e}")
+
             result = await self._try_rag_chain(query, context, base_metadata)
             if result:
                 return result

@@ -28,9 +28,15 @@ export class AppController {
   private readonly fastApiBaseUrl: string;
 
   constructor(private readonly httpService: HttpService) {
-    // @@ 환경변수 BACKEND_API_URL 설정 필수 (production에서)
     this.fastApiBaseUrl =
       process.env.BACKEND_API_URL || 'http://127.0.0.1:8080';
+    if (
+      process.env.NODE_ENV === 'production' && !process.env.BACKEND_API_URL
+    ) {
+      throw new Error(
+        'BACKEND_API_URL must be set in production for FastAPI proxying.',
+      );
+    }
   }
 
   @Get()
@@ -62,31 +68,7 @@ export class AppController {
     }
   }
 
-  // @@ 파인튜닝 로직 아예 정리 부탁
-
-  // @Post('finetune/convert')
-  // async finetuneConvert(
-  //   @Body() body: FinetuneRequestDto,
-  // ): Promise<FinetuneResponseDto> {
-  //   try {
-  //     const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/finetune/convert`;
-  //     const response = await firstValueFrom(
-  //       this.httpService.post(fastApiUrl, body),
-  //     );
-  //     return response.data;
-  //   } catch (error) {
-  //     if (error instanceof AxiosError && error.response) {
-  //       throw new HttpException(
-  //         error.response.data,
-  //         error.response.status,
-  //       );
-  //     }
-  //     throw new HttpException(
-  //       '파인튜닝 변환 중 오류 발생',
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
+  // Finetune route intentionally removed (not implemented on backend)
 
   @Get('quality/company/options')
   async getQualityCompanyOptions() {
@@ -218,7 +200,7 @@ export class AppController {
   @Post('feedback')
   submitFeedback(@Body() body: FeedbackRequestDto): FeedbackResponseDto {
     try {
-      // @@ TODO: 피드백 저장소 연결 및 실제 피드백 처리 로직 구현 필요
+      // TODO: 피드백 저장소 연결 및 실제 피드백 처리 로직 구현 필요
       // Feedback storage or transmission logic connection planned
       return {
         success: true,

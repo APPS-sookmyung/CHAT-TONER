@@ -26,20 +26,20 @@ def submit_and_learn_feedback(request: Request, feedback_data: UserFeedback) -> 
     # 받은 피드백을 기록(history)에 저장
     session['preferences']['history'].append(feedback_data.dict())
 
-    # 선호 말투 학습 로직 (사용자 피드백 연결)
-    # 가장 선호하는 변환 결과의 카운트를 1 증가시켜 어떤 스타일을 선호하는지 학습
-    pref_trans = feedback_data.preferred_transformation
+    # 선호 말투 학습 로직 (현재 스키마에 맞게 수정)
+    # feedback_value를 기반으로 선호도 학습
+    feedback_key = f"{feedback_data.feedback_type}_{feedback_data.feedback_value}"
     counts = session['preferences']['learned_style']['preferred_transformation_counts']
-    counts[pref_trans] = counts.get(pref_trans, 0) + 1
-    
-    # 네거티브 프롬프트 저장 (필요 시)
-    if feedback_data.negative_prompts:
-        if 'negative_prompts' not in session['preferences']['learned_style']:
-            session['preferences']['learned_style']['negative_prompts'] = []
-        # 중복을 제거하고 추가
-        existing_prompts = set(session['preferences']['learned_style']['negative_prompts'])
-        existing_prompts.update(feedback_data.negative_prompts)
-        session['preferences']['learned_style']['negative_prompts'] = list(existing_prompts)
+    counts[feedback_key] = counts.get(feedback_key, 0) + 1
+
+    # 추가 메타데이터 저장
+    session['preferences']['learned_style']['last_feedback'] = {
+        'feedback_type': feedback_data.feedback_type,
+        'feedback_value': feedback_data.feedback_value,
+        'target_audience': feedback_data.target_audience,
+        'context': feedback_data.context,
+        'suggestion_category': feedback_data.suggestion_category
+    }
 
 
     # 변경된 세션 데이터는 FastAPI가 자동으로 저장

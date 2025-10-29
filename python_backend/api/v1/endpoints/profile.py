@@ -27,7 +27,7 @@ class ProfileRequest(BaseModel):
     responses: Optional[Dict[str, Any]] = Field(default_factory=dict, description="추가 응답 데이터")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "userId": "user456",
                 "baseFormalityLevel": 4,
@@ -58,7 +58,7 @@ class ProfileResponse(BaseModel):
     negativePrompts: List[str] = []
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "userId": "user456",
@@ -115,7 +115,45 @@ async def get_user_profile(
 
 # 네거티브 프롬프트 업데이트 엔드포인트는 의존성 문제로 비활성화
 
-@router.post("", response_model=ProfileResponse, summary="사용자 프로필 저장", description="사용자의 개인화 설정을 저장합니다.")
+@router.post(
+    "",
+    response_model=ProfileResponse,
+    status_code=200,
+    summary="사용자 프로필 저장",
+    description="사용자의 개인화 설정을 저장합니다.",
+    responses={
+        200: {
+            "description": "유효한 1~10 레벨 값이 전달되면 200 OK와 함께 저장된 프로필을 반환합니다.",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "성공",
+                            "value": {
+                                "id": 1,
+                                "userId": "user456",
+                                "baseFormalityLevel": 4,
+                                "baseFriendlinessLevel": 3,
+                                "baseEmotionLevel": 5,
+                                "baseDirectnessLevel": 2,
+                                "sessionFormalityLevel": 4,
+                                "sessionFriendlinessLevel": 3,
+                                "sessionEmotionLevel": 5,
+                                "sessionDirectnessLevel": 2,
+                                "responses": {"greeting": "Hello!"},
+                                "completedAt": "2025-10-29T00:00:00Z",
+                                "negativePrompts": []
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "레벨 값이 1~10 범위를 벗어나면 422 Validation Error를 반환합니다."
+        }
+    }
+)
 async def save_user_profile(
     profile: ProfileRequest,
     user_service: UserPreferencesService = Depends(get_user_preferences_service)

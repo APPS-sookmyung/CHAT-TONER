@@ -57,7 +57,7 @@ class ConversionRequest(BaseModel):
     negative_preferences: Optional[NegativePreferences] = Field(default=None, description="네거티브 프롬프트 선호도")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "text": "회의 자료 검토 부탁드립니다",
                 "user_profile": {

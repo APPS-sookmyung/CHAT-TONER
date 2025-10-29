@@ -22,10 +22,21 @@ class OpenAIService:
         self.model = model or settings.OPENAI_MODEL
         self.logger = logger
 
-        # 강제로 Mock 모드 활성화 (개발용)
-        self.logger.warning("Forcing Mock mode for development. OpenAI API key validation disabled.")
-        self.client = None
-        self.mock_mode = True
+        # Mock 모드 판단: 환경변수 OPENAI_MOCK=true 이거나 API 키가 없으면 Mock
+        openai_mock_env = os.getenv("OPENAI_MOCK", "").lower() in {"1", "true", "yes"}
+        self.mock_mode = openai_mock_env or not bool(self.api_key)
+        if self.mock_mode:
+            self.client = None
+            self.logger.warning("OpenAI mock mode enabled (no API key or OPENAI_MOCK=true)")
+        else:
+            try:
+                self.client = OpenAI(api_key=self.api_key)
+                self.logger.info("OpenAI client initialized")
+            except Exception as e:
+                # 안전하게 mock 모드로 폴백
+                self.logger.error(f"Failed to initialize OpenAI client, falling back to mock: {e}")
+                self.client = None
+                self.mock_mode = True
     async def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
         """
         입력 텍스트를 3가지 스타일로 변환
@@ -147,6 +158,60 @@ class OpenAIService:
         except Exception as e:
             self.logger.critical(f"{style_name} 스타일 변환 중 예상치 못한 오류: {e}", exc_info=True)
             raise RuntimeError(f"텍스트 변환 중 내부 오류 발생: {str(e)}")
+
+    async def generate_text(self, prompt: str, *, system: str | None = None, temperature: float = 0.5, max_tokens: int = 800) -> str:
+        """일반 텍스트 생성 유틸리티 (프로필 생성 등)
+
+        Args:
+            prompt: 사용자 프롬프트(한국어 가능)
+            system: 선택적 시스템 지시문
+            temperature: 생성 다양성
+            max_tokens: 최대 토큰 수
+        Returns:
+            생성된 텍스트 (문자열)
+        """
+        if self.mock_mode:
+            # 간단한 모의 응답 생성 (프롬프트 핵심 문장 요약 형태)
+            snippet = prompt.strip().splitlines()[:4]
+            base = " ".join(s.strip() for s in snippet if s.strip())
+            return (
+                "1. 회사 맥락과 대상에 맞춰 명확하고 간결하게 소통합니다.\n"
+                "2. 핵심 메시지를 먼저 전달하고, 필요 시 근거와 예시를 덧붙입니다.\n"
+                "3. 합의된 용어/포맷(이메일/슬랙 등)과 격식을 일관되게 유지합니다."
+            )
+
+        try:
+            messages: list[dict[str, str]] = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            else:
+                messages.append({
+                    "role": "system",
+                    "content": (
+                        "당신은 기업 커뮤니케이션 코치입니다. 입력 정보를 바탕으로 실무에 바로 적용 가능한, "
+                        "간결하고 실행 가능한 한국어 가이드라인을 작성하세요. 항목은 2~4개, 각 항목은 한 문장으로."),
+                })
+            messages.append({"role": "user", "content": prompt})
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            return response.choices[0].message.content.strip()
+        except RateLimitError as e:
+            self.logger.error(f"OpenAI API 요청 한도 초과 (generate_text): {e}")
+            raise RuntimeError("API 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.")
+        except APIConnectionError as e:
+            self.logger.error(f"OpenAI API 연결 실패 (generate_text): {e}")
+            raise RuntimeError("API 서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.")
+        except APIError as e:
+            self.logger.error(f"OpenAI API 오류 (generate_text): {e}", exc_info=True)
+            raise RuntimeError(f"API 서버 오류가 발생했습니다: {str(e)}")
+        except Exception as e:
+            self.logger.critical(f"텍스트 생성 중 예상치 못한 오류: {e}", exc_info=True)
+            raise RuntimeError(f"텍스트 생성 중 내부 오류 발생: {str(e)}")
     
     #사용자 텍스트의 감정을 수치화 (15점, 신뢰도 01).
     #결과는 JSON 형태로 요청하고, 이를 파싱하여 반환.

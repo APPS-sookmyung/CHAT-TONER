@@ -1,5 +1,10 @@
-// Backend API base URL for production
-const BACKEND_URL = 'https://chattoner-back-184664486594.asia-northeast3.run.app/api/v1';
+// Unified backend base URL
+// - Dev: use Vite proxy (relative '/api')
+// - Prod: use VITE_API_URL if provided, else relative
+const BASE = (import.meta as any).env?.PROD
+  ? ((import.meta as any).env?.VITE_API_URL || '')
+  : '';
+const BACKEND_URL = `${BASE}/api/v1`;
 
 export const API = {
   base: `${BACKEND_URL}`,
@@ -13,7 +18,7 @@ export const API = {
     suggestExpressions: `${BACKEND_URL}/rag/suggest-expressions`,
   },
   quality: {
-    analyze: `${BACKEND_URL}/quality/analyze`,
+    analyze: `${BACKEND_URL}/quality/company/analyze`,
   },
   profile: (id: string) => `${BACKEND_URL}/profile/${id}`,
 } as const;
