@@ -36,7 +36,7 @@ export const questions: Question[] = [
     categoryLabel: "Communication Style",
     question: "Which of the following best describes your team’s communication style?",
     description: "",
-    options: ["Friendly", "Strictly", "Formal"],
+    options: ["Friendly", "Strictly", "Formal", "Casual"],
     allowMultiple: false,
     allowCustom: false,
   },
