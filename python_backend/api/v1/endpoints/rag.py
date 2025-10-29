@@ -20,11 +20,43 @@ class DocumentIngestRequest(BaseModel):
     folder_path: str = "python_backend/langchain_pipeline/data/documents"
     company_id: Optional[str] = None
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "folder_path": "python_backend/langchain_pipeline/data/documents",
+                "company_id": "acme-co"
+            }
+        }
+
 class DocumentIngestResponse(BaseModel):
     success: bool
     documents_processed: int
     message: str
     error: Optional[str] = None
+
+    class Config:
+        json_schema_extra = {
+            "examples": {
+                "success": {
+                    "summary": "성공 - 벡터 DB 생성 완료",
+                    "value": {
+                        "success": True,
+                        "documents_processed": 12,
+                        "message": "벡터 데이터베이스 생성이 완료되었습니다. 처리된 문서 수: 12개.",
+                        "error": None
+                    }
+                },
+                "not_found": {
+                    "summary": "경로 없음 - 그러나 200 OK",
+                    "value": {
+                        "success": False,
+                        "documents_processed": 0,
+                        "message": "요청하신 문서로 벡터 DB 생성을 준비했어요. 다만 지정하신 경로가 보이지 않아 진행을 보류했어요. 경로를 확인해 주시면 바로 처리할게요.",
+                        "error": "not_found: C:/path/to/missing"
+                    }
+                }
+            }
+        }
 
 class RAGQueryRequest(BaseModel):
     query: str
@@ -55,7 +87,49 @@ def get_rag_service():
     container = Container()
     return container.rag_service()
 
-@router.post("/ingest", response_model=DocumentIngestResponse)
+@router.post(
+    "/ingest",
+    response_model=DocumentIngestResponse,
+    status_code=200,
+    responses={
+        200: {
+            "description": "항상 200 OK로 응답합니다. success=false인 경우에도 오류를 message/error에 담아 반환합니다.",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "성공",
+                            "value": {
+                                "success": True,
+                                "documents_processed": 5,
+                                "message": "벡터 데이터베이스 생성이 완료되었습니다. 처리된 문서 수: 5개.",
+                                "error": None
+                            }
+                        },
+                        "folder_missing": {
+                            "summary": "경로 없음",
+                            "value": {
+                                "success": False,
+                                "documents_processed": 0,
+                                "message": "요청하신 문서로 벡터 DB 생성을 준비했어요. 다만 지정하신 경로가 보이지 않아 진행을 보류했어요. 경로를 확인해 주시면 바로 처리할게요.",
+                                "error": "not_found: ./missing/path"
+                            }
+                        },
+                        "internal_error": {
+                            "summary": "내부 오류",
+                            "value": {
+                                "success": False,
+                                "documents_processed": 0,
+                                "message": "벡터 DB 생성 요청을 접수했어요. 잠시 후 다시 시도할게요.",
+                                "error": "RuntimeError: ..."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+)
 async def ingest_documents(
     request: DocumentIngestRequest,
     rag_service: Annotated[object, Depends(get_rag_service)]
