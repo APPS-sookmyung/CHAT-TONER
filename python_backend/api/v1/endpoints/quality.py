@@ -480,7 +480,52 @@ async def save_user_feedback(
         )
 
 
-@router.post("/company/generate-final", response_model=FinalTextGenerationResponse)
+@router.post(
+    "/company/generate-final",
+    response_model=FinalTextGenerationResponse,
+    status_code=200,
+    responses={
+        200: {
+            "description": "선택된 제안만 적용된 최종 텍스트와 적용된 제안 개수 정보를 반환합니다.",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "성공 - 제안 적용됨",
+                            "value": {
+                                "success": true,
+                                "finalText": "최종 통합본 텍스트입니다.",
+                                "appliedSuggestions": {
+                                    "grammarCount": 2,
+                                    "protocolCount": 1,
+                                    "totalApplied": 3
+                                },
+                                "originalLength": 120,
+                                "finalLength": 115,
+                                "message": "AI 기반 최종 통합본이 성공적으로 생성되었습니다."
+                            }
+                        },
+                        "no_selection": {
+                            "summary": "선택된 제안 없음",
+                            "value": {
+                                "success": true,
+                                "finalText": "원본 텍스트입니다.",
+                                "appliedSuggestions": {
+                                    "grammarCount": 0,
+                                    "protocolCount": 0,
+                                    "totalApplied": 0
+                                },
+                                "originalLength": 120,
+                                "finalLength": 120,
+                                "message": "적용할 제안이 선택되지 않았습니다."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+)
 async def generate_final_integrated_text(
     request: FinalTextGenerationRequest
 ) -> FinalTextGenerationResponse:

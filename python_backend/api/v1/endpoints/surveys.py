@@ -6,7 +6,7 @@ import logging
 from datetime import datetime # Added import
 from services.profile_pipeline import run_profile_pipeline
 from services.vector_store_pg import VectorStorePG
-from api.dependencies import try_get_vector_store
+from api.dependencies import get_vector_store
 from services.openai_services import OpenAIService
 from services.style_profile_service import extract_style_features_from_survey
 
@@ -42,9 +42,104 @@ class SubmitRequest(BaseModel):
     user_id: str
     answers: Dict[str, Any]
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "tenant_id": "t1",
+                "user_id": "u1",
+                "answers": {
+                    "q_formality": "formal",
+                    "q_friendliness": "friendly",
+                    "q_emotion": "neutral",
+                    "q_directness": "direct"
+                }
+            }
+        }
 
-@router.post("/{key}/responses")
-async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStorePG] = Depends(try_get_vector_store)):
+
+class OnboardingSurveyResponse(BaseModel):
+    id: int
+    userId: str
+    baseFormalityLevel: int
+    baseFriendlinessLevel: int
+    baseEmotionLevel: int
+    baseDirectnessLevel: int
+    sessionFormalityLevel: int
+    sessionFriendlinessLevel: int
+    sessionEmotionLevel: int
+    sessionDirectnessLevel: int
+    traitScores: Dict[str, float]
+    responses: Dict[str, Any]
+    completedAt: str
+    message: Optional[str] = None
+
+    class Config:
+        json_schema_extra = {
+            "examples": {
+                "success": {
+                    "summary": "성공",
+                    "value": {
+                        "id": 1,
+                        "userId": "u1",
+                        "baseFormalityLevel": 80,
+                        "baseFriendlinessLevel": 70,
+                        "baseEmotionLevel": 50,
+                        "baseDirectnessLevel": 60,
+                        "sessionFormalityLevel": 80,
+                        "sessionFriendlinessLevel": 70,
+                        "sessionEmotionLevel": 50,
+                        "sessionDirectnessLevel": 60,
+                        "traitScores": {
+                            "formality": 8.0,
+                            "friendliness": 7.0,
+                            "emotiveness": 5.0,
+                            "directness": 6.0
+                        },
+                        "responses": {"q_formality": "formal"},
+                        "completedAt": "2025-10-29T12:00:00Z",
+                        "message": "협업에서 바로 활용 가능한 톤 가이드를 적용했습니다."
+                    }
+                },
+                "fallback": {
+                    "summary": "폴백(저장 생략)",
+                    "value": {
+                        "id": 1,
+                        "userId": "u1",
+                        "baseFormalityLevel": 50,
+                        "baseFriendlinessLevel": 50,
+                        "baseEmotionLevel": 50,
+                        "baseDirectnessLevel": 50,
+                        "sessionFormalityLevel": 50,
+                        "sessionFriendlinessLevel": 50,
+                        "sessionEmotionLevel": 50,
+                        "sessionDirectnessLevel": 50,
+                        "traitScores": {
+                            "formality": 5.0,
+                            "friendliness": 5.0,
+                            "emotiveness": 5.0,
+                            "directness": 5.0
+                        },
+                        "responses": {"q_formality": "moderate"},
+                        "completedAt": "2025-10-29T12:00:00Z",
+                        "message": "설정 저장은 완료되었어요. 협업에서 유용한 톤 사용 팁을 참고해 주세요."
+                    }
+                }
+            }
+        }
+
+
+@router.post(
+    "/{key}/responses",
+    response_model=OnboardingSurveyResponse,
+    status_code=200,
+    responses={
+        200: {
+            "description": "유효한 설문 응답 시 200 OK를 반환하고 생성된 프로필을 벡터 DB에 저장합니다.",
+            "content": {"application/json": {"examples": OnboardingSurveyResponse.Config.json_schema_extra["examples"]}},
+        }
+    }
+)
+async def submit_survey(key: str, req: SubmitRequest, store: VectorStorePG = Depends(get_vector_store)):
     if key != "onboarding-intake":
         raise HTTPException(404, "unknown survey key")
     try:
@@ -52,8 +147,8 @@ async def submit_survey(key: str, req: SubmitRequest, store: Optional[VectorStor
             tenant_id=req.tenant_id,
             user_id=req.user_id,
             survey_answers=req.answers,
-            store=store,  # None일 수 있음
-            store_vector=bool(store)
+            store=store,
+            store_vector=True
         )
 
         # Map the profile features to the desired response format
@@ -148,13 +243,13 @@ from dependency_injector.wiring import inject, Provide # Added import
 from core.container import Container # Added import
 
 
-@router.post("/company/{company_id}/responses")
+@router.post("/company/{company_id}/responses", status_code=200)
 @inject
 async def submit_company_survey(
     company_id: str,
     survey_data: CompanySurvey,
-    db_service = Provide[Container.enterprise_db_service],
-    profile_generator = Provide[Container.profile_generator_service]
+    db_service: EnterpriseDBService = Depends(Provide[Container.enterprise_db_service]),
+    profile_generator: ProfileGeneratorService = Depends(Provide[Container.profile_generator_service])
 ):
     """
     기업 설문조사 응답을 제출하고 기업 프로필을 생성 및 저장합니다.
@@ -196,13 +291,13 @@ async def submit_company_survey(
     }
 
 # Alias endpoint to match spec: POST /api/v1/surveys/company/{company_id}
-@router.post("/company/{company_id}")
+@router.post("/company/{company_id}", status_code=200)
 @inject
 async def submit_company_survey_alias(
     company_id: str,
     survey_data: CompanySurvey,
-    db_service = Provide[Container.enterprise_db_service],
-    profile_generator = Provide[Container.profile_generator_service]
+    db_service: EnterpriseDBService = Depends(Provide[Container.enterprise_db_service]),
+    profile_generator: ProfileGeneratorService = Depends(Provide[Container.profile_generator_service])
 ):
     # 동일 로직 재사용
     existing_profile = await db_service.get_company_profile(company_id)
