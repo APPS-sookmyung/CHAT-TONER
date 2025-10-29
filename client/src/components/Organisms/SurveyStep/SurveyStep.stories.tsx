@@ -1,13 +1,24 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { MemoryRouter } from "react-router-dom";
 import { SurveyStep, type Question } from "./";
 
 const meta: Meta<typeof SurveyStep> = {
   title: "Organisms/SurveyStep",
   component: SurveyStep,
+  decorators: [
+    (Story) => (
+      <MemoryRouter initialEntries={["/"]}>
+        <Story />
+      </MemoryRouter>
+    ),
+  ],
   tags: ["autodocs"],
   argTypes: {
     onNext: { action: "onNext clicked" },
     onPrev: { action: "onPrev clicked" },
+  },
+  parameters: {
+    layout: 'centered',
   },
 };
 
