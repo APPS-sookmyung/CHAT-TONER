@@ -1,8 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TransformStyleCard } from "@/components/Organisms/TransformStyleCard";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { PATH } from "@/constants/paths";
 import type { UserProfile } from "@shared/schema";
 
 // Define the analysis result type, adapted from StyleConverter
@@ -55,6 +59,7 @@ const generateMockAnalysis = (text: string): StyleAnalysis => {
 };
 
 export default function TransformStylePage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // State for all inputs
@@ -229,6 +234,16 @@ export default function TransformStylePage() {
 
   return (
     <div>
+      <div className="mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(PATH.CHOICE)}
+          className="flex items-center gap-2 text-lg"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Back to Features
+        </Button>
+      </div>
       <h1 className="font-bold text-black text-7xl">Transform Style</h1>
       <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
         Convert text to your team's unique style profile.

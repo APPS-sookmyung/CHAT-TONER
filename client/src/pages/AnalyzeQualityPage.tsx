@@ -1,8 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { PATH } from "@/constants/paths";
 
 // Define the CompanyQualityAnalysisResponse locally to avoid importing from a .d.ts that is not a module.
 type Suggestion = {
@@ -84,6 +88,7 @@ const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
 };
 
 export default function AnalyzeQualityPage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // State for all inputs
@@ -191,6 +196,16 @@ ${
 
   return (
     <div>
+      <div className="mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(PATH.CHOICE)}
+          className="flex items-center gap-2 text-lg"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Back to Features
+        </Button>
+      </div>
       <h1 className="font-bold text-black text-7xl">Analyze Quality Page</h1>
       <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
         Analyze document quality instantly
