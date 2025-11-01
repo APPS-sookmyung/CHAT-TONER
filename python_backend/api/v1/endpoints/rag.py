@@ -3,13 +3,11 @@ RAG (Retrieval-Augmented Generation) Endpoints
 문서 기반 질의응답 및 텍스트 품질 분석 엔드포인트
 """
 
-import logging # Added import
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, Any, Optional, List, Annotated
-from pydantic import BaseModel
-from api.v1.schemas.conversion import UserProfile
-from pathlib import Path
-from core.config import get_settings # Added import
+from services.enterprise_db_service import EnterpriseDBService
+from services.profile_generator import ProfileGeneratorService
+from services.document_service import DocumentService
+from dependency_injector.wiring import inject, Provide
+from core.container import Container
 
 logger = logging.getLogger('chattoner.rag_endpoints') # Added logger
 
@@ -87,6 +85,22 @@ def get_rag_service():
     container = Container()
     return container.rag_service()
 
+from fastapi import File, UploadFile
+import shutil
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Uploads a file to a temporary directory and returns the path."""
+    try:
+        temp_dir = Path("python_backend/temp_uploads")
+        temp_dir.mkdir(exist_ok=True)
+        file_path = temp_dir / file.filename
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return {"filePath": str(file_path)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File upload failed: {e}")
+
 @router.post(
     "/ingest",
     response_model=DocumentIngestResponse,
@@ -130,9 +144,13 @@ def get_rag_service():
         }
     }
 )
+@inject
 async def ingest_documents(
     request: DocumentIngestRequest,
-    rag_service: Annotated[object, Depends(get_rag_service)]
+    rag_service: Annotated[object, Depends(get_rag_service)],
+    db_service: EnterpriseDBService = Depends(Provide[Container.enterprise_db_service]),
+    profile_generator: ProfileGeneratorService = Depends(Provide[Container.profile_generator_service]),
+    document_service: DocumentService = Depends(Provide[Container.document_service]),
 ) -> DocumentIngestResponse:
     """문서 폴더에서 RAG 벡터 DB 생성 (항상 200 OK 폴백)"""
     try:
@@ -202,6 +220,36 @@ async def ingest_documents(
 
         if request.company_id:
             result = rag_service.ingest_company_documents(request.company_id, str(folder_path))
+            if result.get("success"):
+                try:
+                    # Get document contents
+                    documents = document_service.get_documents_from_folder(str(folder_path))
+                    
+                    # Generate profile from documents
+                    generated_profile = await profile_generator.create_profile_from_documents(request.company_id, documents)
+
+                    # Get existing profile
+                    existing_profile = await db_service.get_company_profile(request.company_id)
+                    if existing_profile:
+                        # Update profile
+                        existing_profile["generated_profile"] = f"{existing_profile.get('generated_profile', '')}\n\n[자동 생성된 온보딩 특성]\n{generated_profile}"
+                        
+                        # Upsert profile
+                        await db_service.upsert_company_profile(
+                            company_id=existing_profile["company_id"],
+                            company_name=existing_profile["company_name"],
+                            industry=existing_profile["industry"],
+                            team_size=existing_profile["team_size"],
+                            primary_business=existing_profile["primary_business"],
+                            communication_style=existing_profile["communication_style"],
+                            main_channels=existing_profile["main_channels"],
+                            target_audience=existing_profile["target_audience"],
+                            generated_profile=existing_profile["generated_profile"],
+                            survey_data=existing_profile["survey_data"],
+                        )
+                        logger.info(f"문서 기반 프로필 업데이트 완료: {request.company_id}")
+                except Exception as e:
+                    logger.error(f"문서 기반 프로필 업데이트 실패: {e}")
         else:
             result = rag_service.ingest_documents(str(folder_path))
 
