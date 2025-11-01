@@ -10,6 +10,10 @@ import MainLayout from "./components/Templates/MainLayout";
 import ResultsPage from "./pages/ResultsPage";
 import UploadPage from "./pages/UploadPage";
 
+import CompanyProfilePage from "./pages/CompanyProfilePage";
+
+import CompanySurveyPage from "./pages/CompanySurveyPage";
+
 const Router = () => {
   return (
     <Routes>
@@ -21,6 +25,8 @@ const Router = () => {
         <Route path={PATH.SURVEY(":step")} element={<SurveyPage />} />
         <Route path={PATH.RESULTS} element={<ResultsPage />} />
         <Route path={PATH.UPLOAD} element={<UploadPage />} />
+        <Route path={PATH.COMPANY_PROFILE(":companyId")} element={<CompanyProfilePage />} />
+        <Route path={PATH.COMPANY_SURVEY} element={<CompanySurveyPage />} />
       </Route>
     </Routes>
   );

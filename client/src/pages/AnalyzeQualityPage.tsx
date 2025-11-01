@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ThumbsUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
 import { Button } from "@/components/ui/button";
+import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
 import { PATH } from "@/constants/paths";
 
@@ -101,6 +102,7 @@ export default function AnalyzeQualityPage() {
   const [analysisResult, setAnalysisResult] =
     useState<CompanyQualityAnalysisResponse | null>(null);
   const [finalText, setFinalText] = useState<string>("");
+  const [finalLiked, setFinalLiked] = useState<boolean>(false);
 
   // Fetch dropdown options
   const { data: dropdownOptions } = useQuery({
@@ -176,6 +178,7 @@ export default function AnalyzeQualityPage() {
     onSuccess: (data: any) => {
       if (data?.finalText) {
         setFinalText(data.finalText);
+        setFinalLiked(false);
         toast({ title: "최종 글 생성 완료", description: "전체 제안을 반영해 생성했습니다." });
       } else {
         toast({ title: "생성 결과 없음", description: "응답에 최종 글이 없습니다.", variant: "destructive" });
@@ -272,12 +275,35 @@ ${
 
           {finalText && (
             <div className="w-full max-w-4xl">
-              <h2 className="mb-2 text-xl font-semibold">최종 글</h2>
-              <textarea
-                className="w-full border rounded-lg p-4 min-h-[160px]"
-                readOnly
-                value={finalText}
-              />
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-xl font-semibold">최종 글</h2>
+                <Button
+                  size="sm"
+                  variant={finalLiked ? "default" : "secondary"}
+                  className={[
+                    "gap-2 rounded-full",
+                    finalLiked
+                      ? "ring-2 ring-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.55)]"
+                      : "ring-1 ring-primary/40 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]",
+                  ].join(" ")}
+                  aria-pressed={finalLiked}
+                  disabled={finalLiked}
+                  onClick={() => {
+                    setFinalLiked(true);
+                    toast({ title: "피드백 반영", description: "엄지 피드백이 반영되었습니다." });
+                  }}
+                >
+                  <ThumbsUp className="h-4 w-4" /> {finalLiked ? "좋아요 반영됨" : "좋아요"}
+                </Button>
+              </div>
+              <div
+                className={[
+                  "prose max-w-none border rounded-lg p-5 bg-white transition-shadow",
+                  finalLiked ? "shadow-[0_0_18px_rgba(16,185,129,0.35)]" : "",
+                ].join(" ")}
+              >
+                <ReactMarkdown>{finalText}</ReactMarkdown>
+              </div>
             </div>
           )}
         </div>

@@ -1,19 +1,28 @@
 {
-  "name": "ChatToner",
+  "name": "chattoner-monorepo",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build:server && npm run build:gateway && npm run build:client",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "build:gateway": "cd nestjs-gateway && npm run build",
-    "build:client": "cd client && npm run build",
+    "build:gateway": "cd packages/nestjs-gateway && npm run build",
+    "build:client": "cd packages/client && npm run build",
     "check": "npm run check:gateway && npm run check:client",
-    "check:gateway": "cd nestjs-gateway && tsc --noEmit",
-    "check:client": "cd client && tsc --noEmit",
+    "check:gateway": "cd packages/nestjs-gateway && tsc --noEmit",
+    "check:client": "cd packages/client && tsc --noEmit",
     "dev": "tsx server/index.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "dev:client": "cd packages/client && npm run dev",
+    "dev:gateway": "cd packages/nestjs-gateway && npm run start:dev",
+    "dev:python": "cd packages/python_backend && python main.py",
+    "install:all": "npm install && npm run install:packages",
+    "install:packages": "cd packages/client && npm install && cd ../nestjs-gateway && npm install"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

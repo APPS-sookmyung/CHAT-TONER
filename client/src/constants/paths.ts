@@ -37,4 +37,8 @@ export const PATH = {
   RESULTS: "/results",
 
   UPLOAD: "/upload",
+
+  COMPANY_PROFILE: (companyId: string) => `/company-profile/${companyId}`,
+
+  COMPANY_SURVEY: "/company-survey",
 };
