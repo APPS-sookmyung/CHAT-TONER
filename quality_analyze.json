@@ -1,9 +1,0 @@
-{
-  "company_id": "innovatech-korea",
-  "text": "안녕하세요 고객님, 지난번에 공유드린 계약서가 최신본이 아니었던 것으로 확인되어 수정본 전달드립니다.",
-  "options": {
-    "target_audience": "B2B",
-    "formality": "formal",
-    "dimension": "protocol"   // or "grammar" | "formality"
-  }
-}

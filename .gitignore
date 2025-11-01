@@ -70,5 +70,9 @@ setup-cloud-build-triggers.sh
 storybook-static
 
 # Build outputs
-client/dist/
-nestjs-gateway/dist/
+/dist/
+packages/client/dist/
+packages/nestjs-gateway/dist/
+packages/python_backend/__pycache__/
+packages/python_backend/.venv/
+packages/python_backend/*.log
