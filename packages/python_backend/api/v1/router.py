@@ -6,7 +6,7 @@ Main API Router
 from fastapi import APIRouter
 
 # 개별 엔드포인트 라우터들 import
-from .endpoints import conversion, health, profile, feedback, rag, documents, quality
+from .endpoints import conversion, health, profile, feedback, rag, documents, quality, company_profile
 
 
 # from .endpoints import quality, company  # Temporarily disabled due to langgraph dependency
@@ -35,6 +35,7 @@ api_router.include_router(rag.router, prefix="/rag", tags=["rag"])
 # api_router.include_router(company.router, prefix="/company", tags=["company"])  # Temporarily disabled
 api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
 api_router.include_router(company_survey_router, tags=["company_survey"])
+api_router.include_router(company_profile.router, prefix="/company-profile", tags=["company_profile"])
 
 # 새로운 엔드포인트들 추가 (조건부)
 if NEW_ENDPOINTS_AVAILABLE:

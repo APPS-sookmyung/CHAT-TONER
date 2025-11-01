@@ -10,7 +10,7 @@ def answers_to_traits(answers: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def run_profile_pipeline(
-    *, tenant_id: str, user_id: str, survey_answers: Dict[str, Any], store: VectorStorePG, store_vector: bool = True
+    *, tenant_id: str, user_id: str, survey_answers: Dict[str, Any], store: Optional[VectorStorePG], store_vector: bool = True
 ) -> Dict[str, Any]:
     # Use extract_style_features_from_survey to get the numerical features
     style_features = extract_style_features_from_survey(survey_answers)
@@ -21,7 +21,7 @@ async def run_profile_pipeline(
     profile_text = profile.prompt
 
     stored = None
-    if store_vector:
+    if store_vector and store is not None:
         embedder = EmbeddingService(provider="local")
         vec = (await embedder.embed_texts([profile_text]))[0]
         await store.upsert_style_profile(

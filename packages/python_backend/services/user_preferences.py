@@ -404,23 +404,30 @@ class UserPreferencesService(BaseService):
     def get_feedback_stats(self, user_id: str) -> Dict[str, Any]:
         """사용자 피드백 통계 조회"""
         try:
-            # 임시 구현: 기본 통계 반환
+            feedback_history = self.storage.get_all_feedback(user_id)
+
+            if not feedback_history:
+                return {
+                    "total_feedback": 0,
+                    "average_rating": 0.0,
+                    "style_preference_stats": {},
+                }
+
+            total_feedback = len(feedback_history)
+            average_rating = sum(item['user_rating'] for item in feedback_history) / total_feedback
+
+            style_preference_stats = {}
+            for item in feedback_history:
+                style = item['selected_version']
+                if style in style_preference_stats:
+                    style_preference_stats[style] += 1
+                else:
+                    style_preference_stats[style] = 1
+
             return {
-                "user_id": user_id,
-                "total_conversions": 0,
-                "feedback_count": 0,
-                "average_rating": 0.0,
-                "preferred_styles": {
-                    "direct": 0,
-                    "gentle": 0,
-                    "neutral": 0
-                },
-                "style_satisfaction": {
-                    "direct": 0.0,
-                    "gentle": 0.0,
-                    "neutral": 0.0
-                },
-                "message": "기본 통계 데이터 (구현 예정)"
+                "total_feedback": total_feedback,
+                "average_rating": average_rating,
+                "style_preference_stats": style_preference_stats,
             }
         except Exception as e:
             self.logger.error(f"피드백 통계 조회 실패: {e}")

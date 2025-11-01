@@ -1,0 +1,40 @@
+{
+  "test-123": {
+    "id": 1,
+    "userId": "test-123",
+    "companyContext": {
+      "companySize": "중소기업",
+      "teamSize": "11-50",
+      "primaryFunction": "sales",
+      "communicationStyle": "formal",
+      "primaryChannel": "email",
+      "primaryAudience": [
+        "clients_vendors",
+        "executives"
+      ],
+      "sizeCharacteristics": [
+        "체계적 소통",
+        "부서간 협업",
+        "성장 단계의 조직"
+      ],
+      "functionCharacteristics": [
+        "고객 중심",
+        "설득력 있는 표현",
+        "관계 구축"
+      ]
+    },
+    "generatedProfile": "### 커뮤니케이션 원칙\n\n1. **명확성 유지**: 메시지를 전달할 때 핵심 내용을 먼저 언급하고, 불필요한 정보는 배제하여 상대방의 이해를 돕습니다.\n   \n2. **형식적 존중**: 이메일 및 문서 작성 시 경어체와 존칭을 사용하여 상대방에 대한 존경을 표현합니다.\n\n3. **신속한 응답**: 중요한 이메일과 요청사항에 대해서는 24시간 이내에 회신하여 신뢰를 구축합니다.\n\n### 상황별 톤앤매너 가이드\n\n1. **회의**: 시작과 끝 인사를 공식적으로 하고, 발언 시 명확한 근거와 데이터를 제시하며 결론을 분명히 합니다.\n\n2. **이메일**: 제목에 명확한 주제를 포함하고, 인사말과 서명에 회사명을 명시하여 전문성을 강조합니다.\n\n3. **보고서**: 객관적이고 정확한 데이터로 사실을 기술하며, 결론 부분에는 실행 가능한 제안을 포함합니다.\n\n### 효과적인 표현법\n\n1. **제안 및 요청**: \"귀하의 검토를 요청드립니다\" 또는 \"귀하의 피드백을 기대합니다\"로 상대방의 참여를 유도합니다.\n\n2. **감사 인사**: \"귀사의 지속적인 협조에 감사드립니다\"로 고객 및 협력업체와의 관계를 강화합니다.\n\n3. **문제 해결**: \"이 문제를 신속히 해결하기 위해 ~을 고려하고 있습니다\"로 해결 중심의 접근을 보여줍니다.",
+    "surveyResponses": {
+      "primary_function": "sales",
+      "communication_style": "formal",
+      "team_size": "11-50",
+      "primary_channel": "email",
+      "primary_audience": [
+        "clients_vendors",
+        "executives"
+      ]
+    },
+    "createdAt": "2025-11-01T21:15:15.969412",
+    "profileType": "company_based"
+  }
+}

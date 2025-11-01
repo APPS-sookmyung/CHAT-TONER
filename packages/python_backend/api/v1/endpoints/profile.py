@@ -43,7 +43,7 @@ class ProfileRequest(BaseModel):
         }
 
 class ProfileResponse(BaseModel):
-    id: int
+    id: Optional[int] = None
     userId: str
     baseFormalityLevel: int
     baseFriendlinessLevel: int

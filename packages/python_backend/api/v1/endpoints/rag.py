@@ -97,7 +97,7 @@ import shutil
 async def upload_file(file: UploadFile = File(...)):
     """Uploads a file to a temporary directory and returns the path."""
     try:
-        temp_dir = Path("python_backend/temp_uploads")
+        temp_dir = Path("packages/python_backend/temp_uploads")
         temp_dir.mkdir(exist_ok=True)
         file_path = temp_dir / file.filename
         with open(file_path, "wb") as buffer:

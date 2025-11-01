@@ -17,7 +17,7 @@ logger = logging.getLogger('chattoner')
 
 # --- 상수 정의 ---
 # 회사별 벡터 DB가 저장될 기본 경로
-COMPANY_DATA_ROOT = Path("python_backend/langchain_pipeline/data/company_specific")
+COMPANY_DATA_ROOT = Path("packages/python_backend/langchain_pipeline/data/company_specific")
 # 텍스트 분할 시 청크 크기 및 중복 크기
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200

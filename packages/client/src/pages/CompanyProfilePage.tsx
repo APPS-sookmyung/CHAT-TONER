@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { CompanyProfile } from '../types/company';
 import PdfUpload from '../components/PdfUpload';
-
 import { getOrSetUserId } from '../lib/userId';
 import { FeedbackStats } from '../types/company';
 
@@ -13,19 +12,21 @@ const CompanyProfilePage: React.FC = () => {
   const [feedbackStats, setFeedbackStats] = useState<FeedbackStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<Record<string, string>>({});
+
+  const fetchProfile = async () => {
+          try {
+            const response = await axios.get(`/api/v1/surveys/company/${companyId}`);
+            console.log(response.data);
+            setProfile(response.data);
+          } catch (err) {      setError('Failed to fetch company profile.');
+      console.error(err);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get(`/api/v1/surveys/company/${companyId}`);
-        setProfile(response.data);
-      } catch (err) {
-        setError('Failed to fetch company profile.');
-        console.error(err);
-      }
-      setLoading(false);
-    };
-
     const fetchFeedbackStats = async () => {
       try {
         const userId = getOrSetUserId();
@@ -39,6 +40,44 @@ const CompanyProfilePage: React.FC = () => {
     fetchProfile();
     fetchFeedbackStats();
   }, [companyId]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFiles(e.target.files);
+  };
+
+  const handleUpload = async () => {
+    if (!files || !companyId) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        setUploadStatus((prev) => ({ ...prev, [file.name]: 'Uploading...' }));
+
+        const uploadResponse = await axios.post('/api/v1/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        const { filePath } = uploadResponse.data;
+
+        await axios.post('/api/v1/rag/ingest', {
+          company_id: companyId,
+          folder_path: filePath,
+        });
+
+        setUploadStatus((prev) => ({ ...prev, [file.name]: 'Success' }));
+        // Refresh profile to show new characteristics
+        fetchProfile();
+      } catch (error) {
+        setUploadStatus((prev) => ({ ...prev, [file.name]: 'Failed' }));
+        console.error(`Failed to upload ${file.name}`, error);
+      }
+    }
+  };
 
   if (loading) {
     return <div className="p-4">Loading...</div>;
@@ -64,15 +103,37 @@ const CompanyProfilePage: React.FC = () => {
             </div>
           </div>
           <div className="mt-4">
-            <h2 className="font-bold">Onboarding Characteristics</h2>
-            <p className="whitespace-pre-wrap">{profile.generated_profile}</p>
+            <h2 className="font-bold">Survey-based Onboarding Characteristics</h2>
+            <p className="whitespace-pre-wrap">
+              {profile.generated_profile && profile.generated_profile.split('[자동 생성된 온보딩 특성]')[0]}
+            </p>
           </div>
+          {profile.generated_profile && profile.generated_profile.includes('[자동 생성된 온보딩 특성]') && (
+            <div className="mt-4">
+              <h2 className="font-bold">PDF-based Onboarding Characteristics</h2>
+              <p className="whitespace-pre-wrap">
+                {profile.generated_profile.split('[자동 생성된 온보딩 특성]')[1]}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-4">Upload PDF Documents</h2>
-        {companyId && <PdfUpload companyId={companyId} />}
+        <PdfUpload onFileChange={handleFileChange} onUpload={handleUpload} />
+        <div className="mt-4">
+          {files ? (
+            Array.from(files).map((file, i) => (
+              <div key={i} className="flex justify-between items-center p-2 border-b">
+                <span>{file.name}</span>
+                <span>{uploadStatus[file.name]}</span>
+              </div>
+            ))
+          ) : (
+            <p>No files selected.</p>
+          )}
+        </div>
       </div>
 
       {feedbackStats && (
@@ -103,3 +164,4 @@ const CompanyProfilePage: React.FC = () => {
 };
 
 export default CompanyProfilePage;
+
