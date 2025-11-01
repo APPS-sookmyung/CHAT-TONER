@@ -4,9 +4,13 @@ RAG (Retrieval-Augmented Generation) Endpoints
 """
 
 import logging
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any, Annotated
 from services.enterprise_db_service import EnterpriseDBService
 from services.profile_generator import ProfileGeneratorService
 from services.document_service import DocumentService
+from api.v1.schemas.conversion import UserProfile
 from dependency_injector.wiring import inject, Provide
 from core.container import Container
 
