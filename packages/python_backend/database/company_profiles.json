@@ -36,5 +36,141 @@
     },
     "createdAt": "2025-11-01T21:15:15.969412",
     "profileType": "company_based"
+  },
+  "test-user-isolation": {
+    "id": 2,
+    "userId": "test-user-isolation",
+    "companyContext": {
+      "companySize": "스타트업/소규모",
+      "teamSize": "1-10",
+      "primaryFunction": "engineering",
+      "communicationStyle": "friendly",
+      "primaryChannel": "email",
+      "primaryAudience": [
+        "peers_internal"
+      ],
+      "sizeCharacteristics": [
+        "빠른 의사결정",
+        "유연한 소통",
+        "다양한 역할 수행"
+      ],
+      "functionCharacteristics": [
+        "기술적 정확성",
+        "논리적 설명",
+        "문제 해결 중심"
+      ]
+    },
+    "generatedProfile": "### 커뮤니케이션 원칙\n\n1. **명확성과 간결성**: 모든 전달 내용은 핵심 정보를 중심으로 명확하고 간결하게 작성합니다.\n2. **적극적 피드백**: 동료에게 피드백을 제공할 때는 긍정적인 부분을 강조하며 개선점을 친근하게 제안합니다.\n3. **상호 존중**: 소통 시 상대방의 의견을 존중하고 경청하는 자세를 유지합니다.\n\n### 톤앤매너 가이드\n\n- **회의**: 편안하고 열린 분위기를 조성하여 자유롭게 의견을 나누고 질문을 권장합니다.\n- **이메일**: 친근한 인사말로 시작하고, 감사의 표현을 잊지 않으며, 필요시 명확한 요청 사항을 포함합니다.\n- **보고서**: 정확한 데이터와 함께 전문성을 유지하며, 결론 부분에 명확한 요약을 추가합니다.\n\n### 효과적인 표현법\n\n- \"다음 단계를 제안드립니다.\"(명확한 지침 제공)\n- \"귀하의 견해에 공감하며, 이런 방법은 어떨까요?\"(의견 존중과 대안 제시)\n- \"이 부분에서 더 나은 결과를 기대할 수 있습니다.\"(긍정적인 피드백)",
+    "surveyResponses": {
+      "primary_function": "engineering",
+      "communication_style": "friendly",
+      "team_size": "1-10",
+      "primary_channel": "email",
+      "primary_audience": [
+        "peers_internal"
+      ]
+    },
+    "createdAt": "2025-11-01T22:05:06.115595",
+    "profileType": "company_based"
+  },
+  "real-test-user": {
+    "id": 3,
+    "userId": "real-test-user",
+    "companyContext": {
+      "companySize": "스타트업/소규모",
+      "teamSize": "1-10",
+      "primaryFunction": "engineering",
+      "communicationStyle": "friendly",
+      "primaryChannel": "email",
+      "primaryAudience": [
+        "peers_internal"
+      ],
+      "sizeCharacteristics": [
+        "빠른 의사결정",
+        "유연한 소통",
+        "다양한 역할 수행"
+      ],
+      "functionCharacteristics": [
+        "기술적 정확성",
+        "논리적 설명",
+        "문제 해결 중심"
+      ]
+    },
+    "generatedProfile": "**커뮤니케이션 원칙**\n\n1. 모든 이메일 시작 시 친근한 인사말을 사용하여 팀의 분위기를 살려라.\n2. 각 메시지는 명확한 목적과 기대되는 결과를 포함하여 업무의 효율성을 높여라.\n3. 피드백은 긍정적이고 건설적인 방식으로 제공하여 팀의 성장을 지원하라.\n\n**상황별 톤앤매너 가이드**\n\n- **회의:** 자유로운 의견 교환을 장려하며, 결론에서는 각자의 역할과 다음 단계를 명확히 하라.\n- **이메일:** 간결하면서도 친근하게, 이모티콘 등을 적절히 활용하여 인간미를 더하라.\n- **보고서:** 전문적이고 명확한 언어를 사용하되, 긍정적인 마무리로 협력의 가능성을 열어라.\n\n**효과적인 표현법**\n\n- \"이 의견에 대해 어떻게 생각하세요?\"를 사용하여 동료의 참여를 유도하라.\n- \"이 부분을 함께 검토해보면 좋겠습니다\"로 협업을 촉진하라.\n- \"다음 단계로는 무엇을 진행할까요?\"로 명확한 방향성을 제시하라.",
+    "surveyResponses": {
+      "primary_function": "engineering",
+      "communication_style": "friendly",
+      "team_size": "1-10",
+      "primary_channel": "email",
+      "primary_audience": [
+        "peers_internal"
+      ]
+    },
+    "createdAt": "2025-11-01T22:14:27.838818",
+    "profileType": "company_based"
+  },
+  "9e57d650-d7ee-4037-ba7d-e4bfeb693eaa": {
+    "id": 5,
+    "userId": "9e57d650-d7ee-4037-ba7d-e4bfeb693eaa",
+    "companyContext": {
+      "companySize": "대기업",
+      "teamSize": "100",
+      "primaryFunction": "engineering",
+      "communicationStyle": "Strictly",
+      "primaryChannel": "email",
+      "primaryAudience": [],
+      "sizeCharacteristics": [
+        "체계적 보고 체계",
+        "공식적 소통",
+        "계층적 구조"
+      ],
+      "functionCharacteristics": [
+        "기술적 정확성",
+        "논리적 설명",
+        "문제 해결 중심"
+      ]
+    },
+    "generatedProfile": "### 커뮤니케이션 원칙\n1. 명확하고 간결하게 정보를 전달하며 불필요한 장황함을 피합니다.\n2. 모든 커뮤니케이션은 명확한 목적과 결과를 중심으로 합니다.\n3. 피드백은 구체적이고 건설적으로 제공하여 팀의 효율성을 높입니다.\n\n### 상황별 톤앤매너 가이드\n- **회의:** 시간 엄수를 강조하고, 필요한 경우 요약 발언으로 논점을 명확히 합니다.\n- **이메일:** 제목을 명확히 하고, 핵심 내용을 서두에 배치하여 가독성을 높입니다.\n- **보고서:** 데이터와 분석 결과를 일목요연하게 정리하고, 결론을 명확히 제시합니다.\n\n### 효과적인 표현법\n- \"이 문제를 해결하기 위해 다음 단계를 제안합니다.\"\n- \"데이터 분석 결과, 다음과 같은 결론을 도출할 수 있습니다.\"\n- \"프로젝트 진행 상황을 다음과 같이 요약합니다.\"",
+    "surveyResponses": {
+      "company_name": "a",
+      "team_size": "100",
+      "communication_style": "Strictly",
+      "internal_communication_tool": "Microsoft Teams",
+      "main_audience": "Other Departments"
+    },
+    "createdAt": "2025-11-03T08:49:15.176170",
+    "profileType": "company_based"
+  },
+  "cd1bd4d1-2568-45ab-8cac-bcb7c4a47688": {
+    "id": 6,
+    "userId": "cd1bd4d1-2568-45ab-8cac-bcb7c4a47688",
+    "companyContext": {
+      "companySize": "대기업",
+      "teamSize": "5",
+      "primaryFunction": "engineering",
+      "communicationStyle": "Strictly",
+      "primaryChannel": "email",
+      "primaryAudience": [],
+      "sizeCharacteristics": [
+        "체계적 보고 체계",
+        "공식적 소통",
+        "계층적 구조"
+      ],
+      "functionCharacteristics": [
+        "기술적 정확성",
+        "논리적 설명",
+        "문제 해결 중심"
+      ]
+    },
+    "generatedProfile": "### 커뮤니케이션 원칙\n1. 명확하고 간결한 메시지를 전달하고, 불필요한 정보는 배제합니다.\n2. 모든 이메일과 보고서에는 기한과 책임자를 명확히 기재합니다.\n3. 피드백은 구체적이고 직접적으로 전달하며, 개선점을 중심으로 작성합니다.\n\n### 상황별 톤앤매너 가이드\n1. **회의:** 준비된 아젠다에 따라 진행하며, 논의 사항과 결론은 회의 후 즉시 요약하여 이메일로 공유합니다.\n2. **이메일:** 제목은 핵심 내용을 반영하고, 본문에서는 중요한 사항을 가장 먼저 언급합니다.\n3. **보고서:** 데이터와 사실에 기반한 분석을 제공하며, 결론과 추천 사항은 명확하고 실행 가능하게 제시합니다.\n\n### 효과적인 표현법\n1. \"해당 문제의 핵심 원인은 무엇입니까?\" - 문제 해결 중심의 질문을 통해 핵심 이슈를 파악합니다.\n2. \"이 사항에 대해 어떻게 생각하십니까?\" - 팀원의 의견을 적극적으로 수용하고 협업을 촉진합니다.\n3. \"프로젝트 일정에 변동이 생기면 즉시 알려주세요.\" - 기한 준수를 강조하고 신속한 정보 공유를 권장합니다.",
+    "surveyResponses": {
+      "company_name": "shit",
+      "team_size": "5",
+      "communication_style": "Strictly",
+      "internal_communication_tool": "Slack",
+      "main_audience": "External Clients/Customers"
+    },
+    "createdAt": "2025-11-03T10:49:58.043137",
+    "profileType": "company_based"
   }
 }
