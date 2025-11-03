@@ -60,9 +60,10 @@
 > [Placeholder for a screenshot of the quality analysis results with justifications]
 
 ### 3. RAG-Powered Knowledge Base
-<img width="591" height="606" alt="image" src="https://github.com/user-attachments/assets/f2432139-16a1-42ce-b018-851548024682" />
 
-<img width="1238" height="690" alt="image" src="https://github.com/user-attachments/assets/52e3a1f0-b85b-4ce3-9e63-7db7354c5209" />
+| Ingestion UI | RAG Q&A UI |
+| :---: | :---: |
+| <img src="https://github.com/user-attachments/assets/f2432139-16a1-42ce-b018-851548024682" alt="image" width="400"> | <img src="https://github.com/user-attachments/assets/52e3a1f0-b85b-4ce3-9e63-7db7354c5209" alt="image" width="400"> |
 
 - **Document Ingestion:** Build a company-specific knowledge base by uploading documents (PDFs, etc.).
 - **Contextual Q&A:** Ask questions and get answers based on the ingested documents, ensuring everyone follows the same guidelines.
