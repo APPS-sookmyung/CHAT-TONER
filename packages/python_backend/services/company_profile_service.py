@@ -42,6 +42,10 @@ class CompanyProfileService:
         """
         설문 응답을 기반으로 회사 맞춤형 커뮤니케이션 프로필 생성
         """
+        print(f"[CompanyProfile] generate_company_profile 시작")
+        print(f"[CompanyProfile] user_id: {user_id}")
+        print(f"[CompanyProfile] survey_answers: {survey_answers}")
+
         # 설문 응답 해석
         team_size = survey_answers.get("team_size", "1-10")
         primary_function = survey_answers.get("primary_function", "engineering")
@@ -49,12 +53,18 @@ class CompanyProfileService:
         primary_channel = survey_answers.get("primary_channel", "email")
         primary_audience = survey_answers.get("primary_audience", [])
 
+        print(f"[CompanyProfile] 추출된 값들: team_size={team_size}, function={primary_function}, style={communication_style}")
+
         # 회사 특성 분석
+        print("[CompanyProfile] 회사 컨텍스트 분석 시작...")
         company_context = self._analyze_company_context(survey_answers)
+        print(f"[CompanyProfile] 회사 컨텍스트 분석 완료: {company_context}")
 
         # OpenAI를 사용하여 맞춤형 커뮤니케이션 가이드 생성
+        print("[CompanyProfile] OpenAI 서비스 초기화 및 프로필 생성 시작...")
         try:
             oai = OpenAIService()
+            print("[CompanyProfile] OpenAI 서비스 생성 완료")
             profile_prompt = f"""
 다음 회사 정보를 바탕으로 실용적인 커뮤니케이션 가이드를 작성해주세요:
 
@@ -73,18 +83,23 @@ class CompanyProfileService:
 실무에서 바로 적용할 수 있도록 구체적이고 실용적으로 작성해주세요.
 """
 
+            print(f"[CompanyProfile] 프롬프트 길이: {len(profile_prompt)} 문자")
             generated_profile = await oai.generate_text(
                 profile_prompt,
                 temperature=0.7,
                 max_tokens=800
             )
+            print(f"[CompanyProfile] OpenAI 프로필 생성 성공! 길이: {len(generated_profile)} 문자")
 
         except Exception as e:
-            print(f"OpenAI 프로필 생성 실패: {e}")
+            print(f"[CompanyProfile] OpenAI 프로필 생성 실패: {e}")
+            print(f"[CompanyProfile] 폴백 프로필로 처리합니다...")
             # 폴백: 기본 템플릿 사용
             generated_profile = self._generate_fallback_profile(company_context)
+            print(f"[CompanyProfile] 폴백 프로필 생성 완료")
 
         # 프로필 데이터 구성
+        print("[CompanyProfile] 프로필 데이터 구성 중...")
         profile_data = {
             "id": len(self._load_profiles()) + 1,
             "userId": user_id,
@@ -94,12 +109,16 @@ class CompanyProfileService:
             "createdAt": datetime.now().isoformat(),
             "profileType": "company_based"
         }
+        print(f"[CompanyProfile] 프로필 데이터 구성 완료: {profile_data.keys()}")
 
         # JSON 파일에 저장
+        print("[CompanyProfile] JSON 파일에 저장 시작...")
         profiles = self._load_profiles()
         profiles[user_id] = profile_data
         self._save_profiles(profiles)
+        print(f"[CompanyProfile] JSON 파일 저장 완료! 총 프로필 수: {len(profiles)}")
 
+        print("[CompanyProfile] CompanyProfileService.generate_company_profile 완전 성공!")
         return profile_data
 
     def _analyze_company_context(self, survey_answers: Dict[str, Any]) -> Dict[str, Any]:

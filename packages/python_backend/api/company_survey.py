@@ -18,25 +18,44 @@ class CompanySurveyRequest(BaseModel):
 @router.post("/company/{company_id}")
 def submit_company_survey(company_id: str, payload: CompanySurveyRequest, db: Session = Depends(get_db)):
     """
-    기업용 설문조사를 제출받아 처리하는 엔드포인트입니다.
-    company_id를 정수로 변환해서 기존 id 컬럼과 비교합니다.
+    기업용 설문조사를 제출받아 처리하고, 해당 기업의 프로필을 업데이트하는 엔드포인트입니다.
     """
     try:
-        # company_id를 정수로 변환
         company_id_int = int(company_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="company_id must be a valid integer")
 
-    # 임시 우회: DB 조회 없이 성공 응답 반환 (권한 문제 해결까지)
+    # company_id로 CompanyProfile 조회 또는 생성
+    company_profile = db.query(CompanyProfile).filter(CompanyProfile.id == company_id_int).first()
+    
+    if not company_profile:
+        company_profile = CompanyProfile(id=company_id_int, company_name=payload.company_name)
+        db.add(company_profile)
+
+    # 설문 데이터로 프로필 업데이트
+    company_profile.team_size = payload.team_size
+    company_profile.main_channel = payload.main_channel
+    company_profile.main_target = payload.main_target
+    company_profile.communication_style = payload.communication_style
+    company_profile.survey_data = payload.dict()
+    company_profile.updated_at = datetime.utcnow()
+
+    try:
+        db.commit()
+        db.refresh(company_profile)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"An error occurred while updating the profile: {e}")
+
     return {
-        "company_id": company_id_int,
-        "company_name": payload.company_name,
-        "id": company_id_int,
-        "message": "Company survey submitted successfully (temporary bypass)",
-        "survey_received": {
-            "communication_style": payload.communication_style,
-            "main_channel": payload.main_channel,
-            "main_target": payload.main_target,
-            "team_size": payload.team_size
+        "message": "Company survey submitted and profile updated successfully.",
+        "company_profile": {
+            "id": company_profile.id,
+            "company_name": company_profile.company_name,
+            "team_size": company_profile.team_size,
+            "main_channel": company_profile.main_channel,
+            "main_target": company_profile.main_target,
+            "communication_style": company_profile.communication_style,
+            "updated_at": company_profile.updated_at.isoformat()
         }
     }
