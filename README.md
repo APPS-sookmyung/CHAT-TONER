@@ -1,4 +1,8 @@
 # Chat-Toner: Your AI-Powered Communication Assistant
+<img width="1432" height="611" alt="image" src="https://github.com/user-attachments/assets/60b67dfb-be5c-4ec8-aaab-d5dbae453720" />
+
+<img width="1697" height="892" alt="image" src="https://github.com/user-attachments/assets/73fab338-d302-41d8-8794-cc670b1ede58" />
+
 
 **Chat-Toner** is an intelligent text conversion and analysis service designed to refine your communication. It helps you adjust the tone and style of your writing, ensures quality and consistency, and provides a knowledge base for company-specific communication protocols.
 
