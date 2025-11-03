@@ -1,7 +1,10 @@
 # Chat-Toner: Your AI-Powered Communication Assistant
-<img width="1432" height="611" alt="image" src="https://github.com/user-attachments/assets/60b67dfb-be5c-4ec8-aaab-d5dbae453720" />
+<img width="1440" height="826" alt="Desktop - 61" src="https://github.com/user-attachments/assets/36d5fe89-d9f6-4241-ae18-7fd3b0ccb371" />
 
-<img width="1697" height="892" alt="image" src="https://github.com/user-attachments/assets/73fab338-d302-41d8-8794-cc670b1ede58" />
+
+<img width="1440" height="1024" alt="Desktop - 60" src="https://github.com/user-attachments/assets/31a550b8-2e2d-4a59-a725-a7e73b34b50a" />
+
+
 
 
 **Chat-Toner** is an intelligent text conversion and analysis service designed to refine your communication. It helps you adjust the tone and style of your writing, ensures quality and consistency, and provides a knowledge base for company-specific communication protocols.
@@ -47,7 +50,8 @@
 
 > 
 
-https://github.com/user-attachments/assets/aed86e2e-deb2-4a99-bec7-9b13da1baabe
+![KakaoTalk_Video_2025-11-03-15-08-15](https://github.com/user-attachments/assets/4e2f8314-b65c-4c89-9faf-e78278a3cc5f)
+
 
 
 
