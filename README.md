@@ -45,7 +45,11 @@
 - **Tone & Style Adjustment:** Easily convert your text between different communication styles (e.g., formal, friendly, direct).
 - **Profile-Based Conversion:** The system learns your preferences from surveys and feedback to provide personalized conversions.
 
-> [Placeholder for a screenshot of the text conversion interface]
+> 
+
+https://github.com/user-attachments/assets/aed86e2e-deb2-4a99-bec7-9b13da1baabe
+
+
 
 ### 2. Advanced Quality Analysis
 
