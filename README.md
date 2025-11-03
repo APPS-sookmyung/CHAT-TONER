@@ -89,8 +89,8 @@
 ## 🏛️ Architecture
 
 The Chat-Toner service is built on a microservices architecture, with a React frontend, a NestJS API gateway, and a Python backend for core AI/ML and business logic.
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/0dc24cbe-94c9-4f78-b355-fde2682c7b1e" />
 
-> [Placeholder for the RAG Architecture Diagram]
 
 ## 📂 Directory Structure
 
