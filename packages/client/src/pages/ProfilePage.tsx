@@ -4,7 +4,11 @@ import { getOrSetUserId } from '../lib/userId';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Users, Mail, Target, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Building2, Users, Mail, Target, Calendar, FileText, Trash2, Upload, Plus } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface CompanyContext {
   companySize: string;
@@ -28,9 +32,54 @@ interface UserProfile {
 }
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [documents, setDocuments] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 문서 목록 조회
+  const fetchDocuments = async () => {
+    setDocumentsLoading(true);
+    try {
+      const docs = await api.getDocuments();
+      setDocuments(docs);
+    } catch (err) {
+      console.error('문서 목록 로딩 실패:', err);
+      toast({
+        variant: "destructive",
+        title: "문서 목록 로딩 실패",
+        description: "문서 목록을 불러오는데 실패했습니다.",
+      });
+    } finally {
+      setDocumentsLoading(false);
+    }
+  };
+
+  // 문서 삭제
+  const handleDeleteDocument = async (documentName: string) => {
+    if (!confirm(`"${documentName}" 문서를 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      await api.deleteDocument(documentName);
+      toast({
+        title: "문서 삭제 완료",
+        description: `"${documentName}" 문서가 삭제되었습니다.`,
+      });
+      fetchDocuments(); // 목록 새로고침
+    } catch (err) {
+      console.error('문서 삭제 실패:', err);
+      toast({
+        variant: "destructive",
+        title: "문서 삭제 실패",
+        description: "문서를 삭제하는데 실패했습니다.",
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -50,6 +99,9 @@ const ProfilePage: React.FC = () => {
         // 새로운 회사 프로필 API 확인
         const companyProfileResponse = await axios.get(`/api/v1/company-profile/${userId}`);
         setProfile(companyProfileResponse.data);
+
+        // 문서 목록도 함께 로드
+        fetchDocuments();
 
       } catch (err) {
         console.error('프로필 로딩 실패:', err);
@@ -195,7 +247,7 @@ const ProfilePage: React.FC = () => {
       </Card>
 
       {/* 커뮤니케이션 가이드 */}
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle>커뮤니케이션 가이드</CardTitle>
           <CardDescription>
@@ -209,6 +261,94 @@ const ProfilePage: React.FC = () => {
               __html: `<p class="mb-3">${formatProfile(profile.companyProfile)}</p>`
             }}
           />
+        </CardContent>
+      </Card>
+
+      {/* 기업 데이터 관리 */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              기업 데이터 관리
+            </CardTitle>
+            <CardDescription>
+              업로드된 기업 문서와 데이터를 관리합니다.
+            </CardDescription>
+          </div>
+          <Button
+            onClick={() => navigate('/upload')}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            문서 업로드
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {documentsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <p className="text-gray-500">문서 목록 로딩 중...</p>
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">업로드된 문서가 없습니다.</p>
+              <Button
+                onClick={() => navigate('/upload')}
+                variant="outline"
+                className="flex items-center gap-2 mx-auto"
+              >
+                <Upload className="h-4 w-4" />
+                문서 업로드 시작하기
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-sm text-gray-600">
+                  총 {documents.length}개의 문서가 업로드되어 있습니다.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchDocuments}
+                  disabled={documentsLoading}
+                >
+                  새로고침
+                </Button>
+              </div>
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {documents.map((doc, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium text-sm">{doc}</p>
+                        <p className="text-xs text-gray-500">
+                          {doc.endsWith('.pdf') ? 'PDF 문서' :
+                           doc.endsWith('.docx') ? 'Word 문서' :
+                           doc.endsWith('.txt') ? '텍스트 파일' :
+                           doc.endsWith('.md') ? 'Markdown 파일' : '문서'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteDocument(doc)}
+                      className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

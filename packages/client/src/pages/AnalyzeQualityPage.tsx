@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ThumbsUp } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Copy, Slack } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
 import { Button } from "@/components/ui/button";
@@ -277,24 +277,42 @@ ${
             <div className="w-full max-w-4xl">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">최종 글</h2>
-                <Button
-                  size="sm"
-                  variant={finalLiked ? "default" : "secondary"}
-                  className={[
-                    "gap-2 rounded-full",
-                    finalLiked
-                      ? "ring-2 ring-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.55)]"
-                      : "ring-1 ring-primary/40 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]",
-                  ].join(" ")}
-                  aria-pressed={finalLiked}
-                  disabled={finalLiked}
-                  onClick={() => {
-                    setFinalLiked(true);
-                    toast({ title: "피드백 반영", description: "엄지 피드백이 반영되었습니다." });
-                  }}
-                >
-                  <ThumbsUp className="h-4 w-4" /> {finalLiked ? "좋아요 반영됨" : "좋아요"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(finalText);
+                      toast({ title: "Copied to clipboard!" });
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                  <a href="https://slack.com" target="_blank" rel="noopener noreferrer">
+                    <Button size="sm" variant="outline">
+                      <Slack className="h-4 w-4" />
+                    </Button>
+                  </a>
+                  <Button
+                    size="sm"
+                    variant={finalLiked ? "default" : "secondary"}
+                    className={[
+                      "gap-2 rounded-full",
+                      finalLiked
+                        ? "ring-2 ring-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.55)]"
+                        : "ring-1 ring-primary/40 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]",
+                    ].join(" ")}
+                    aria-pressed={finalLiked}
+                    disabled={finalLiked}
+                    onClick={() => {
+                      setFinalLiked(true);
+                      toast({ title: "피드백 반영", description: "엄지 피드백이 반영되었습니다." });
+                    }}
+                  >
+                    <ThumbsUp className="h-4 w-4" /> {finalLiked ? "좋아요 반영됨" : "좋아요"}
+                  </Button>
+                </div>
               </div>
               <div
                 className={[
