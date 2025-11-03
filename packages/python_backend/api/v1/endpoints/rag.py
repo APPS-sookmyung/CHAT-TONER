@@ -436,3 +436,44 @@ async def suggest_better_expressions(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"표현 개선 제안 중 오류가 발생했습니다: {str(e)}")
+
+class JustifyScoreResponse(BaseModel):
+    justifications: List[str]
+
+@router.get("/justify-score", response_model=JustifyScoreResponse)
+async def justify_score(
+    score_type: str,
+    company_id: Optional[str] = None,
+    rag_service: Annotated[object, Depends(get_rag_service)] = None
+) -> JustifyScoreResponse:
+    """점수 산정 근거를 RAG를 통해 조회"""
+    
+    query_map = {
+        "formality": "글의 격식에 대한 기준",
+        "readability": "글의 가독성을 높이는 방법",
+        "grammar": "자주 틀리는 문법 및 맞춤법",
+        "protocol": "회사의 커뮤니케이션 프로토콜"
+    }
+    
+    query = query_map.get(score_type)
+    if not query:
+        raise HTTPException(status_code=400, detail=f"Invalid score_type: {score_type}")
+        
+    try:
+        result = await rag_service.ask_question(
+            query=query,
+            context=f"{score_type} 점수 근거 조회",
+            company_id=company_id
+        )
+        
+        if not result.get("success"):
+            return JustifyScoreResponse(justifications=[])
+            
+        sources = result.get("sources", [])
+        justifications = [source.get("page_content", "") for source in sources[:3]]
+        
+        return JustifyScoreResponse(justifications=justifications)
+        
+    except Exception as e:
+        logger.error(f"점수 근거 조회 중 오류: {e}")
+        raise HTTPException(status_code=500, detail="점수 근거를 조회하는 중 오류가 발생했습니다.")
