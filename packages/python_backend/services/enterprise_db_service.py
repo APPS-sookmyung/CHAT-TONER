@@ -38,3 +38,7 @@ class EnterpriseDBService:
         }
         return self.storage.save_company_profile(profile_data)
 
+def get_enterprise_db_service() -> EnterpriseDBService:
+    """Factory function to create EnterpriseDBService instance"""
+    return EnterpriseDBService()
+
