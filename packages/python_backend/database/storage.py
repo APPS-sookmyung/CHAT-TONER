@@ -135,68 +135,41 @@ class DatabaseStorage:
 
             return [dict(row) for row in feedback]
 
-    
 
-        def update_conversion_feedback(self, feedback_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def update_conversion_feedback(self, feedback_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-            conn = get_db_connection()
+        try:
+            cursor.execute("""
+                UPDATE conversion_history
+                SET user_rating = ?, selected_version = ?, feedback_text = ?
+                WHERE id = ?
+            """, (
+                feedback_data.get('rating'),
+                feedback_data.get('selectedVersion'),
+                feedback_data.get('feedback_text'),
+                feedback_data.get('conversionId')
+            ))
 
-            cursor = conn.cursor()
+            conn.commit()
+            cursor.execute("SELECT * FROM conversion_history WHERE id = ?", (feedback_data.get('conversionId'),))
+            updated_conversion = cursor.fetchone()
+            return dict(updated_conversion)
 
-            try:
+        except Exception as e:
+            logger.error(f"Error updating conversion feedback: {e}")
+            return None
 
-                cursor.execute("""
-
-                    UPDATE conversion_history
-
-                    SET user_rating = ?, selected_version = ?, feedback_text = ?
-
-                    WHERE id = ?
-
-                """, (
-
-                    feedback_data.get('rating'),
-
-                    feedback_data.get('selectedVersion'),
-
-                    feedback_data.get('feedback_text'),
-
-                    feedback_data.get('conversionId')
-
-                ))
-
-                conn.commit()
-
-                cursor.execute("SELECT * FROM conversion_history WHERE id = ?", (feedback_data.get('conversionId'),))
-
-                updated_conversion = cursor.fetchone()
-
-                return dict(updated_conversion)
-
-            except Exception as e:
-
-                logger.error(f"Error updating conversion feedback: {e}")
-
-                return None
-
-            finally:
-
-                conn.close()
-
-    
-
-        def get_conversion_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-
-            conn = get_db_connection()
-
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT * FROM conversion_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?", (user_id, limit))
-
-            history = cursor.fetchall()
-
+        finally:
             conn.close()
 
-            return [dict(row) for row in history]
+    def get_conversion_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM conversion_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?", (user_id, limit))
+        history = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in history]
 
     

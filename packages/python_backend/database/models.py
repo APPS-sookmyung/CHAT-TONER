@@ -185,10 +185,16 @@ class CompanyProfile(Base):
     __tablename__ = "company_profiles"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_name = Column(String, index=True)  # name -> company_name으로 수정
+    company_name = Column(String, index=True)
 
-    # 설문조사 원본 응답 저장 (임시 제거 - 실제 DB에 컬럼이 없음)
-    # survey_data = Column(JSON, nullable=True)
+    # 설문조사 응답
+    team_size = Column(Integer)
+    main_channel = Column(String)
+    main_target = Column(JSON)
+    communication_style = Column(String)
+    
+    # 원본 설문 데이터 저장
+    survey_data = Column(JSON, nullable=True)
 
     # 생성한 프로필 텍스트 저장
     generated_profile = Column(Text, nullable=True)
