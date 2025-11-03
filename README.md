@@ -48,14 +48,13 @@
 - **Tone & Style Adjustment:** Easily convert your text between different communication styles (e.g., formal, friendly, direct).
 - **Profile-Based Conversion:** The system learns your preferences from surveys and feedback to provide personalized conversions.
 
-> 
-
 ![KakaoTalk_Video_2025-11-03-15-08-15](https://github.com/user-attachments/assets/4e2f8314-b65c-4c89-9faf-e78278a3cc5f)
 
 
 
 
 ### 2. Advanced Quality Analysis
+<img width="1479" height="816" alt="image" src="https://github.com/user-attachments/assets/1e89bf07-3563-460f-8bad-6f40a0c8df38" />
 
 - **Comprehensive Scoring:** Get scores for your text based on **Grammar**, **Formality**, **Readability**, and **Protocol Compliance**.
 - **Actionable Suggestions:** Receive concrete suggestions for improving your text.
