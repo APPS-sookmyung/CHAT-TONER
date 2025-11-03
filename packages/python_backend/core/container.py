@@ -13,6 +13,7 @@ from services.document_service import DocumentService
 from services.rag_service import RAGService
 from services.profile_generator import ProfileGeneratorService # Added import
 from services.user_service import UserService
+from services.pdf_summary_service import PDFSummaryService
 
 # 선택적 import (의존성이 있을 때만)
 try:
@@ -76,6 +77,12 @@ class Container(containers.DeclarativeContainer):
     # 프로필 생성 서비스 (OpenAIService 주입)
     profile_generator_service = providers.Singleton(
         ProfileGeneratorService,
+        openai_service=openai_service
+    )
+
+    # PDF 요약 서비스 (OpenAIService 주입)
+    pdf_summary_service = providers.Singleton(
+        PDFSummaryService,
         openai_service=openai_service
     )
 

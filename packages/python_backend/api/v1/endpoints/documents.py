@@ -10,6 +10,7 @@ import shutil
 import os
 
 from .rag import get_rag_service  # 기존 RAG 서비스 싱글톤 재사용
+from core.container import Container
 
 router = APIRouter()
 
@@ -158,3 +159,97 @@ async def ingest_text_document(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"텍스트 인덱싱 실패: {e}")
+
+
+# PDF 요약 관련 엔드포인트들
+from pydantic import BaseModel
+from enum import Enum
+
+class SummaryType(str, Enum):
+    BRIEF = "brief"
+    DETAILED = "detailed"
+    BULLET_POINTS = "bullet_points"
+
+class PDFSummaryRequest(BaseModel):
+    document_name: str = Field(..., description="요약할 PDF 파일명")
+    summary_type: SummaryType = Field(SummaryType.BRIEF, description="요약 유형")
+
+class TextSummaryRequest(BaseModel):
+    text: str = Field(..., description="요약할 텍스트")
+    summary_type: SummaryType = Field(SummaryType.BRIEF, description="요약 유형")
+
+
+def get_pdf_summary_service():
+    """PDF 요약 서비스 의존성 함수"""
+    container = Container()
+    return container.pdf_summary_service()
+
+
+@router.post("/summarize-pdf")
+async def summarize_pdf(
+    request: PDFSummaryRequest,
+    pdf_service: Annotated[object, Depends(get_pdf_summary_service)] = None,
+):
+    """
+    업로드된 PDF 파일을 요약합니다.
+
+    Args:
+        request: PDF 요약 요청 (파일명, 요약 유형)
+        pdf_service: PDF 요약 서비스
+
+    Returns:
+        PDF 요약 결과
+    """
+    try:
+        base_dir = _get_documents_path()
+        file_path = base_dir / request.document_name
+
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"파일을 찾을 수 없습니다: {request.document_name}")
+
+        result = await pdf_service.summarize_pdf_by_path(
+            str(file_path),
+            request.summary_type.value
+        )
+
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF 요약 생성 실패: {e}")
+
+
+@router.post("/summarize-text")
+async def summarize_text(
+    request: TextSummaryRequest,
+    pdf_service: Annotated[object, Depends(get_pdf_summary_service)] = None,
+):
+    """
+    주어진 텍스트를 요약합니다.
+
+    Args:
+        request: 텍스트 요약 요청 (텍스트, 요약 유형)
+        pdf_service: PDF 요약 서비스 (텍스트 요약에도 사용)
+
+    Returns:
+        텍스트 요약 결과
+    """
+    try:
+        result = await pdf_service.summarize_pdf_text(
+            request.text,
+            request.summary_type.value
+        )
+
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"텍스트 요약 생성 실패: {e}")

@@ -1,14 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 import logging
 
 from datetime import datetime # Added import
-from services.profile_pipeline import run_profile_pipeline
-from services.vector_store_pg import VectorStorePG
-from api.dependencies import try_get_vector_store
 from services.openai_services import OpenAIService
-from services.style_profile_service import extract_style_features_from_survey
 from services.company_profile_service import CompanyProfileService
 
 logger = logging.getLogger('chattoner.surveys')
@@ -100,7 +96,7 @@ class OnboardingSurveyResponse(BaseModel):
     status_code=200,
     responses={
         200: {
-            "description": "유효한 설문 응답 시 200 OK를 반환하고 생성된 프로필을 벡터 DB에 저장합니다.",
+            "description": "유효한 설문 응답 시 200 OK를 반환하고 생성된 회사 프로필을 JSON 파일에 저장합니다.",
             "content": {"application/json": {"examples": OnboardingSurveyResponse.Config.json_schema_extra["examples"]}},
         }
     }
@@ -109,13 +105,22 @@ async def submit_survey(key: str, req: SubmitRequest):
     if key != "onboarding-intake":
         raise HTTPException(404, "unknown survey key")
 
+    logger.info(f"=== 설문 제출 시작 ===")
+    logger.info(f"User ID: {req.user_id}")
+    logger.info(f"Survey answers: {req.answers}")
+
     try:
         # 회사 프로필 생성 서비스 사용
+        logger.info("CompanyProfileService 인스턴스 생성 중...")
         company_profile_service = CompanyProfileService()
+        logger.info("CompanyProfileService 생성 완료, generate_company_profile 호출 중...")
+
         profile_data = await company_profile_service.generate_company_profile(
             user_id=req.user_id,
             survey_answers=req.answers
         )
+        logger.info(f"CompanyProfileService.generate_company_profile 성공완료!")
+        logger.info(f"생성된 프로필 데이터: {profile_data}")
 
         # 온보딩 완료 메시지 생성
         try:
@@ -144,7 +149,11 @@ async def submit_survey(key: str, req: SubmitRequest):
 
     except Exception as e:
         # 폴백: 실패 시에도 기본 프로필 반환
-        logger.error(f"회사 프로필 생성 실패, 기본 프로필로 처리: {e}", exc_info=True)
+        logger.error(f"=== 회사 프로필 생성 실패 ===")
+        logger.error(f"오류: {e}")
+        logger.error(f"오류 타입: {type(e)}")
+        logger.error("전체 스택 트레이스:", exc_info=True)
+        logger.error("기본 프로필로 폴백 처리합니다.")
 
         fallback_context = {
             "companySize": "일반 조직",
