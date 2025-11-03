@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Building, CheckCircle, Info, Plus, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Building, CheckCircle, Info, Plus, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { PATH } from "@/constants/paths";
 import type { UserProfile } from "@shared/schema";
 
 interface CompanyProfile {
@@ -33,6 +35,7 @@ export default function ProfileDropdown({
   onClose,
   userProfile,
 }: ProfileDropdownProps) {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<CompanyProfile>(() => {
     if (userProfile) {
@@ -88,6 +91,11 @@ export default function ProfileDropdown({
     toast({ title: "Success", description: "The rule has been deleted." });
   };
 
+  const handleViewProfile = () => {
+    navigate(PATH.PROFILE);
+    onClose();
+  };
+
   if (!open) return null;
 
   return (
@@ -114,6 +122,17 @@ export default function ProfileDropdown({
             </h3>
             <p className="text-sm text-gray-500">AI Profile Management</p>
           </div>
+        </div>
+
+        <div className="mb-4">
+          <Button
+            onClick={handleViewProfile}
+            className="w-full flex items-center gap-2"
+            variant="outline"
+          >
+            <User className="w-4 h-4" />
+            내 커뮤니케이션 프로필 보기
+          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">

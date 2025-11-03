@@ -122,6 +122,35 @@ export const api = {
   }) => {
     const response = await apiClient.post('/api/v1/quality/company/generate-final', data);
     return response.data;
+  },
+
+  // Document Management
+  getDocuments: async (subdir?: string) => {
+    const params = subdir ? { subdir } : {};
+    const response = await apiClient.get('/api/v1/documents/', { params });
+    return response.data;
+  },
+
+  deleteDocument: async (documentName: string) => {
+    const response = await apiClient.delete(`/api/v1/documents/${encodeURIComponent(documentName)}`);
+    return response.data;
+  },
+
+  // PDF Summarization
+  summarizePDF: async (data: {
+    document_name: string;
+    summary_type: 'brief' | 'detailed' | 'bullet_points';
+  }) => {
+    const response = await apiClient.post('/api/v1/documents/summarize-pdf', data);
+    return response.data;
+  },
+
+  summarizeText: async (data: {
+    text: string;
+    summary_type: 'brief' | 'detailed' | 'bullet_points';
+  }) => {
+    const response = await apiClient.post('/api/v1/documents/summarize-text', data);
+    return response.data;
   }
 };
 
