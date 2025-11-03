@@ -149,12 +149,6 @@ You can run all services together using Docker Compose.
 docker-compose up --build
 ```
 
-The services will be available at:
-
-- **Frontend:** `http://localhost:3000`
-- **API Gateway:** `http://localhost:8080`
-- **Backend:** `http://localhost:8000`
-
 ## 🤝 Contributing
 
 We welcome contributions! Please follow these guidelines:
