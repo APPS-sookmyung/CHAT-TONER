@@ -10,12 +10,12 @@ export default defineConfig({
     proxy: {
       "/api": {
         // Dev: point to local FastAPI so LLM-only logic is used
-        target: process.env.VITE_PROXY_TARGET || "http://127.0.0.1:5010",
+        target: process.env.VITE_PROXY_TARGET || "http://127.0.0.1:5000",
         changeOrigin: true,
         rewrite: (path) => path,
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Proxying:', req.method, req.url, '->', process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:5003');
+            console.log('Proxying:', req.method, req.url, '->', process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:5000');
           });
         },
       },
