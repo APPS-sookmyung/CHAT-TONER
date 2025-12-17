@@ -1,9 +1,7 @@
 // src/lib/api.ts
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-const API_BASE = import.meta.env.PROD 
-  ? (import.meta.env.VITE_API_URL || '') 
-  : '';
+const API_BASE = '';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
@@ -67,7 +65,7 @@ export const api = {
     files.forEach(file => {
       formData.append('files', file);
     });
-    
+
     const response = await apiClient.post('/api/v1/documents/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
