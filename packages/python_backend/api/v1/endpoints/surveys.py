@@ -66,27 +66,24 @@ class OnboardingSurveyResponse(BaseModel):
 
     class Config:
         json_schema_extra = {
-            "examples": {
-                "success": {
-                    "summary": "성공",
-                    "value": {
-                        "id": 1,
-                        "userId": "u1",
-                        "companyProfile": "## 스타트업/소규모 engineering 팀 커뮤니케이션 가이드\n\n### 핵심 원칙\n1. **기술적 정확성**: 구체적인 기술 용어와 명확한 문제 정의\n2. **빠른 피드백**: 이슈 발생 시 즉시 공유하여 신속한 해결\n3. **협업 중심**: 코드 리뷰와 페어 프로그래밍을 통한 지식 공유\n\n### 상황별 가이드\n- **데일리 미팅**: 진행 상황과 블로커를 간결하게 공유\n- **이메일/슬랙**: 기술적 이슈는 스크린샷과 로그 첨부\n- **코드 리뷰**: 건설적 피드백으로 개선점 제시",
-                        "companyContext": {
-                            "companySize": "스타트업/소규모",
-                            "teamSize": "1-10",
-                            "primaryFunction": "engineering",
-                            "communicationStyle": "friendly",
-                            "primaryChannel": "email"
-                        },
-                        "surveyResponses": {"primary_function": "engineering", "communication_style": "friendly"},
-                        "createdAt": "2025-10-29T12:00:00Z",
-                        "message": "팀 특성에 맞는 커뮤니케이션 가이드를 생성했습니다.",
-                        "profileType": "company_based"
-                    }
+            "examples": [
+                {
+                    "id": 1,
+                    "userId": "u1",
+                    "companyProfile": "## 스타트업/소규모 engineering 팀 커뮤니케이션 가이드\n\n### 핵심 원칙\n1. **기술적 정확성**: 구체적인 기술 용어와 명확한 문제 정의\n2. **빠른 피드백**: 이슈 발생 시 즉시 공유하여 신속한 해결\n3. **협업 중심**: 코드 리뷰와 페어 프로그래밍을 통한 지식 공유\n\n### 상황별 가이드\n- **데일리 미팅**: 진행 상황과 블로커를 간결하게 공유\n- **이메일/슬랙**: 기술적 이슈는 스크린샷과 로그 첨부\n- **코드 리뷰**: 건설적 피드백으로 개선점 제시",
+                    "companyContext": {
+                        "companySize": "스타트업/소규모",
+                        "teamSize": "1-10",
+                        "primaryFunction": "engineering",
+                        "communicationStyle": "friendly",
+                        "primaryChannel": "email"
+                    },
+                    "surveyResponses": {"primary_function": "engineering", "communication_style": "friendly"},
+                    "createdAt": "2025-10-29T12:00:00Z",
+                    "message": "팀 특성에 맞는 커뮤니케이션 가이드를 생성했습니다.",
+                    "profileType": "company_based"
                 }
-            }
+            ]
         }
 
 
