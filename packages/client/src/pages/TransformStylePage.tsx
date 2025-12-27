@@ -98,19 +98,27 @@ export default function TransformStylePage() {
       console.log(`Transforming text: ${text}`);
 
       try {
+        const clampToScale = (value: number) => {
+          const numericValue = Number(value);
+          if (Number.isNaN(numericValue)) return 5;
+          return Math.max(1, Math.min(10, Math.round(numericValue)));
+        };
+
         const result = await api.convertStyle({
           text,
           user_profile: userProfile
             ? {
-                baseFormalityLevel: Math.round(
-                  userProfile.baseFormalityLevel / 10
+                baseFormalityLevel: clampToScale(
+                  userProfile.baseFormalityLevel
                 ),
-                baseFriendlinessLevel: Math.round(
-                  userProfile.baseFriendlinessLevel / 10
+                baseFriendlinessLevel: clampToScale(
+                  userProfile.baseFriendlinessLevel
                 ),
-                baseEmotionLevel: Math.round(userProfile.baseEmotionLevel / 10),
-                baseDirectnessLevel: Math.round(
-                  userProfile.baseDirectnessLevel / 10
+                baseEmotionLevel: clampToScale(
+                  userProfile.baseEmotionLevel
+                ),
+                baseDirectnessLevel: clampToScale(
+                  userProfile.baseDirectnessLevel
                 ),
               }
             : {
