@@ -35,15 +35,25 @@ async def submit_feedback(
 ) -> FeedbackResponse:
     """사용자 피드백 처리 및 학습"""
     try:
-        # 서비스 레이어를 호출하여 피드백을 저장하고 업데이트된 기록을 받음
+        # 피드백 저장 로직: 서비스 레이어를 호출하여 피드백을 저장하고 업데이트된 기록을 받음
         updated_record = user_service.save_feedback(feedback)
 
         if not updated_record:
             raise HTTPException(status_code=400, detail="피드백 저장에 실패했습니다. 해당 ID의 변환 기록을 찾을 수 없습니다.")
         
+        # StyleLearning Engine 트리거: 백그라운드 작업으로 비동기 실행
+        if feedback.feedback_text and feedback.feedback_text.strip():
+            background_tasks.add_task(
+                user_service.adapt_user_style,
+                user_id=feedback.userId,
+                feedback_text=feedback.feedback_text,
+                rating=feedback.rating,
+                selected_version=feedback.selectedVersion
+            )
+        
         return FeedbackResponse(
             status="success",
-            message="피드백이 성공적으로 처리 및 저장되었습니다.",
+            message="피드백이 성공적으로 저장되었으며 스타일 학습이 백그라운드에서 진행됩니다.",
             feedbackId=updated_record['id'],
             timestamp=updated_record['updated_at']
         )

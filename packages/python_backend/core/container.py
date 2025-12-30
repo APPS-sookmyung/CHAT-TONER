@@ -45,16 +45,13 @@ class Container(containers.DeclarativeContainer):
         model=config.OPENAI_MODEL
     )
 
+    # DatabaseStorage 싱글톤 인스턴스로 생성
     database_storage = providers.Singleton(DatabaseStorage)
-
     user_preferences_service = providers.Singleton(
         UserPreferencesService,
         storage=database_storage,
         openai_service=openai_service
     )
-
-    # User service
-    user_service = providers.Singleton(UserService)
     
     # 메인 변환 서비스
     conversion_service = providers.Singleton(
