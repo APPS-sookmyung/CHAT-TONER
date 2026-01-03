@@ -10,14 +10,11 @@ python_backend/jiwon
 .venv
 python_backend/.env
 dist/
-.claude/
-/.claude
+
 .env
 *.env
 
 # Local AI agent config (do not commit)
-/.claude/
-python_backend/.claude/
 
 
 .vscode/
@@ -42,7 +39,7 @@ python_backend/.venv/
 
 
 # Documentation and issue tracking (local only)
-CLAUDE.md
+
 API_MISMATCH_ISSUES.md
 
 # Cloud deployment documentation (local only)
