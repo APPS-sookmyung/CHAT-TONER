@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 from core.rag_config import get_rag_config
 from datetime import datetime
-from core.rag_config import get_rag_config
+from utils.response_helpers import create_error_response
 
 logger = logging.getLogger('chattoner')
 
@@ -234,9 +234,17 @@ class RAGService:
             
             # 입력 검증
             if not query.strip():
-                return self._create_error_response(
-                    "빈 질문은 처리할 수 없습니다.", 
-                    query, context, base_metadata
+                return create_error_response(
+                    "빈 질문은 처리할 수 없습니다.",
+                    answer="",
+                    original_query=query,
+                    context=context,
+                    sources=[],
+                    metadata={
+                        **base_metadata,
+                        "model_used": "none",
+                        "error_type": "service_unavailable"
+                    }
                 )
             
             # GPT/Simple Embedder 우선 사용
@@ -264,16 +272,32 @@ class RAGService:
                 return result
             
             # 모든 방법 실패
-            return self._create_error_response(
-                "RAG 서비스가 초기화되지 않았습니다.", 
-                query, context, base_metadata
+            return create_error_response(
+                "RAG 서비스가 초기화되지 않았습니다.",
+                answer="",
+                original_query=query,
+                context=context,
+                sources=[],
+                metadata={
+                    **base_metadata,
+                    "model_used": "none",
+                    "error_type": "service_unavailable"
+                }
             )
             
         except Exception as e:
             logger.error(f"단일 질의응답 중 오류: {e}")
-            return self._create_error_response(
-                f"질의응답 중 서버 오류가 발생했습니다: {str(e)}", 
-                query, context, base_metadata
+            return create_error_response(
+                f"질의응답 중 서버 오류가 발생했습니다: {str(e)}",
+                answer="",
+                original_query=query,
+                context=context,
+                sources=[],
+                metadata={
+                    **base_metadata,
+                    "model_used": "none",
+                    "error_type": "service_unavailable"
+                }
             )
     
     async def ask_generative_question(self, 
@@ -291,9 +315,20 @@ class RAGService:
         
         try:
             logger.info(f"생성형 RAG 요청: {len(query)}자, context={bool(context)}")
-            
+
             if not query.strip():
-                return self._create_error_response("빈 질문은 처리할 수 없습니다.", query, context, base_metadata)
+                return create_error_response(
+                    "빈 질문은 처리할 수 없습니다.",
+                    answer="",
+                    original_query=query,
+                    context=context,
+                    sources=[],
+                    metadata={
+                        **base_metadata,
+                        "model_used": "none",
+                        "error_type": "service_unavailable"
+                    }
+                )
             
             # RAG Chain을 직접 호출
             result = await self._try_rag_chain(query, context, base_metadata)
@@ -301,11 +336,33 @@ class RAGService:
                 return result
             
             # RAG Chain 실패
-            return self._create_error_response("RAG 서비스가 초기화되지 않았거나 답변 생성에 실패했습니다.", query, context, base_metadata)
-            
+            return create_error_response(
+                "RAG 서비스가 초기화되지 않았거나 답변 생성에 실패했습니다.",
+                answer="",
+                original_query=query,
+                context=context,
+                sources=[],
+                metadata={
+                    **base_metadata,
+                    "model_used": "none",
+                    "error_type": "service_unavailable"
+                }
+            )
+
         except Exception as e:
             logger.error(f"생성형 RAG 중 오류: {e}")
-            return self._create_error_response(f"생성형 RAG 중 서버 오류가 발생했습니다: {str(e)}", query, context, base_metadata)
+            return create_error_response(
+                f"생성형 RAG 중 서버 오류가 발생했습니다: {str(e)}",
+                answer="",
+                original_query=query,
+                context=context,
+                sources=[],
+                metadata={
+                    **base_metadata,
+                    "model_used": "none",
+                    "error_type": "service_unavailable"
+                }
+            )
     
     async def _try_embedder_search(self, query: str, context: Optional[str], base_metadata: dict) -> Optional[Dict[str, Any]]:
         """임베더 검색 시도"""
@@ -381,23 +438,7 @@ class RAGService:
         except Exception as e:
             logger.error(f"RAG Chain 오류: {e}")
             return None
-    
-    def _create_error_response(self, error_msg: str, query: str, context: Optional[str], metadata: dict) -> Dict[str, Any]:
-        """통일된 에러 응답 생성"""
-        return {
-            "success": False,
-            "error": error_msg,
-            "answer": "",
-            "original_query": query,
-            "context": context,
-            "sources": [],
-            "metadata": {
-                **metadata,
-                "model_used": "none",
-                "error_type": "service_unavailable"
-            }
-        }
-    
+
     async def ask_with_styles(self, 
                              query: str, 
                              user_profile: Dict[str, Any], 

@@ -257,7 +257,7 @@ class OpenAIService:
             }
             
         except Exception as e:
-            print(f"감정 분석 오류: {e}")
+            self.logger.error(f"감정 분석 오류: {e}")
             return {"rating": 3, "confidence": 0.5}
     
     def analyze_style_feedback(self, feedback_text: str) -> Dict[str, float]:
@@ -306,10 +306,10 @@ class OpenAIService:
             return json.loads(result)
             
         except Exception as e:
-            print(f"피드백 분석 오류: {e}")
+            self.logger.error(f"피드백 분석 오류: {e}")
             return {
                 "formalityDelta": 0.0,
-                "friendlinessDelta": 0.0, 
+                "friendlinessDelta": 0.0,
                 "emotionDelta": 0.0,
                 "directnessDelta": 0.0
             }
