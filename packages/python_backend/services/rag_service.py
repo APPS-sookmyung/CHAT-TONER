@@ -1,9 +1,7 @@
 """
 RAG (Retrieval-Augmented Generation) 서비스
 RAG Chain을 래핑하여 FastAPI와 연동하는 서비스 레이어
-ConversionService와 동일한 패턴으로 구현
-
-이 파일은 이제 Facade 패턴으로 작동하며, 실제 작업은 전문화된 모듈에 위임합니다:
+Facade 패턴으로 구현되어 실제 작업은 전문화된 모듈에 위임:
 - RAGEmbedderManager: 임베더 초기화 및 관리
 - RAGIngestionService: 문서 인덱싱
 - RAGQueryService: 질의응답 처리
@@ -12,48 +10,82 @@ ConversionService와 동일한 패턴으로 구현
 import logging
 from typing import Dict, Any, Optional
 
-# 분리된 모듈 import
-from services.rag.rag_embedder_manager import RAGEmbedderManager
-from services.rag.rag_ingestion_service import RAGIngestionService
-from services.rag.rag_query_service import RAGQueryService
-
 logger = logging.getLogger('chattoner')
 
 
 class RAGService:
     """RAG를 활용한 문서 검색 및 질의응답 서비스 (Facade)"""
-    
-    def __init__(self, user_preferences_service=None):
-        """RAG 서비스 초기화 - ConversionService와 동일한 패턴"""
-        # 직접 생성 (ConversionService 패턴)
-        from services.prompt_engineering import PromptEngineer
-        from services.openai_services import OpenAIService
-        from services.conversion_service import ConversionService
-        
-        self.prompt_engineer = PromptEngineer()
-        self.openai_service = OpenAIService()
-        self.conversion_service = ConversionService()
-        
-        # 선택적 주입 (향후 확장용)
-        self.user_preferences_service = user_preferences_service
-        
+
+    def __init__(
+        self,
+        user_preferences_service=None,
+        embedder_manager=None,
+        ingestion_service=None,
+        query_service=None
+    ):
+        """
+        RAG 서비스 초기화 - 의존성 주입 방식
+
+        Args:
+            user_preferences_service: 사용자 선호도 서비스 (선택)
+            embedder_manager: RAG 임베더 관리자 (주입 또는 자동 생성)
+            ingestion_service: RAG 인덱싱 서비스 (주입 또는 자동 생성)
+            query_service: RAG 질의응답 서비스 (주입 또는 자동 생성)
+        """
         # RAG Chain 초기화 (LangChain 사용 시)
         self.rag_chain = None
         self._initialize_chain()
-        
-        # 전문화된 서비스 모듈 초기화
-        self.embedder_manager = RAGEmbedderManager()
-        self.ingestion_service = RAGIngestionService(rag_chain=self.rag_chain)
-        self.query_service = RAGQueryService(
-            rag_chain=self.rag_chain,
-            embedder_manager=self.embedder_manager,
-            openai_service=self.openai_service,
-            conversion_service=self.conversion_service,
-            user_preferences_service=user_preferences_service
-        )
-        
+
+        # 전문화된 서비스 모듈 - 주입된 것 사용 또는 자동 생성
+        if embedder_manager is not None:
+            self.embedder_manager = embedder_manager
+        else:
+            # 하위 호환성: 주입되지 않은 경우 직접 생성
+            from services.rag.rag_embedder_manager import RAGEmbedderManager
+            self.embedder_manager = RAGEmbedderManager()
+
+        if ingestion_service is not None:
+            self.ingestion_service = ingestion_service
+            # RAG Chain 업데이트
+            self.ingestion_service.rag_chain = self.rag_chain
+        else:
+            # 하위 호환성: 주입되지 않은 경우 직접 생성
+            from services.rag.rag_ingestion_service import RAGIngestionService
+            self.ingestion_service = RAGIngestionService(rag_chain=self.rag_chain)
+
+        if query_service is not None:
+            self.query_service = query_service
+            # RAG Chain 업데이트
+            self.query_service.rag_chain = self.rag_chain
+            # embedder_manager 업데이트
+            self.query_service.embedder_manager = self.embedder_manager
+        else:
+            # 하위 호환성: 주입되지 않은 경우 직접 생성
+            from services.rag.rag_query_service import RAGQueryService
+            from services.prompt_engineering import PromptEngineer
+            from services.openai_services import OpenAIService
+            from services.conversion_service import ConversionService
+
+            self.prompt_engineer = PromptEngineer()
+            self.openai_service = OpenAIService()
+            self.conversion_service = ConversionService()
+
+            self.query_service = RAGQueryService(
+                rag_chain=self.rag_chain,
+                embedder_manager=self.embedder_manager,
+                openai_service=self.openai_service,
+                conversion_service=self.conversion_service,
+                user_preferences_service=user_preferences_service
+            )
+
+        # 선택적 주입 (향후 확장용)
+        self.user_preferences_service = user_preferences_service
+
         # 하위 호환성을 위한 속성 유지
         self.simple_embedder = self.embedder_manager.get_embedder()
+        # query_service에서 사용하는 openai_service도 노출 (rag.py 엔드포인트에서 사용)
+        if hasattr(self.query_service, 'openai_service'):
+            self.openai_service = self.query_service.openai_service
     
     def _initialize_chain(self):
         """RAG Chain 초기화 (LangChain 사용 시)"""

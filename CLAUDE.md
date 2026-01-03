@@ -96,6 +96,11 @@ npm run build-storybook          # Build Storybook static files
 
 ## Architecture Overview
 
+**📋 Comprehensive architecture documentation is available in:**
+- `ARCHITECTURE_REVIEW.md`: Complete architecture analysis with health score, findings, and improvement roadmap
+- `ARCHITECTURE_DIAGRAMS.md`: 12 Mermaid diagrams covering system architecture, layer diagrams, and deployment
+- `ARCHITECTURE_METRICS.md`: Quantitative metrics including file counts, service complexity, and performance indicators
+
 ### Request Flow
 
 1. **Client** makes requests to the **NestJS Gateway** (port 3000)
@@ -113,11 +118,16 @@ The Python backend uses **dependency injection** (via `dependency_injector`) wit
 - **Services** (`services/`): Business logic layer with specialized services:
   - `ConversionService`: Text tone/style conversion
   - `QualityAnalysisService`: Text quality scoring and analysis
-  - `RAGService`: Document ingestion and retrieval-augmented generation
+  - `RAGService`: Facade for RAG operations, coordinates specialized RAG subservices
+    - `RAGEmbedderManager`: Manages embedding operations
+    - `RAGIngestionService`: Handles document ingestion and indexing
+    - `RAGQueryService`: Processes RAG queries and retrieval
   - `UserPreferencesService`: User profile and preference management
   - `DocumentService`: PDF and document processing
 - **Agents** (`agents/`): LangGraph-based agents for complex workflows (optional, requires langgraph dependency)
 - **API Endpoints** (`api/v1/endpoints/`): FastAPI route handlers
+
+All services are registered as singletons in the DI container with explicit dependency wiring for better testability and maintainability.
 
 ### Key Service Patterns
 
@@ -144,10 +154,14 @@ container.wire(modules=[
 The gateway is a simple proxy layer that:
 - Validates requests using class-validator DTOs (`src/dto/`)
 - Forwards requests to the Python backend via HttpService (axios)
-- Handles errors and transforms responses
+- Handles errors globally via interceptors (`src/interceptors/`)
+  - `ErrorInterceptor`: Centralized error handling for HttpException, AxiosError, and unexpected errors
+  - `LoggingInterceptor`: Request/response logging with duration tracking
 - Provides Swagger documentation at `/api`
 
-**Important**: The gateway does NOT contain business logic - it's purely a proxy and validation layer.
+**Important**: The gateway does NOT contain business logic - it's purely a proxy and validation layer. Controller endpoints are clean and focused on request/response handling, with all error handling delegated to global interceptors.
+
+See `packages/nestjs-gateway/ERROR_HANDLING.md` for comprehensive error handling documentation.
 
 ### Frontend Architecture
 
@@ -155,7 +169,9 @@ React app using:
 - **React Router** for routing (`Router.tsx`)
 - **TanStack Query** for server state management
 - **Radix UI** components with Tailwind CSS
-- **Axios** for API calls
+- **Axios** for API calls via unified `api` object (`src/lib/api.ts`)
+
+**API Client Pattern**: All API communication uses the centralized axios-based `api` object with consistent error handling and request configuration. Each method corresponds to a backend endpoint (e.g., `api.convertStyle()`, `api.analyzeQuality()`).
 
 ## Environment Variables
 
@@ -209,7 +225,7 @@ Tests use Jest with:
 
 2. **Create proxy in NestJS gateway**:
    - Add DTO in `packages/nestjs-gateway/src/dto/`
-   - Add route handler in `src/app.controller.ts`
+   - Add route handler in `src/app.controller.ts` (no try-catch needed - handled by global interceptors)
 
 3. **Update frontend**:
    - Add API call in `packages/client/src/lib/` or create hook in `hooks/`
@@ -218,13 +234,26 @@ Tests use Jest with:
 
 ### Working with RAG
 
-RAG functionality is split across:
-- `langchain_pipeline/`: Core RAG components (embedder, retriever, chains)
-- `services/rag_service.py`: High-level RAG orchestration
-- `services/document_service.py`: Document processing and ingestion
-- `services/vector_store_pg.py`: PostgreSQL vector store operations
+RAG functionality follows a **Facade pattern** with specialized subservices:
 
-**Document ingestion flow**: PDF → text extraction → chunking → embedding → vector store
+**Main Service (Facade)**:
+- `services/rag_service.py`: High-level RAG orchestration, coordinates all RAG operations
+
+**Specialized Subservices** (in `services/rag/`):
+- `rag_embedder_manager.py`: Manages embedding generation and configuration
+- `rag_ingestion_service.py`: Handles document chunking and indexing into vector store
+- `rag_query_service.py`: Processes queries and retrieval operations
+- `vector_store_pg.py`: PostgreSQL vector store operations with PGVector
+
+**Supporting Components**:
+- `langchain_pipeline/`: LangChain integration (chains, retrievers, prompts)
+- `services/document_service.py`: Document processing and metadata management
+
+**Document ingestion flow**: PDF → text extraction → chunking (RAGIngestionService) → embedding (RAGEmbedderManager) → vector store (VectorStorePG)
+
+**Query flow**: User question → embedding (RAGEmbedderManager) → similarity search (RAGQueryService) → context retrieval → LLM generation → response
+
+All RAG services are registered in the DI container (`core/container.py`) as singletons and wired with proper dependencies.
 
 ### Database Migrations
 
