@@ -11,9 +11,7 @@ from services.openai_services import OpenAIService
 from services.user_preferences import UserPreferencesService
 from services.document_service import DocumentService
 from services.rag_service import RAGService
-from services.rag.rag_embedder_manager import RAGEmbedderManager
-from services.rag.rag_ingestion_service import RAGIngestionService
-from services.rag.rag_query_service import RAGQueryService
+from services.rag import RAGEmbedderManager, RAGIngestionService, RAGQueryService
 from services.profile_generator import ProfileGeneratorService # Added import
 from services.user_service import UserService
 from services.pdf_summary_service import PDFSummaryService
