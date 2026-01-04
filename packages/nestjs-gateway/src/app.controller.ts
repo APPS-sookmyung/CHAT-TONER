@@ -6,7 +6,12 @@ import {
   Post,
   Get,
   Param,
+  Delete,
+  Query,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { HttpService } from '@nestjs/axios';
 import { ConversionRequestDto } from './dto/conversion-request.dto';
 import { ConversionResponseDto } from './dto/conversion-response.dto';
@@ -131,5 +136,132 @@ export class AppController {
         received_feedback: body.feedback_text,
       },
     };
+  }
+
+  // ========== Documents Endpoints ==========
+
+  @Post('documents/upload')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 10 }]))
+  async uploadDocuments(
+    @UploadedFiles() files: { files?: any[] },
+    @Body() body: any,
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/upload`;
+    const FormData = require('form-data');
+    const formData = new FormData();
+
+    if (files?.files) {
+      for (const file of files.files) {
+        formData.append('files', file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+      }
+    }
+
+    if (body.subdir) {
+      formData.append('subdir', body.subdir);
+    }
+
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, formData, {
+        headers: formData.getHeaders(),
+      }),
+    );
+    return response.data;
+  }
+
+  @Get('documents')
+  async listDocuments(@Query('subdir') subdir?: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl, {
+        params: subdir ? { subdir } : {},
+      }),
+    );
+    return response.data;
+  }
+
+  @Delete('documents/:documentName')
+  async deleteDocument(@Param('documentName') documentName: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/${encodeURIComponent(documentName)}`;
+    const response = await firstValueFrom(
+      this.httpService.delete(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Post('documents/summarize-pdf')
+  async summarizePDF(
+    @Body() body: { document_name: string; summary_type: string },
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/summarize-pdf`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Post('documents/summarize-text')
+  async summarizeText(
+    @Body() body: { text: string; summary_type: string },
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/summarize-text`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  // ========== Surveys Endpoints ==========
+
+  @Get('surveys/:key')
+  async getSurvey(@Param('key') key: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/surveys/${key}`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Post('surveys/:key/responses')
+  async submitSurveyResponse(
+    @Param('key') key: string,
+    @Body() body: { tenant_id: string; user_id: string; answers: Record<string, any> },
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/surveys/${key}/responses`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  // ========== Additional Quality Endpoints ==========
+
+  @Get('quality/company/:companyId/status')
+  async getCompanyStatus(@Param('companyId') companyId: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/${companyId}/status`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Post('quality/company/test-setup')
+  async createTestCompany(@Body() body: { company_id: string }) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/test-setup`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Post('quality/company/generate-final')
+  async generateFinalText(@Body() body: any) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/generate-final`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
   }
 }
