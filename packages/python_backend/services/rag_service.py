@@ -24,59 +24,38 @@ class RAGService:
         query_service=None
     ):
         """
-        RAG 서비스 초기화 - 의존성 주입 방식
+        RAG 서비스 초기화 - 완전한 의존성 주입 방식
 
         Args:
             user_preferences_service: 사용자 선호도 서비스 (선택)
-            embedder_manager: RAG 임베더 관리자 (주입 또는 자동 생성)
-            ingestion_service: RAG 인덱싱 서비스 (주입 또는 자동 생성)
-            query_service: RAG 질의응답 서비스 (주입 또는 자동 생성)
+            embedder_manager: RAG 임베더 관리자 (필수)
+            ingestion_service: RAG 인덱싱 서비스 (필수)
+            query_service: RAG 질의응답 서비스 (필수)
+
+        Raises:
+            ValueError: 필수 의존성이 주입되지 않은 경우
         """
+        # 필수 의존성 검증
+        if embedder_manager is None:
+            raise ValueError("embedder_manager is required. Please inject RAGEmbedderManager via DI container.")
+        if ingestion_service is None:
+            raise ValueError("ingestion_service is required. Please inject RAGIngestionService via DI container.")
+        if query_service is None:
+            raise ValueError("query_service is required. Please inject RAGQueryService via DI container.")
+
         # RAG Chain 초기화 (LangChain 사용 시)
         self.rag_chain = None
         self._initialize_chain()
 
-        # 전문화된 서비스 모듈 - 주입된 것 사용 또는 자동 생성
-        if embedder_manager is not None:
-            self.embedder_manager = embedder_manager
-        else:
-            # 하위 호환성: 주입되지 않은 경우 직접 생성
-            from services.rag.rag_embedder_manager import RAGEmbedderManager
-            self.embedder_manager = RAGEmbedderManager()
+        # 의존성 주입된 서비스 할당
+        self.embedder_manager = embedder_manager
+        self.ingestion_service = ingestion_service
+        self.query_service = query_service
 
-        if ingestion_service is not None:
-            self.ingestion_service = ingestion_service
-            # RAG Chain 업데이트
-            self.ingestion_service.rag_chain = self.rag_chain
-        else:
-            # 하위 호환성: 주입되지 않은 경우 직접 생성
-            from services.rag.rag_ingestion_service import RAGIngestionService
-            self.ingestion_service = RAGIngestionService(rag_chain=self.rag_chain)
-
-        if query_service is not None:
-            self.query_service = query_service
-            # RAG Chain 업데이트
-            self.query_service.rag_chain = self.rag_chain
-            # embedder_manager 업데이트
-            self.query_service.embedder_manager = self.embedder_manager
-        else:
-            # 하위 호환성: 주입되지 않은 경우 직접 생성
-            from services.rag.rag_query_service import RAGQueryService
-            from services.prompt_engineering import PromptEngineer
-            from services.openai_services import OpenAIService
-            from services.conversion_service import ConversionService
-
-            self.prompt_engineer = PromptEngineer()
-            self.openai_service = OpenAIService()
-            self.conversion_service = ConversionService()
-
-            self.query_service = RAGQueryService(
-                rag_chain=self.rag_chain,
-                embedder_manager=self.embedder_manager,
-                openai_service=self.openai_service,
-                conversion_service=self.conversion_service,
-                user_preferences_service=user_preferences_service
-            )
+        # RAG Chain 업데이트
+        self.ingestion_service.rag_chain = self.rag_chain
+        self.query_service.rag_chain = self.rag_chain
+        self.query_service.embedder_manager = self.embedder_manager
 
         # 선택적 주입 (향후 확장용)
         self.user_preferences_service = user_preferences_service

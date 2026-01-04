@@ -20,17 +20,17 @@ class RAGEmbedderManager:
         self._initialize_embedder()
     
     def _initialize_embedder(self):
-        """GPT 및 Simple Text Embedder 초기화 (개선된 버전)"""
+        """GPT Embedder 초기화 (Simple Embedder 폴백 제거)"""
         # @@ [윤지원] 기업 특화 임베딩 부족: 기업별 지식베이스, 가이드라인 문서 처리 로직 없음
-        embedder_initialized = False
 
-        # GPT Embedder 우선 시도
-        if self._try_gpt_embedder():
-            embedder_initialized = True
-
-        # 실패 시 Simple Embedder 백업
-        if not embedder_initialized:
-            self._try_simple_embedder()
+        # GPT Embedder 필수: 실패 시 예외 발생
+        if not self._try_gpt_embedder():
+            error_msg = (
+                "Failed to initialize GPT Embedder. "
+                "Please ensure OPENAI_API_KEY is set and documents are available."
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
     
     def _try_gpt_embedder(self) -> bool:
         """GPT Embedder 초기화 시도"""
@@ -61,30 +61,6 @@ class RAGEmbedderManager:
         except Exception as e:
             logger.warning(f"GPT Embedder 초기화 실패: {e}")
             return False
-    
-    def _try_simple_embedder(self):
-        """Simple Embedder 백업 초기화"""
-        try:
-            from langchain_pipeline.embedder.simple_embedder import SimpleTextEmbedder, create_embeddings_from_documents
-            
-            self.simple_embedder = SimpleTextEmbedder()
-            
-            if self.simple_embedder.load():
-                logger.info("Simple Text Embedder 로드 완료 (백업)")
-                return
-            
-            # 새로 생성
-            cfg = get_rag_config()
-            docs_path = Path(cfg.documents_path)
-            if create_embeddings_from_documents(docs_path) and self.simple_embedder.load():
-                logger.info("Simple Text Embedder 생성 및 로드 완료")
-            else:
-                logger.error("Simple Text Embedder 초기화 완전 실패")
-                self.simple_embedder = None
-                
-        except Exception as e:
-            logger.error(f"Simple Text Embedder 초기화 실패: {e}")
-            self.simple_embedder = None
     
     def _load_documents(self) -> list:
         """문서 로드 공통 함수"""

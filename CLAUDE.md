@@ -175,11 +175,14 @@ React app using:
 
 ## Environment Variables
 
+⚠️ **CRITICAL**: As of 2026-01-04, all mock modes have been removed. The application **REQUIRES** a valid OpenAI API key to run.
+
 Both the NestJS gateway and Python backend require environment variables. Create `.env.local` in the project root with:
 
 ```bash
-# OpenAI
+# OpenAI (REQUIRED - Application will not start without this)
 OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o  # Optional, defaults to gpt-4o
 
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/chattoner
@@ -195,6 +198,16 @@ PORT=3000
 ```
 
 For Python backend, also create `packages/python_backend/.env` (the code explicitly loads from parent directory in main.py).
+
+### Required vs Optional
+
+**Required:**
+- `OPENAI_API_KEY` - Application fails on startup without this
+
+**Optional:**
+- `OPENAI_MODEL` - Defaults to "gpt-4o"
+- `DATABASE_URL` - Can be constructed from individual DB_ variables
+- `DEBUG` - Defaults to True
 
 ## Testing Strategy
 
@@ -262,6 +275,44 @@ Python backend uses Alembic. To modify schema:
 2. Generate migration: `alembic revision --autogenerate -m "description"`
 3. Review generated migration in `alembic/versions/`
 4. Apply: `alembic upgrade head`
+
+## Architecture Changes (2026-01-04)
+
+### Mock Mode Removal
+
+**All mock and fallback implementations have been removed** to ensure production code quality:
+
+1. **OpenAIService** - No longer has mock mode. Always requires valid API key.
+2. **RAGService** - No longer creates dependencies internally. All must be injected via DI container.
+3. **RAGEmbedderManager** - No longer falls back to SimpleTextEmbedder. Only uses GPT embedder.
+4. **SimpleTextEmbedder** - Deprecated with runtime warnings.
+
+**Impact:**
+- Application **will not start** without `OPENAI_API_KEY`
+- RAG services **must be wired** in DI container
+- All embeddings use OpenAI (consistent quality)
+- Clear error messages on configuration issues
+
+**See `MOCK_REMOVAL_SUMMARY.md` for complete details.**
+
+### Dependency Injection Requirements
+
+All services must be properly wired in `core/container.py`:
+
+```python
+# All RAG services must be registered
+rag_embedder_manager = providers.Singleton(RAGEmbedderManager)
+rag_ingestion_service = providers.Singleton(RAGIngestionService, ...)
+rag_query_service = providers.Singleton(RAGQueryService, ...)
+rag_service = providers.Singleton(
+    RAGService,
+    embedder_manager=rag_embedder_manager,
+    ingestion_service=rag_ingestion_service,
+    query_service=rag_query_service
+)
+```
+
+**Never instantiate services directly** - always use the DI container.
 
 ## Known Issues and Patterns
 
