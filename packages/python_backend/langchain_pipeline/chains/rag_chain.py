@@ -197,6 +197,56 @@ class RAGChain:
                 "sources": []
             }
     
+    def ask_with_retriever(self, query: str, context: Optional[str] = None, retriever: Optional[Any] = None) -> Dict:
+        """질문하기 (특정 retriever 사용)"""
+        if not self.is_initialized:
+            return {"success": False, "answer": "문서가 인덱싱되지 않았습니다."}
+        
+        current_retriever = retriever if retriever is not None else self.retriever
+        if current_retriever is None:
+             return {"success": False, "answer": "Retriever가 제공되지 않았습니다."}
+
+        try:
+            qa_chain = RetrievalQA.from_chain_type(
+                llm=self.llm,
+                retriever=current_retriever,
+                chain_type="stuff",
+                chain_type_kwargs={"prompt": self.default_rag_prompt},
+                return_source_documents=True
+            )
+            
+            # 쿼리 실행
+            if context and context.strip():
+                enhanced_query = f"문맥: {context.strip()}\n\n질문: {query}"
+            else:
+                enhanced_query = query
+
+            result = qa_chain.invoke({"query": enhanced_query})
+            
+            # 결과 정리
+            source_docs = result.get("source_documents", [])
+            chunks = [
+                {
+                    "content": doc.page_content[:100] + "...",
+                    "source": doc.metadata.get("source", "Unknown")
+                }
+                for doc in source_docs
+            ]
+            
+            return {
+                "success": True,
+                "answer": result["result"],
+                "sources": chunks,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "answer": f"오류 발생: {e}",
+                "sources": []
+            }
+
     async def ask_with_styles(self, query: str, user_profile: Dict, context: str = "personal") -> Dict:
         """3가지 스타일 RAG 답변 (개선된 버전)"""
         error_response = {

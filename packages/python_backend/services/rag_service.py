@@ -12,6 +12,10 @@ from typing import Dict, Any, Optional
 
 logger = logging.getLogger('chattoner')
 
+_ERR_NO_EMBEDDER = "embedder_manager is required. Please inject RAGEmbedderManager via DI container."
+_ERR_NO_INGESTION = "ingestion_service is required. Please inject RAGIngestionService via DI container."
+_ERR_NO_QUERY = "query_service is required. Please inject RAGQueryService via DI container."
+
 
 class RAGService:
     """RAG를 활용한 문서 검색 및 질의응답 서비스 (Facade)"""
@@ -26,6 +30,12 @@ class RAGService:
         """
         RAG 서비스 초기화 - 완전한 의존성 주입 방식
 
+        .. warning::
+            이 서비스는 주입된 `ingestion_service` 및 `query_service`의
+            `rag_chain`과 `embedder_manager` 속성을 런타임에 변경합니다.
+            이는 해당 서비스들이 싱글톤으로 사용될 경우 다른 부분에
+            영향을 줄 수 있습니다.
+
         Args:
             user_preferences_service: 사용자 선호도 서비스 (선택)
             embedder_manager: RAG 임베더 관리자 (필수)
@@ -37,11 +47,11 @@ class RAGService:
         """
         # 필수 의존성 검증
         if embedder_manager is None:
-            raise ValueError("embedder_manager is required. Please inject RAGEmbedderManager via DI container.")
+            raise ValueError(_ERR_NO_EMBEDDER)
         if ingestion_service is None:
-            raise ValueError("ingestion_service is required. Please inject RAGIngestionService via DI container.")
+            raise ValueError(_ERR_NO_INGESTION)
         if query_service is None:
-            raise ValueError("query_service is required. Please inject RAGQueryService via DI container.")
+            raise ValueError(_ERR_NO_QUERY)
 
         # RAG Chain 초기화 (LangChain 사용 시)
         self.rag_chain = None
@@ -59,12 +69,6 @@ class RAGService:
 
         # 선택적 주입 (향후 확장용)
         self.user_preferences_service = user_preferences_service
-
-        # 하위 호환성을 위한 속성 유지
-        self.simple_embedder = self.embedder_manager.get_embedder()
-        # query_service에서 사용하는 openai_service도 노출 (rag.py 엔드포인트에서 사용)
-        if hasattr(self.query_service, 'openai_service'):
-            self.openai_service = self.query_service.openai_service
     
     def _initialize_chain(self):
         """RAG Chain 초기화 (LangChain 사용 시)"""

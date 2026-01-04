@@ -53,10 +53,10 @@ class RAGIngestionService:
             return result
             
         except Exception as e:
-            logger.error(f"문서 인덱싱 중 오류: {e}")
+            logger.exception(f"문서 인덱싱 중 오류: {e!s}")
             return {
                 "success": False,
-                "error": f"문서 인덱싱 중 서버 오류가 발생했습니다: {str(e)}",
+                "error": f"문서 인덱싱 중 서버 오류가 발생했습니다: {e!s}",
                 "documents_processed": 0
             }
 
@@ -82,5 +82,5 @@ class RAGIngestionService:
                 return {"success": True, "documents_processed": len(docs)}
             return {"success": False, "error": "문서 처리 실패", "documents_processed": 0}
         except Exception as e:
-            logger.error(f"기업 문서 인덱싱 중 오류: {e}")
-            return {"success": False, "error": str(e), "documents_processed": 0}
+            logger.exception(f"기업 문서 인덱싱 중 오류: {e!s}")
+            return {"success": False, "error": f"{e!s}", "documents_processed": 0}

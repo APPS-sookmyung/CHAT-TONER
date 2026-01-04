@@ -16,7 +16,7 @@ class RAGEmbedderManager:
     
     def __init__(self):
         """임베더 매니저 초기화"""
-        self.simple_embedder: Optional[Any] = None
+        self.embedder: Optional[Any] = None
         self._initialize_embedder()
     
     def _initialize_embedder(self):
@@ -39,27 +39,27 @@ class RAGEmbedderManager:
             gpt_embedder = GPTTextEmbedder()
             
             if not gpt_embedder.is_available():
-                logger.warning("OpenAI API 사용 불가 - Simple Embedder로 전환")
+                logger.error("OpenAI API 사용 불가 - GPT Embedder 필수")
                 return False
             
             # 기존 임베딩 로드 시도
             if gpt_embedder.load():
                 logger.info("GPT Text Embedder 로드 완료")
-                self.simple_embedder = gpt_embedder
+                self.embedder = gpt_embedder
                 return True
             
             # 새로 생성
             documents = self._load_documents()
             if documents and gpt_embedder.fit(documents) and gpt_embedder.save():
                 logger.info("GPT 임베딩 생성 및 저장 완료")
-                self.simple_embedder = gpt_embedder
+                self.embedder = gpt_embedder
                 return True
                 
             logger.warning("GPT 임베딩 생성 실패")
             return False
             
         except Exception as e:
-            logger.warning(f"GPT Embedder 초기화 실패: {e}")
+            logger.exception("GPT Embedder 초기화 실패")
             return False
     
     def _load_documents(self) -> list:
@@ -85,8 +85,8 @@ class RAGEmbedderManager:
     
     def get_embedder(self) -> Optional[Any]:
         """현재 활성화된 임베더 반환"""
-        return self.simple_embedder
+        return self.embedder
     
     def is_available(self) -> bool:
         """임베더 사용 가능 여부"""
-        return self.simple_embedder is not None
+        return self.embedder is not None

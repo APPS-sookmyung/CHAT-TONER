@@ -96,10 +96,18 @@ class RAGQueryService:
                     company_index_path = Path(cfg.faiss_index_path) / company_id
                     vs = load_vector_store(company_index_path)
                     if vs:
-                        self.rag_chain.vectorstore = vs
-                        self.rag_chain.retriever = vs.as_retriever(search_kwargs={"k": 5})
-                        self.rag_chain.is_initialized = True
                         logger.info(f"기업 전용 벡터스토어 사용: {company_index_path}")
+                        retriever = vs.as_retriever(search_kwargs={"k": 5})
+                        # ask_with_retriever를 직접 호출하여 race condition 방지
+                        result = self.rag_chain.ask_with_retriever(query, context, retriever)
+                        if result and result.get("success"):
+                            result["original_query"] = query
+                            result["context"] = context
+                            result["metadata"] = {
+                                **base_metadata,
+                                "model_used": "rag_chain_company_specific",
+                            }
+                            return result
                 except Exception as e:
                     logger.warning(f"기업 전용 벡터스토어 로드 실패(기본 인덱스로 진행): {e}")
 
@@ -122,9 +130,9 @@ class RAGQueryService:
             )
             
         except Exception as e:
-            logger.error(f"단일 질의응답 중 오류: {e}")
+            logger.exception("단일 질의응답 중 오류")
             return create_error_response(
-                f"질의응답 중 서버 오류가 발생했습니다: {str(e)}",
+                f"질의응답 중 서버 오류가 발생했습니다: {e!s}",
                 answer="",
                 original_query=query,
                 context=context,
@@ -408,7 +416,12 @@ class RAGQueryService:
                     }
             
             # 기본 피드백 처리 (OpenAIService 사용) - ConversionService 로직
-            style_deltas = self.openai_service.analyze_style_feedback(feedback_text)
+            if not self.openai_service:
+                return create_error_response(
+                    "OpenAI 서비스가 초기화되지 않았습니다.",
+                    updated_profile=user_profile
+                )
+            style_deltas = await self.openai_service.analyze_style_feedback(feedback_text)
             
             updated_profile = user_profile.copy()
             

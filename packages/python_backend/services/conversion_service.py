@@ -172,19 +172,17 @@ class ConversionService:
         # 입력 검증
         if not feedback_text or not feedback_text.strip():
             self.logger.warning("빈 피드백 텍스트 처리 시도")
-            return {
-                "success": False,
-                "error": "피드백 텍스트가 비어있습니다",
-                "updated_profile": user_profile
-            }
+            return create_error_response(
+                "피드백 텍스트가 비어있습니다",
+                updated_profile=user_profile
+            )
 
         if not user_profile:
             self.logger.error("사용자 프로필 없이 피드백 처리 시도")
-            return {
-                "success": False,
-                "error": "사용자 프로필이 필요합니다",
-                "updated_profile": {}
-            }
+            return create_error_response(
+                "사용자 프로필이 필요합니다",
+                updated_profile={}
+            )
 
         try:
             self.logger.info(f"피드백 처리 시작: length={len(feedback_text)}")
@@ -229,19 +227,17 @@ class ConversionService:
 
         except RuntimeError as e:
             self.logger.error(f"피드백 처리 실패: {e}", exc_info=True)
-            return {
-                "success": False,
-                "error": str(e),
-                "updated_profile": user_profile
-            }
+            return create_error_response(
+                str(e),
+                updated_profile=user_profile
+            )
 
         except Exception as e:
             self.logger.critical(f"피드백 처리 중 예상치 못한 오류: {e}", exc_info=True)
-            return {
-                "success": False,
-                "error": "서버 내부 오류가 발생했습니다",
-                "updated_profile": user_profile
-            }
+            return create_error_response(
+                "서버 내부 오류가 발생했습니다",
+                updated_profile=user_profile
+            )
 
     def _get_timestamp(self) -> str:
         """현재 타임스탬프 반환"""

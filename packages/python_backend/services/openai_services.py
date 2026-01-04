@@ -33,7 +33,7 @@ class OpenAIService:
             self.logger.info("OpenAI client initialized successfully")
         except Exception as e:
             error_msg = f"Failed to initialize OpenAI client: {e}"
-            self.logger.error(error_msg)
+            self.logger.exception(error_msg)
             raise RuntimeError(error_msg) from e
     async def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
         """
@@ -233,7 +233,7 @@ class OpenAIService:
             }
             
         except Exception as e:
-            self.logger.error(f"감정 분석 오류: {e}")
+            self.logger.exception(f"감정 분석 오류: {e}")
             return {"rating": 3, "confidence": 0.5}
     
     def analyze_style_feedback(self, feedback_text: str) -> Dict[str, float]:
@@ -282,7 +282,7 @@ class OpenAIService:
             return json.loads(result)
             
         except Exception as e:
-            self.logger.error(f"피드백 분석 오류: {e}")
+            self.logger.exception(f"피드백 분석 오류: {e}")
             return {
                 "formalityDelta": 0.0,
                 "friendlinessDelta": 0.0,

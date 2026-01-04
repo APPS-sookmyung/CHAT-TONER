@@ -191,7 +191,7 @@ class OptimizedEnterpriseQualityService:
         
         except Exception as e:
             # 예외 발생
-            logger.error(f"분석 중 예외 발생: {e}")
+            logger.exception(f"분석 중 예외 발생: {e}")
 
             if self.config.fallback_to_rule_based:
                 return await self._service_fallback_analysis(

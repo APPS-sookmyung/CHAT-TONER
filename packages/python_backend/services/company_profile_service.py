@@ -93,9 +93,8 @@ class CompanyProfileService:
             )
             logger.info(f"OpenAI 프로필 생성 성공 - 길이: {len(generated_profile)} 문자")
 
-        except Exception as e:
-            logger.error(f"OpenAI 프로필 생성 실패: {e}")
-            logger.info("폴백 프로필로 처리")
+        except Exception:
+            logger.exception("OpenAI 프로필 생성 실패, 폴백 프로필 사용")
             # 폴백: 기본 템플릿 사용
             generated_profile = self._generate_fallback_profile(company_context)
             logger.debug("폴백 프로필 생성 완료")
