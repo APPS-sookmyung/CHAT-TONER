@@ -45,7 +45,7 @@ sub-agent-architecture-reviewer [target] [options]
 ### Stage 1: Analysis Agents (Parallel)
 
 #### Agent 1: Dependency Mapper
-```
+```text
 Map all dependencies in [TARGET]
 
 Tasks:
@@ -81,7 +81,7 @@ Return:
 ```
 
 #### Agent 2: Pattern Analyzer
-```
+```text
 Analyze architectural patterns in [TARGET]
 
 Tasks:
@@ -119,7 +119,7 @@ Return:
 ```
 
 #### Agent 3: Complexity Analyzer
-```
+```text
 Analyze architectural complexity in [TARGET]
 
 Tasks:
@@ -156,7 +156,7 @@ Return:
 
 ### Stage 2: Synthesis Agent
 
-```
+```text
 Synthesize architecture analysis from all agents: [ANALYSIS_RESULTS]
 
 Tasks:
@@ -193,7 +193,7 @@ Generate:
 
 ### Stage 3: Visualization Agent
 
-```
+```text
 Generate architecture visualizations from synthesis: [ARCHITECTURE_DATA]
 
 Diagrams to Generate:

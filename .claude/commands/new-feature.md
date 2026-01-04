@@ -72,7 +72,7 @@ sub-agent-new-feature \
 ## Stage 1: Analysis Agents (Parallel)
 
 ### Agent 1A: Pattern Analyzer
-```
+```text
 Analyze existing codebase patterns for implementing: [FEATURE_DESCRIPTION]
 Target location: [LOCATION]
 
@@ -109,7 +109,7 @@ Return:
 ```
 
 ### Agent 1B: Dependency Checker
-```
+```text
 Check for existing packages and dependencies for: [FEATURE_DESCRIPTION]
 
 Tasks:
@@ -143,7 +143,7 @@ Return:
 ```
 
 ### Agent 1C: Technical Feasibility Analyzer
-```
+```text
 Assess technical requirements for: [FEATURE_DESCRIPTION]
 In location: [LOCATION]
 
@@ -182,7 +182,7 @@ Return:
 
 ## Stage 2: Planning & Architecture Agent
 
-```
+```text
 Synthesize analysis from all Stage 1 agents: [ANALYSIS_RESULTS]
 Create implementation plan for: [FEATURE_DESCRIPTION]
 
@@ -228,7 +228,7 @@ Generate:
 ## Stage 3: Implementation Agents (Parallel)
 
 ### Agent 3A: UI Component Builder (React/Frontend)
-```
+```text
 Implement frontend components for: [COMPONENT_SPEC]
 Following plan: [IMPLEMENTATION_PLAN]
 
@@ -265,7 +265,7 @@ Output complete, working components with all imports.
 ```
 
 ### Agent 3B: API Endpoint Builder (Laravel/Backend)
-```
+```text
 Implement API endpoints for: [API_SPEC]
 Following plan: [IMPLEMENTATION_PLAN]
 
@@ -304,7 +304,7 @@ Output complete controllers, services, and routes.
 ```
 
 ### Agent 3C: Worker/Edge Function Builder (Cloudflare)
-```
+```text
 Implement Cloudflare Worker for: [WORKER_SPEC]
 Following plan: [IMPLEMENTATION_PLAN]
 
@@ -343,7 +343,7 @@ Output complete worker with all dependencies.
 ```
 
 ### Agent 3D: Test Generator
-```
+```text
 Generate tests for: [FEATURE_COMPONENTS]
 Following patterns in: [EXISTING_TESTS]
 
@@ -375,7 +375,7 @@ Output complete test files with all assertions.
 
 ## Stage 4: Integration & Review Agent
 
-```
+```text
 Review and integrate all generated code from Stage 3 agents.
 
 Integration tasks:

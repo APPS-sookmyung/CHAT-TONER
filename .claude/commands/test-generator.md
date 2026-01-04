@@ -47,7 +47,7 @@ sub-agent-test-generator [target] [options]
 ### Stage 1: Analysis Agents (Parallel)
 
 #### Agent 1: Coverage Analyzer
-```
+```text
 Analyze test coverage in [TARGET]
 
 Tasks:
@@ -88,7 +88,7 @@ Return:
 ```
 
 #### Agent 2: Code Path Analyzer
-```
+```text
 Analyze code paths and behaviors in [TARGET]
 
 Tasks:
@@ -129,7 +129,7 @@ Return:
 ```
 
 #### Agent 3: Pattern Recognizer
-```
+```text
 Identify testing patterns and conventions in [TARGET]
 
 Tasks:
@@ -172,7 +172,7 @@ Return:
 ### Stage 2: Test Generation Agents (Parallel)
 
 #### Agent 2A: Unit Test Generator
-```
+```javascript
 Generate unit tests for [FUNCTIONS] following [PATTERNS]
 
 Tasks:
@@ -236,7 +236,7 @@ describe('UserService', () => {
 ```
 
 #### Agent 2B: Integration Test Generator
-```
+```javascript
 Generate integration tests for [COMPONENTS] with [DEPENDENCIES]
 
 Tasks:
@@ -303,7 +303,7 @@ describe('Order Processing Integration', () => {
 ```
 
 #### Agent 2C: E2E Test Generator
-```
+```javascript
 Generate end-to-end tests for [USER_FLOWS]
 
 Tasks:
@@ -373,7 +373,7 @@ describe('User Registration Flow', () => {
 
 ### Stage 3: Test Optimizer Agent
 
-```
+```text
 Optimize generated tests from [GENERATED_TESTS]
 
 Tasks:
@@ -443,7 +443,7 @@ module.exports = {
 ## Output Examples
 
 ### Test Generation Report
-```
+```text
 📊 Test Generation Complete
 ==========================
 

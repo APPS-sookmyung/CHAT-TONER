@@ -68,7 +68,7 @@ sub-agent-tech-debt-finder-fixer \
 ## Phase 1: Finding Tech Debt (Parallel Agents)
 
 ### Agent 1: Duplicate Code Detector
-```
+```text
 Find duplicate code in [TARGET]
 
 Detection Tasks:
@@ -109,7 +109,7 @@ Return:
 ```
 
 ### Agent 2: Complexity & Size Analyzer
-```
+```text
 Analyze code complexity and file sizes in [TARGET]
 
 Complexity Detection:
@@ -150,7 +150,7 @@ Return:
 ```
 
 ### Agent 3: Pattern Inconsistency Detector
-```
+```text
 Find inconsistent patterns in [TARGET]
 
 Pattern Analysis:
@@ -191,7 +191,7 @@ Return:
 ```
 
 ### Agent 4: Dead Code Detector
-```
+```text
 Find unused code in [TARGET]
 
 Dead Code Detection:
@@ -232,7 +232,7 @@ Return:
 ```
 
 ### Agent 5: Type Coverage Analyzer
-```
+```text
 Analyze TypeScript type coverage in [TARGET]
 
 Type Analysis:
@@ -274,7 +274,7 @@ Return:
 
 ## Synthesis & Presentation Agent
 
-```
+```text
 Synthesize findings from all detection agents: [ALL_FINDINGS]
 Create tech debt report and fix recommendations.
 
@@ -315,7 +315,7 @@ Generate:
 ```
 
 ### Example Report Output
-```
+```text
 🔍 Tech Debt Analysis Complete
 ==============================
 
@@ -348,7 +348,7 @@ Proceed with fixes? [Y/n]:
 ## Phase 2: Fixing Tech Debt
 
 ### Pre-Flight Check Agent
-```
+```text
 Verify system ready for fixes:
 1. Git status is clean
 2. All tests passing
@@ -360,7 +360,7 @@ Return: Go/No-go decision
 ```
 
 ### Fix Orchestrator Agent
-```
+```text
 Coordinate fix implementation based on user approval: [APPROVED_FIXES]
 
 Orchestration Tasks:
@@ -381,7 +381,7 @@ For each fix:
 ### Specialized Fix Agents (Parallel)
 
 #### Agent F1: Utility Extractor
-```
+```text
 Extract utilities from duplicated code: [DUPLICATES_TO_FIX]
 
 Tasks:
@@ -410,7 +410,7 @@ Requirements:
 ```
 
 #### Agent F2: File Splitter
-```
+```text
 Split large files: [FILES_TO_SPLIT]
 
 Tasks:
@@ -439,7 +439,7 @@ Requirements:
 ```
 
 #### Agent F3: Pattern Standardizer
-```
+```text
 Standardize inconsistent patterns: [PATTERNS_TO_FIX]
 
 Tasks:
@@ -468,7 +468,7 @@ Requirements:
 ```
 
 #### Agent F4: Dead Code Remover
-```
+```text
 Remove unused code: [DEAD_CODE_TO_REMOVE]
 
 Tasks:
@@ -497,7 +497,7 @@ Requirements:
 ```
 
 #### Agent F5: Type Improver
-```
+```text
 Improve TypeScript types: [TYPES_TO_FIX]
 
 Tasks:
@@ -526,7 +526,7 @@ Requirements:
 ```
 
 ### Verification Agent
-```
+```text
 Verify all fixes were successful:
 
 1. Run full test suite
@@ -546,7 +546,7 @@ Generate final report with:
 ## Configuration
 
 ### .techdebtignore
-```
+```text
 # Ignore patterns for tech debt analysis
 vendor/
 node_modules/

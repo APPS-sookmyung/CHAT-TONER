@@ -72,7 +72,7 @@ sub-agent-migration-assistant --from <source> --to <target> [options]
 ### Stage 1: Analysis Agents (Parallel)
 
 #### Agent 1: Deprecation Scanner
-```
+```text
 Scan for deprecated features in [TARGET] for [FROM_VERSION]
 
 Tasks:
@@ -112,7 +112,7 @@ Return:
 ```
 
 #### Agent 2: Compatibility Analyzer
-```
+```text
 Analyze compatibility requirements for migration
 
 Tasks:
@@ -153,7 +153,7 @@ Return:
 ```
 
 #### Agent 3: Pattern Detector
-```
+```text
 Detect migration patterns in [TARGET]
 
 Tasks:
@@ -195,7 +195,7 @@ Return:
 
 ### Stage 2: Migration Planning Agent
 
-```
+```text
 Create migration plan from analyses: [ANALYSIS_RESULTS]
 
 Tasks:
@@ -238,7 +238,7 @@ Generate:
 ### Stage 3: Implementation Agents (Parallel)
 
 #### Agent 3A: Codemod Executor
-```
+```javascript
 Apply automated migrations using codemods
 
 Tasks:
@@ -290,7 +290,7 @@ function UserProfile() {
 ```
 
 #### Agent 3B: Manual Migration Handler
-```
+```php
 Handle complex migrations requiring manual intervention
 
 Tasks:
@@ -336,7 +336,7 @@ public function index(Request $request): JsonResponse
 ```
 
 #### Agent 3C: Dependency Updater
-```
+```json
 Update dependencies and handle conflicts
 
 Tasks:
@@ -377,7 +377,7 @@ Example package.json updates:
 
 ### Stage 4: Verification Agent
 
-```
+```text
 Verify migration success and stability
 
 Tasks:
@@ -420,7 +420,7 @@ Generate:
 ## Output Examples
 
 ### Migration Plan
-```
+```text
 📋 Migration Plan: React 17 → 18
 =================================
 
@@ -456,7 +456,7 @@ Rollback Strategy: Feature branch
 ```
 
 ### Migration Report
-```
+```text
 ✅ Migration Complete: Class Components → Hooks
 ==============================================
 
@@ -533,7 +533,7 @@ module.exports = {
 
 ## Best Practices
 
-1. **Always Backup**: Create branches and backups before migration
+1. **Always Back Up**: Create branches and backups before migration
 2. **Test Continuously**: Run tests after each migration step
 3. **Incremental Approach**: Migrate in small, testable chunks
 4. **Document Changes**: Keep detailed migration logs

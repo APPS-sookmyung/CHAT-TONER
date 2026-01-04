@@ -47,7 +47,7 @@ sub-agent-performance-optimizer [target] [options]
 ### Stage 1: Analysis Agents (Parallel)
 
 #### Agent 1: Frontend Performance Analyzer
-```
+```text
 Analyze frontend performance in [TARGET]
 
 Tasks:
@@ -92,7 +92,7 @@ Return:
 ```
 
 #### Agent 2: Backend Performance Analyzer
-```
+```text
 Analyze backend performance in [TARGET]
 
 Tasks:
@@ -137,7 +137,7 @@ Return:
 ```
 
 #### Agent 3: Database Performance Analyzer
-```
+```text
 Analyze database performance for [TARGET]
 
 Tasks:
@@ -182,7 +182,7 @@ Return:
 ```
 
 #### Agent 4: Caching Strategy Analyzer
-```
+```text
 Analyze caching opportunities in [TARGET]
 
 Tasks:
@@ -228,7 +228,7 @@ Return:
 
 ### Stage 2: Optimization Planning Agent
 
-```
+```text
 Create optimization plan from all analyses: [PERFORMANCE_ANALYSES]
 
 Tasks:
@@ -271,7 +271,7 @@ Generate:
 ### Stage 3: Implementation Agents (Parallel)
 
 #### Agent 3A: Frontend Optimizer
-```
+```text
 Implement frontend optimizations from [FRONTEND_PLAN]
 
 Optimizations:
@@ -303,7 +303,7 @@ Example implementations...
 ```
 
 #### Agent 3B: Backend Optimizer
-```
+```text
 Implement backend optimizations from [BACKEND_PLAN]
 
 Optimizations:
@@ -335,7 +335,7 @@ Example implementations...
 ```
 
 #### Agent 3C: Database Optimizer
-```
+```text
 Implement database optimizations from [DATABASE_PLAN]
 
 Optimizations:
@@ -369,7 +369,7 @@ Example implementations...
 ## Output Examples
 
 ### Performance Report
-```
+```text
 🚀 Performance Optimization Report
 ==================================
 
@@ -412,7 +412,7 @@ Database (Impact: -45ms query time):
 ```
 
 ### Bundle Analysis Report
-```
+```text
 📦 Bundle Analysis
 ==================
 

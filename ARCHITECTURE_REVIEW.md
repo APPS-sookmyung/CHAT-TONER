@@ -606,7 +606,7 @@ graph TB
 
 ## Conclusion
 
-**Overall Architecture Health: 82/100**
+### Overall Architecture Health: 82/100
 
 The Chat-Toner system demonstrates **strong architectural foundations** with excellent separation of concerns, proper dependency injection, and clean layering. The microservices approach is well-executed with appropriate technology choices for each tier.
 

@@ -31,6 +31,13 @@ export class LoggingInterceptor implements NestInterceptor {
             `Completed ${method} ${url} ${statusCode} - ${elapsedTime}ms`,
           );
         },
+        error: (error) => {
+          const elapsedTime = Date.now() - startTime;
+          this.logger.error(
+            `Failed ${method} ${url} - ${elapsedTime}ms`,
+            error.stack,
+          );
+        },
       }),
     );
   }

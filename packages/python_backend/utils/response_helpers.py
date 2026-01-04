@@ -23,6 +23,9 @@ def create_error_response(error_message: str, **kwargs) -> Dict[str, Any]:
         >>> create_error_response("Invalid input", original_text="hello", code=400)
         {'success': False, 'error': 'Invalid input', 'original_text': 'hello', 'code': 400}
     """
+    if 'success' in kwargs or 'error' in kwargs:
+        raise ValueError("Reserved keys 'success' and 'error' cannot be provided in kwargs")
+
     return {
         "success": False,
         "error": error_message,
@@ -45,6 +48,9 @@ def create_success_response(data: Dict[str, Any], **kwargs) -> Dict[str, Any]:
         >>> create_success_response({"result": "ok"}, timestamp="2024-01-01")
         {'success': True, 'result': 'ok', 'timestamp': '2024-01-01'}
     """
+    if 'success' in data or 'success' in kwargs:
+        raise ValueError("Reserved key 'success' cannot be provided in data or kwargs")
+
     return {
         "success": True,
         **data,

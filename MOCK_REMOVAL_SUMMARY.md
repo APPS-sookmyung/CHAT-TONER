@@ -209,7 +209,7 @@ except RuntimeError as e:
 ### Current Test Status
 - ⚠️ **13 RAG endpoint tests failing** - Test fixtures need DI container mocking
 - ✅ **NestJS builds successfully**
-- ✅ **Frontend type-checks successfully**
+- ✅ **Frontend type-checks**
 - 📝 **Test fixture updates needed** - separate task
 
 ---

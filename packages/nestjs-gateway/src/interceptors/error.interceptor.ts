@@ -113,6 +113,29 @@ export class ErrorInterceptor implements NestInterceptor {
     return errorNames[statusCode] || 'Error';
   }
 
+  private sanitizeDetails(details: any): any {
+    // For client errors (4xx), avoid logging potentially sensitive request bodies.
+    if (details) {
+      return { message: 'Details sanitized for client error' };
+    }
+    return details;
+  }
+
+  private safeStringify(obj: any): string {
+    const cache = new Set();
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.has(value)) {
+          // Circular reference found, replace with a placeholder
+          return '[Circular]';
+        }
+        // Store value in our collection
+        cache.add(value);
+      }
+      return value;
+    });
+  }
+
   private logError(error: any, request: Request, errorResponse: ErrorResponseDto): void {
     const { statusCode, message, details } = errorResponse;
     const { method, url } = request;
@@ -123,24 +146,19 @@ export class ErrorInterceptor implements NestInterceptor {
       url,
       statusCode,
       message,
-      details,
+      details: statusCode >= 500 ? details : this.sanitizeDetails(details),
     };
 
     // Log with appropriate level based on status code
     if (statusCode >= 500) {
       this.logger.error(
         `Server error on ${method} ${url}: ${message}`,
-        error.stack,
-      );
-    } else if (statusCode >= 400) {
-      this.logger.warn(
-        `Client error on ${method} ${url}: ${message}`,
-        JSON.stringify(logContext),
+        error.stack, // Include stack trace for server errors
       );
     } else {
-      this.logger.log(
-        `Error on ${method} ${url}: ${message}`,
-        JSON.stringify(logContext),
+      this.logger.warn(
+        `Client error on ${method} ${url}: ${message}`,
+        this.safeStringify(logContext), // Use safe stringify for context
       );
     }
   }
