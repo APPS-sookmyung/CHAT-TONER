@@ -10,6 +10,7 @@ Chat Toner FastAPI Main Application
 """
 
 # .env 파일 명시적 로드 (설정 로드 전에 수행)
+import os
 from dotenv import load_dotenv
 from pathlib import Path
 env_path = Path(__file__).resolve().parent.parent / '.env'

@@ -13,7 +13,7 @@ dist/
 .claude/
 /.claude
 .env
-*.env
+*.env.*
 
 # Local AI agent config (do not commit)
 /.claude/
