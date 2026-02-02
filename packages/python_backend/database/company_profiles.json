@@ -172,5 +172,33 @@
     },
     "createdAt": "2025-11-03T10:49:58.043137",
     "profileType": "company_based"
+  },
+  "2b8cdb7c-5f16-490e-9051-aca4df821f63": {
+    "id": 6,
+    "userId": "2b8cdb7c-5f16-490e-9051-aca4df821f63",
+    "companyContext": {
+      "companySize": "스타트업/소규모",
+      "teamSize": "1-10",
+      "primaryFunction": "engineering",
+      "communicationStyle": "friendly",
+      "primaryChannel": "email",
+      "primaryAudience": [],
+      "sizeCharacteristics": [
+        "빠른 의사결정",
+        "유연한 소통",
+        "다양한 역할 수행"
+      ],
+      "functionCharacteristics": [
+        "기술적 정확성",
+        "논리적 설명",
+        "문제 해결 중심"
+      ]
+    },
+    "generatedProfile": "1. 회사 맥락과 대상에 맞춰 명확하고 간결하게 소통합니다.\n2. 핵심 메시지를 먼저 전달하고, 필요 시 근거와 예시를 덧붙입니다.\n3. 합의된 용어/포맷(이메일/슬랙 등)과 격식을 일관되게 유지합니다.",
+    "surveyResponses": {
+      "main_audience": "External Clients/Customers"
+    },
+    "createdAt": "2025-11-23T18:49:53.071092",
+    "profileType": "company_based"
   }
 }

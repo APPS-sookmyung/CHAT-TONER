@@ -10,10 +10,16 @@ Chat Toner FastAPI Main Application
 """
 
 # .env 파일 명시적 로드 (설정 로드 전에 수행)
+import os
 from dotenv import load_dotenv
 from pathlib import Path
 env_path = Path(__file__).resolve().parent.parent / '.env'
+
+print("ENV PATH:", env_path)   # 경로 확인용
+print("ENV EXISTS?:", env_path.exists())
 load_dotenv(env_path)
+
+print("POSTGRES_URL loaded:", os.getenv("POSTGRES_URL"))
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -69,6 +75,9 @@ def create_app() -> FastAPI:
         redoc_url="/redoc" if settings.DEBUG else None,
         **swagger_params
     )
+
+    logger.info(f"DB URL Loaded: {settings.POSTGRES_URL}")
+
 
     app.add_middleware(
         CORSMiddleware,
