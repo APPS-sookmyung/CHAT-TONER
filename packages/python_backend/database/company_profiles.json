@@ -174,7 +174,7 @@
     "profileType": "company_based"
   },
   "2b8cdb7c-5f16-490e-9051-aca4df821f63": {
-    "id": 6,
+    "id": 7,
     "userId": "2b8cdb7c-5f16-490e-9051-aca4df821f63",
     "companyContext": {
       "companySize": "스타트업/소규모",
@@ -198,7 +198,7 @@
     "surveyResponses": {
       "main_audience": "External Clients/Customers"
     },
-    "createdAt": "2025-11-23T18:49:53.071092",
+    "createdAt": "2026-02-03T16:07:56.384598",
     "profileType": "company_based"
   }
 }
