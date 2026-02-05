@@ -1,8 +1,9 @@
 // src/lib/api.ts
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { api } from '@/lib/api';
 
-const API_BASE = import.meta.env.PROD 
-  ? (import.meta.env.VITE_API_URL || '') 
+const API_BASE = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_URL || '')
   : '';
 
 const apiClient: AxiosInstance = axios.create({
@@ -53,11 +54,16 @@ export const api = {
   // Style Conversion
   convertStyle: async (data: {
     text: string;
-    user_profile: any;
+    userId: string;
     context?: string;
     negative_preferences?: any;
+    user_profile?: any;
   }) => {
-    const response = await apiClient.post('/api/v1/conversion/convert', data);
+    const payload: any = { ...data };
+    if (payload.user_profile == null) delete payload.user_profile;
+
+
+    const response = await apiClient.post('/api/v1/conversion/convert', payload);
     return response.data;
   },
 
@@ -67,7 +73,7 @@ export const api = {
     files.forEach(file => {
       formData.append('files', file);
     });
-    
+
     const response = await apiClient.post('/api/v1/documents/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

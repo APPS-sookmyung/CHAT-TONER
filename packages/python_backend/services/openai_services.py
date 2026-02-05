@@ -307,6 +307,7 @@ class OpenAIService:
             
         except Exception as e:
             print(f"피드백 분석 오류: {e}")
+            logger.exception("OpenAI error raw: %r", e)
             return {
                 "formalityDelta": 0.0,
                 "friendlinessDelta": 0.0, 

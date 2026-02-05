@@ -177,16 +177,16 @@
     "id": 7,
     "userId": "2b8cdb7c-5f16-490e-9051-aca4df821f63",
     "companyContext": {
-      "companySize": "스타트업/소규모",
-      "teamSize": "1-10",
+      "companySize": "대기업",
+      "teamSize": "3",
       "primaryFunction": "engineering",
-      "communicationStyle": "friendly",
+      "communicationStyle": "Strictly",
       "primaryChannel": "email",
       "primaryAudience": [],
       "sizeCharacteristics": [
-        "빠른 의사결정",
-        "유연한 소통",
-        "다양한 역할 수행"
+        "체계적 보고 체계",
+        "공식적 소통",
+        "계층적 구조"
       ],
       "functionCharacteristics": [
         "기술적 정확성",
@@ -196,9 +196,13 @@
     },
     "generatedProfile": "1. 회사 맥락과 대상에 맞춰 명확하고 간결하게 소통합니다.\n2. 핵심 메시지를 먼저 전달하고, 필요 시 근거와 예시를 덧붙입니다.\n3. 합의된 용어/포맷(이메일/슬랙 등)과 격식을 일관되게 유지합니다.",
     "surveyResponses": {
-      "main_audience": "External Clients/Customers"
+      "company_name": "ㅇ",
+      "team_size": "3",
+      "communication_style": "Strictly",
+      "internal_communication_tool": "Microsoft Teams",
+      "main_audience": "Other Departments"
     },
-    "createdAt": "2026-02-03T16:07:56.384598",
+    "createdAt": "2026-02-05T21:17:06.825144",
     "profileType": "company_based"
   }
 }
