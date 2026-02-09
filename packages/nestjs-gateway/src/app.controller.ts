@@ -264,4 +264,193 @@ export class AppController {
     );
     return response.data;
   }
+
+  @Post('quality/company/feedback')
+  async saveUserFeedback(@Body() body: any) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/feedback`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  // ========== Health Endpoints ==========
+
+  @Get('health')
+  async healthCheck() {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/health`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Get('db-health')
+  async dbHealth() {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/db-health`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  // ========== Conversion Test Endpoint ==========
+
+  @Get('conversion/test')
+  async conversionTest() {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/conversion/test`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  // ========== Additional RAG Endpoints ==========
+
+  @Post('rag/upload')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'file', maxCount: 1 }]))
+  async uploadRagFile(@UploadedFiles() files: { file?: any[] }) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/upload`;
+    const FormData = require('form-data');
+    const formData = new FormData();
+
+    if (files?.file?.[0]) {
+      const file = files.file[0];
+      formData.append('file', file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
+    }
+
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, formData, {
+        headers: formData.getHeaders(),
+      }),
+    );
+    return response.data;
+  }
+
+  @Get('rag/status')
+  async getRagStatus() {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/status`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Post('rag/analyze-grammar')
+  async analyzeTextGrammar(@Body() body: RAGQueryRequestDto) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/analyze-grammar`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Post('rag/suggest-expressions')
+  async suggestBetterExpressions(@Body() body: RAGQueryRequestDto) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/suggest-expressions`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Get('rag/justify-score')
+  async justifyScore(
+    @Query('score_type') scoreType: string,
+    @Query('company_id') companyId?: string,
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/justify-score`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl, {
+        params: { score_type: scoreType, ...(companyId ? { company_id: companyId } : {}) },
+      }),
+    );
+    return response.data;
+  }
+
+  // ========== Documents Text Ingest ==========
+
+  @Post('documents/ingest-text')
+  async ingestTextDocument(@Body() body: any) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/ingest-text`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  // ========== Knowledge Base Endpoints ==========
+
+  @Post('kb/upload')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'file', maxCount: 1 }]))
+  async uploadKbDocument(
+    @UploadedFiles() files: { file?: any[] },
+    @Body() body: { tenant_id: string; category?: string; doc_id?: string },
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/kb/upload`;
+    const FormData = require('form-data');
+    const formData = new FormData();
+
+    if (files?.file?.[0]) {
+      const file = files.file[0];
+      formData.append('file', file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
+    }
+
+    formData.append('tenant_id', body.tenant_id);
+    if (body.category) formData.append('category', body.category);
+    if (body.doc_id) formData.append('doc_id', body.doc_id);
+
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, formData, {
+        headers: formData.getHeaders(),
+      }),
+    );
+    return response.data;
+  }
+
+  // ========== Suggest Endpoints ==========
+
+  @Post('suggest/rewrite')
+  async suggestRewrite(@Body() body: any) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/suggest/rewrite`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Post('suggest/finalize')
+  async suggestFinalize(@Body() body: any) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/suggest/finalize`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  // ========== Company Profile Endpoints ==========
+
+  @Post('company-profile/generate')
+  async generateCompanyProfile(@Body() body: any) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/company-profile/generate`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Get('company-profile/:userId')
+  async getCompanyProfile(@Param('userId') userId: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/company-profile/${userId}`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
 }
