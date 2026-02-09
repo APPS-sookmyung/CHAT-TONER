@@ -22,21 +22,19 @@ class OpenAIService:
         self.model = model or settings.OPENAI_MODEL
         self.logger = logger
 
-        # Mock 모드 판단: 환경변수 OPENAI_MOCK=true 이거나 API 키가 없으면 Mock
-        openai_mock_env = os.getenv("OPENAI_MOCK", "").lower() in {"1", "true", "yes"}
-        self.mock_mode = openai_mock_env or not bool(self.api_key)
-        if self.mock_mode:
-            self.client = None
-            self.logger.warning("OpenAI mock mode enabled (no API key or OPENAI_MOCK=true)")
-        else:
-            try:
-                self.client = OpenAI(api_key=self.api_key)
-                self.logger.info("OpenAI client initialized")
-            except Exception as e:
-                # 안전하게 mock 모드로 폴백
-                self.logger.error(f"Failed to initialize OpenAI client, falling back to mock: {e}")
-                self.client = None
-                self.mock_mode = True
+        # API 키 필수: Mock 모드 제거됨
+        if not self.api_key:
+            error_msg = "OPENAI_API_KEY is required. Please set it in environment variables or .env file."
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        try:
+            self.client = OpenAI(api_key=self.api_key)
+            self.logger.info("OpenAI client initialized successfully")
+        except Exception as e:
+            error_msg = f"Failed to initialize OpenAI client: {e}"
+            self.logger.exception(error_msg)
+            raise RuntimeError(error_msg) from e
     async def convert_text_styles(self, input_text: str, prompts: Dict[str, str]) -> Dict[str, str]:
         """
         입력 텍스트를 3가지 스타일로 변환
@@ -108,18 +106,6 @@ class OpenAIService:
         Raises:
             RuntimeError: API 호출 실패 시
         """
-        if self.mock_mode:
-            self.logger.debug(f"Mock mode: {style_name} 스타일 변환")
-            # Mock 모드에서도 실제 변환된 텍스트를 반환
-            if style_name == "direct":
-                return f"{input_text} (직접적으로)"
-            elif style_name == "gentle":
-                return f"{input_text} (부드럽게)"
-            elif style_name == "neutral":
-                return f"{input_text} (중립적으로)"
-            else:
-                return f"{input_text} (변환됨)"
-
         try:
             self.logger.debug(f"{style_name} 스타일 변환 시작")
 
@@ -170,16 +156,6 @@ class OpenAIService:
         Returns:
             생성된 텍스트 (문자열)
         """
-        if self.mock_mode:
-            # 간단한 모의 응답 생성 (프롬프트 핵심 문장 요약 형태)
-            snippet = prompt.strip().splitlines()[:4]
-            base = " ".join(s.strip() for s in snippet if s.strip())
-            return (
-                "1. 회사 맥락과 대상에 맞춰 명확하고 간결하게 소통합니다.\n"
-                "2. 핵심 메시지를 먼저 전달하고, 필요 시 근거와 예시를 덧붙입니다.\n"
-                "3. 합의된 용어/포맷(이메일/슬랙 등)과 격식을 일관되게 유지합니다."
-            )
-
         try:
             messages: list[dict[str, str]] = []
             if system:
@@ -257,7 +233,7 @@ class OpenAIService:
             }
             
         except Exception as e:
-            print(f"감정 분석 오류: {e}")
+            self.logger.exception(f"감정 분석 오류: {e}")
             return {"rating": 3, "confidence": 0.5}
     
     def analyze_style_feedback(self, feedback_text: str) -> Dict[str, float]:
@@ -306,10 +282,10 @@ class OpenAIService:
             return json.loads(result)
             
         except Exception as e:
-            print(f"피드백 분석 오류: {e}")
+            self.logger.exception(f"피드백 분석 오류: {e}")
             return {
                 "formalityDelta": 0.0,
-                "friendlinessDelta": 0.0, 
+                "friendlinessDelta": 0.0,
                 "emotionDelta": 0.0,
                 "directnessDelta": 0.0
             }

@@ -6,17 +6,18 @@ import {
   Post,
   Get,
   Param,
+  Delete,
+  Query,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { HttpService } from '@nestjs/axios';
 import { ConversionRequestDto } from './dto/conversion-request.dto';
 import { ConversionResponseDto } from './dto/conversion-response.dto';
 import { FeedbackRequestDto } from './dto/feedback-request.dto';
 import { FeedbackResponseDto } from './dto/feedback-response.dto';
 import { firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
-//@JiiminHa
-// import { FinetuneRequestDto } from './dto/finetune-request.dto';
-// import { FinetuneResponseDto } from './dto/finetune-response.dto';
 import { CompanyQualityAnalysisRequestDto } from './dto/quality-analysis-request.dto';
 import { CompanyQualityAnalysisResponseDto } from './dto/quality-analysis-response.dto';
 import { RAGQueryRequestDto, RAGQueryResponseDto } from './dto/rag-query.dto';
@@ -48,172 +49,219 @@ export class AppController {
   async convertText(
     @Body() body: ConversionRequestDto,
   ): Promise<ConversionResponseDto> {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/conversion/convert`;
-      const response = await firstValueFrom(
-        this.httpService.post(fastApiUrl, body),
-      );
-      return response.data as ConversionResponseDto;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(
-          error.response.data as string | Record<string, any>,
-          error.response.status,
-        );
-      }
-      throw new HttpException(
-        '텍스트 변환 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/conversion/convert`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data as ConversionResponseDto;
   }
 
   // Finetune route intentionally removed (not implemented on backend)
 
   @Get('quality/company/options')
   async getQualityCompanyOptions() {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/options`;
-      const response = await firstValueFrom(
-        this.httpService.get(fastApiUrl),
-      );
-      return response.data;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(error.response.data, error.response.status);
-      }
-      throw new HttpException(
-        '옵션 조회 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/options`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
   }
 
   @Post('quality/company/analyze')
   async analyzeCompanyTextQuality(
     @Body() body: CompanyQualityAnalysisRequestDto,
   ): Promise<CompanyQualityAnalysisResponseDto> {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/analyze`;
-      const response = await firstValueFrom(
-        this.httpService.post<CompanyQualityAnalysisResponseDto>(
-          fastApiUrl,
-          body,
-        ),
-      );
-      return response.data;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(error.response.data, error.response.status);
-      }
-      throw new HttpException(
-        '기업용 품질 분석 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/analyze`;
+    const response = await firstValueFrom(
+      this.httpService.post<CompanyQualityAnalysisResponseDto>(
+        fastApiUrl,
+        body,
+      ),
+    );
+    return response.data;
   }
 
   @Post('rag/ask')
   async askRagQuestion(
     @Body() body: RAGQueryRequestDto,
   ): Promise<RAGQueryResponseDto> {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/ask`;
-      const response = await firstValueFrom(
-        this.httpService.post<RAGQueryResponseDto>(fastApiUrl, body),
-      );
-      return response.data;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(error.response.data, error.response.status);
-      }
-      throw new HttpException(
-        'RAG 질의응답 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/ask`;
+    const response = await firstValueFrom(
+      this.httpService.post<RAGQueryResponseDto>(fastApiUrl, body),
+    );
+    return response.data;
   }
 
   @Post('rag/ingest')
   async ingestRagDocuments(
     @Body() body: RAGIngestRequestDto,
   ): Promise<RAGIngestResponseDto> {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/ingest`;
-      const response = await firstValueFrom(
-        this.httpService.post<RAGIngestResponseDto>(fastApiUrl, body),
-      );
-      return response.data;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(error.response.data, error.response.status);
-      }
-      throw new HttpException(
-        'RAG 문서 주입 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/rag/ingest`;
+    const response = await firstValueFrom(
+      this.httpService.post<RAGIngestResponseDto>(fastApiUrl, body),
+    );
+    return response.data;
   }
 
   @Get('profile/:user_id')
   async getUserProfile(
     @Param('user_id') userId: string,
   ): Promise<ProfileResponseDto> {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/profile/${userId}`;
-      const response = await firstValueFrom(
-        this.httpService.get<ProfileResponseDto>(fastApiUrl),
-      );
-      return response.data;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(error.response.data, error.response.status);
-      }
-      throw new HttpException(
-        '사용자 프로필 조회 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/profile/${userId}`;
+    const response = await firstValueFrom(
+      this.httpService.get<ProfileResponseDto>(fastApiUrl),
+    );
+    return response.data;
   }
 
   @Post('profile')
   async saveUserProfile(
     @Body() body: ProfileRequestDto,
   ): Promise<ProfileResponseDto> {
-    try {
-      const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/profile`;
-      const response = await firstValueFrom(
-        this.httpService.post<ProfileResponseDto>(fastApiUrl, body),
-      );
-      return response.data;
-    } catch (error) {
-      if (error instanceof AxiosError && error.response) {
-        throw new HttpException(error.response.data, error.response.status);
-      }
-      throw new HttpException(
-        '사용자 프로필 저장 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/profile`;
+    const response = await firstValueFrom(
+      this.httpService.post<ProfileResponseDto>(fastApiUrl, body),
+    );
+    return response.data;
   }
 
   @Post('feedback')
   submitFeedback(@Body() body: FeedbackRequestDto): FeedbackResponseDto {
-    try {
-      // TODO: 피드백 저장소 연결 및 실제 피드백 처리 로직 구현 필요
-      // Feedback storage or transmission logic connection planned
-      return {
-        success: true,
-        message: '피드백이 반영되었습니다.',
-        data: {
-          received_feedback: body.feedback_text,
-        },
-      };
-    } catch {
-      throw new HttpException(
-        '피드백 처리 중 오류 발생',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    // TODO: 피드백 저장소 연결 및 실제 피드백 처리 로직 구현 필요
+    // Feedback storage or transmission logic connection planned
+    return {
+      success: true,
+      message: '피드백이 반영되었습니다.',
+      data: {
+        received_feedback: body.feedback_text,
+      },
+    };
+  }
+
+  // ========== Documents Endpoints ==========
+
+  @Post('documents/upload')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 10 }]))
+  async uploadDocuments(
+    @UploadedFiles() files: { files?: any[] },
+    @Body() body: any,
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/upload`;
+    const FormData = require('form-data');
+    const formData = new FormData();
+
+    if (files?.files) {
+      for (const file of files.files) {
+        formData.append('files', file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+      }
     }
+
+    if (body.subdir) {
+      formData.append('subdir', body.subdir);
+    }
+
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, formData, {
+        headers: formData.getHeaders(),
+      }),
+    );
+    return response.data;
+  }
+
+  @Get('documents')
+  async listDocuments(@Query('subdir') subdir?: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl, {
+        params: subdir ? { subdir } : {},
+      }),
+    );
+    return response.data;
+  }
+
+  @Delete('documents/:documentName')
+  async deleteDocument(@Param('documentName') documentName: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/${encodeURIComponent(documentName)}`;
+    const response = await firstValueFrom(
+      this.httpService.delete(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Post('documents/summarize-pdf')
+  async summarizePDF(
+    @Body() body: { document_name: string; summary_type: string },
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/summarize-pdf`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Post('documents/summarize-text')
+  async summarizeText(
+    @Body() body: { text: string; summary_type: string },
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/documents/summarize-text`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  // ========== Surveys Endpoints ==========
+
+  @Get('surveys/:key')
+  async getSurvey(@Param('key') key: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/surveys/${key}`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Post('surveys/:key/responses')
+  async submitSurveyResponse(
+    @Param('key') key: string,
+    @Body() body: { tenant_id: string; user_id: string; answers: Record<string, any> },
+  ) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/surveys/${key}/responses`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  // ========== Additional Quality Endpoints ==========
+
+  @Get('quality/company/:companyId/status')
+  async getCompanyStatus(@Param('companyId') companyId: string) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/${companyId}/status`;
+    const response = await firstValueFrom(
+      this.httpService.get(fastApiUrl),
+    );
+    return response.data;
+  }
+
+  @Post('quality/company/test-setup')
+  async createTestCompany(@Body() body: { company_id: string }) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/test-setup`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
+  }
+
+  @Post('quality/company/generate-final')
+  async generateFinalText(@Body() body: any) {
+    const fastApiUrl = `${this.fastApiBaseUrl}/api/v1/quality/company/generate-final`;
+    const response = await firstValueFrom(
+      this.httpService.post(fastApiUrl, body),
+    );
+    return response.data;
   }
 }

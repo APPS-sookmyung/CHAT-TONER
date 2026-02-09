@@ -15,6 +15,7 @@ from datetime import datetime
 
 from .prompt_engineering import PromptEngineer
 from .openai_services import OpenAIService
+from utils.response_helpers import create_error_response
 
 logger = logging.getLogger('chattoner.conversion_service')
 
@@ -48,7 +49,15 @@ class ConversionService:
         # 입력 검증
         if not input_text or not input_text.strip():
             self.logger.warning("빈 텍스트 변환 시도")
-            return self._create_error_response("입력 텍스트가 비어있습니다", input_text)
+            return create_error_response(
+                "입력 텍스트가 비어있습니다",
+                original_text=input_text,
+                converted_texts={
+                    "direct": input_text,
+                    "gentle": input_text,
+                    "neutral": input_text
+                }
+            )
 
         if not user_profile:
             self.logger.warning("사용자 프로필 없이 변환 시도")
@@ -111,17 +120,41 @@ class ConversionService:
         except ValueError as e:
             # 입력 검증 오류 (4xx 에러로 처리)
             self.logger.warning(f"입력 검증 실패: {e}")
-            return self._create_error_response(str(e), input_text)
+            return create_error_response(
+                str(e),
+                original_text=input_text,
+                converted_texts={
+                    "direct": input_text,
+                    "gentle": input_text,
+                    "neutral": input_text
+                }
+            )
 
         except RuntimeError as e:
             # API 호출 오류 (5xx 에러로 처리)
             self.logger.error(f"서비스 실행 오류: {e}", exc_info=True)
-            return self._create_error_response(str(e), input_text)
+            return create_error_response(
+                str(e),
+                original_text=input_text,
+                converted_texts={
+                    "direct": input_text,
+                    "gentle": input_text,
+                    "neutral": input_text
+                }
+            )
 
         except Exception as e:
             # 예상치 못한 오류
             self.logger.critical(f"텍스트 변환 중 예상치 못한 오류: {e}", exc_info=True)
-            return self._create_error_response("서버 내부 오류가 발생했습니다", input_text)
+            return create_error_response(
+                "서버 내부 오류가 발생했습니다",
+                original_text=input_text,
+                converted_texts={
+                    "direct": input_text,
+                    "gentle": input_text,
+                    "neutral": input_text
+                }
+            )
     
     async def process_user_feedback(self,
                                    feedback_text: str,
@@ -139,19 +172,17 @@ class ConversionService:
         # 입력 검증
         if not feedback_text or not feedback_text.strip():
             self.logger.warning("빈 피드백 텍스트 처리 시도")
-            return {
-                "success": False,
-                "error": "피드백 텍스트가 비어있습니다",
-                "updated_profile": user_profile
-            }
+            return create_error_response(
+                "피드백 텍스트가 비어있습니다",
+                updated_profile=user_profile
+            )
 
         if not user_profile:
             self.logger.error("사용자 프로필 없이 피드백 처리 시도")
-            return {
-                "success": False,
-                "error": "사용자 프로필이 필요합니다",
-                "updated_profile": {}
-            }
+            return create_error_response(
+                "사용자 프로필이 필요합니다",
+                updated_profile={}
+            )
 
         try:
             self.logger.info(f"피드백 처리 시작: length={len(feedback_text)}")
@@ -196,32 +227,17 @@ class ConversionService:
 
         except RuntimeError as e:
             self.logger.error(f"피드백 처리 실패: {e}", exc_info=True)
-            return {
-                "success": False,
-                "error": str(e),
-                "updated_profile": user_profile
-            }
+            return create_error_response(
+                str(e),
+                updated_profile=user_profile
+            )
 
         except Exception as e:
             self.logger.critical(f"피드백 처리 중 예상치 못한 오류: {e}", exc_info=True)
-            return {
-                "success": False,
-                "error": "서버 내부 오류가 발생했습니다",
-                "updated_profile": user_profile
-            }
-
-    def _create_error_response(self, error_message: str, input_text: str) -> Dict[str, Any]:
-        """에러 응답 생성 헬퍼 메서드"""
-        return {
-            "success": False,
-            "error": error_message,
-            "original_text": input_text,
-            "converted_texts": {
-                "direct": input_text,
-                "gentle": input_text,
-                "neutral": input_text
-            }
-        }
+            return create_error_response(
+                "서버 내부 오류가 발생했습니다",
+                updated_profile=user_profile
+            )
 
     def _get_timestamp(self) -> str:
         """현재 타임스탬프 반환"""

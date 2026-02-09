@@ -11,6 +11,7 @@ from services.openai_services import OpenAIService
 from services.user_preferences import UserPreferencesService
 from services.document_service import DocumentService
 from services.rag_service import RAGService
+from services.rag import RAGEmbedderManager, RAGIngestionService, RAGQueryService
 from services.profile_generator import ProfileGeneratorService # Added import
 from services.user_service import UserService
 from services.pdf_summary_service import PDFSummaryService
@@ -68,8 +69,31 @@ class Container(containers.DeclarativeContainer):
         openai_api_key=config.OPENAI_API_KEY
     )
 
-    # RAG 서비스 (싱글톤으로 한번만 초기화)
-    rag_service = providers.Singleton(RAGService)
+    # RAG 전문화 서비스들 (싱글톤)
+    rag_embedder_manager = providers.Singleton(RAGEmbedderManager)
+
+    rag_ingestion_service = providers.Singleton(
+        RAGIngestionService,
+        rag_chain=None  # RAG Chain은 RAGService에서 초기화
+    )
+
+    rag_query_service = providers.Singleton(
+        RAGQueryService,
+        rag_chain=None,  # RAG Chain은 RAGService에서 초기화
+        embedder_manager=rag_embedder_manager,
+        openai_service=openai_service,
+        conversion_service=conversion_service,
+        user_preferences_service=user_preferences_service
+    )
+
+    # RAG 서비스 Facade (싱글톤으로 한번만 초기화)
+    rag_service = providers.Singleton(
+        RAGService,
+        user_preferences_service=user_preferences_service,
+        embedder_manager=rag_embedder_manager,
+        ingestion_service=rag_ingestion_service,
+        query_service=rag_query_service
+    )
 
     # 프로필 생성 서비스 (OpenAIService 주입)
     profile_generator_service = providers.Singleton(
