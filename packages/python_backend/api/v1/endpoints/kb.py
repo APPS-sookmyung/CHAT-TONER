@@ -7,7 +7,7 @@ from services.embedding_service import EmbeddingService
 from services.vector_store_pg import VectorStorePG
 
 
-router = APIRouter(prefix="/kb", tags=["kb"])
+router = APIRouter(tags=["kb"])
 
 
 class UploadResponse(BaseModel):

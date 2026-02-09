@@ -73,3 +73,5 @@ packages/nestjs-gateway/dist/
 packages/python_backend/__pycache__/
 packages/python_backend/.venv/
 packages/python_backend/*.log
+packages/python_backend/venv/
+venv/
