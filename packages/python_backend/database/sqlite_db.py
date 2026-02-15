@@ -1,15 +1,12 @@
 import sqlite3
+import os
 
-DATABASE_FILE = "local.db"
+DATABASE_FILE = os.path.join(os.path.dirname(__file__), "..", "local.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_FILE)
     conn.row_factory = sqlite3.Row
     return conn
-
-def create_tables():
-    conn = get_db_connection()
-    cursor = conn.cursor()
 
 def create_tables():
     conn = get_db_connection()
@@ -27,7 +24,7 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
         base_formality_level INTEGER DEFAULT 3,
         base_friendliness_level INTEGER DEFAULT 3,
         base_emotion_level INTEGER DEFAULT 3,
@@ -38,15 +35,14 @@ def create_tables():
         session_directness_level REAL,
         questionnaire_responses TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS conversion_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
         original_text TEXT NOT NULL,
         converted_texts TEXT NOT NULL,
         context TEXT DEFAULT 'personal',
@@ -56,15 +52,14 @@ def create_tables():
         sentiment_analysis TEXT,
         prompts_used TEXT,
         model_used TEXT DEFAULT 'gpt-4o',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS negative_preferences (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
         avoid_flowery_language TEXT DEFAULT 'moderate',
         avoid_repetitive_words TEXT DEFAULT 'moderate',
         comma_usage_style TEXT DEFAULT 'moderate',
@@ -73,8 +68,7 @@ def create_tables():
         emoticon_usage TEXT DEFAULT 'strict',
         custom_negative_prompts TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
@@ -102,7 +96,7 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS rag_query_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
         query_text TEXT NOT NULL,
         query_hash TEXT NOT NULL,
         context_type TEXT DEFAULT 'general',
@@ -116,17 +110,27 @@ def create_tables():
         user_rating INTEGER,
         user_feedback TEXT,
         was_helpful INTEGER,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS company_profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id TEXT,
         company_name TEXT,
+        industry TEXT,
+        team_size TEXT,
+        primary_business TEXT,
+        communication_style TEXT,
+        main_channels TEXT,
+        target_audience TEXT,
         generated_profile TEXT,
+        survey_data TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    conn.commit()
+    conn.close()

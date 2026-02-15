@@ -5,6 +5,34 @@ from .sqlite_db import get_db_connection, create_tables
 
 logger = logging.getLogger('chattoner.storage')
 
+
+def _row_to_profile(row) -> Dict[str, Any]:
+    """SQLite snake_case row를 API camelCase dict로 변환"""
+    raw = dict(row)
+    responses = raw.get("questionnaire_responses", "{}")
+    if isinstance(responses, str):
+        try:
+            responses = json.loads(responses)
+        except (json.JSONDecodeError, TypeError):
+            responses = {}
+
+    return {
+        "id": raw.get("id"),
+        "userId": raw.get("user_id"),
+        "baseFormalityLevel": raw.get("base_formality_level", 3),
+        "baseFriendlinessLevel": raw.get("base_friendliness_level", 3),
+        "baseEmotionLevel": raw.get("base_emotion_level", 3),
+        "baseDirectnessLevel": raw.get("base_directness_level", 3),
+        "sessionFormalityLevel": raw.get("session_formality_level"),
+        "sessionFriendlinessLevel": raw.get("session_friendliness_level"),
+        "sessionEmotionLevel": raw.get("session_emotion_level"),
+        "sessionDirectnessLevel": raw.get("session_directness_level"),
+        "questionnaireResponses": responses,
+        "createdAt": raw.get("created_at"),
+        "updatedAt": raw.get("updated_at"),
+    }
+
+
 class DatabaseStorage:
     def __init__(self):
         create_tables()
@@ -16,21 +44,25 @@ class DatabaseStorage:
         profile = cursor.fetchone()
         conn.close()
         if profile:
-            return dict(profile)
+            return _row_to_profile(profile)
         return None
 
     def save_user_profile(self, user_id: str, profile_data: Dict[str, Any]) -> bool:
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
+            # responses 필드를 questionnaire_responses로 매핑
+            responses_raw = profile_data.get('responses') or profile_data.get('questionnaireResponses', {})
+            responses_json = json.dumps(responses_raw) if not isinstance(responses_raw, str) else responses_raw
+
             cursor.execute("SELECT id FROM user_profiles WHERE user_id = ?", (user_id,))
             existing_profile = cursor.fetchone()
             if existing_profile:
                 cursor.execute("""
                     UPDATE user_profiles
-                    SET base_formality_level = ?, base_friendliness_level = ?, base_emotion_level = ?, base_directness_level = ?, 
-                        session_formality_level = ?, session_friendliness_level = ?, session_emotion_level = ?, session_directness_level = ?, 
-                        questionnaire_responses = ?
+                    SET base_formality_level = ?, base_friendliness_level = ?, base_emotion_level = ?, base_directness_level = ?,
+                        session_formality_level = ?, session_friendliness_level = ?, session_emotion_level = ?, session_directness_level = ?,
+                        questionnaire_responses = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE user_id = ?
                 """, (
                     profile_data.get('baseFormalityLevel', 3),
@@ -41,13 +73,13 @@ class DatabaseStorage:
                     profile_data.get('sessionFriendlinessLevel'),
                     profile_data.get('sessionEmotionLevel'),
                     profile_data.get('sessionDirectnessLevel'),
-                    json.dumps(profile_data.get('questionnaireResponses', {})),
+                    responses_json,
                     user_id
                 ))
             else:
                 cursor.execute("""
-                    INSERT INTO user_profiles (user_id, base_formality_level, base_friendliness_level, base_emotion_level, base_directness_level, 
-                                           session_formality_level, session_friendliness_level, session_emotion_level, session_directness_level, 
+                    INSERT INTO user_profiles (user_id, base_formality_level, base_friendliness_level, base_emotion_level, base_directness_level,
+                                           session_formality_level, session_friendliness_level, session_emotion_level, session_directness_level,
                                            questionnaire_responses)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
@@ -60,7 +92,7 @@ class DatabaseStorage:
                     profile_data.get('sessionFriendlinessLevel'),
                     profile_data.get('sessionEmotionLevel'),
                     profile_data.get('sessionDirectnessLevel'),
-                    json.dumps(profile_data.get('questionnaireResponses', {}))
+                    responses_json
                 ))
             conn.commit()
             return True
@@ -79,8 +111,8 @@ class DatabaseStorage:
             if existing_profile:
                 cursor.execute("""
                     UPDATE company_profiles
-                    SET company_name = ?, industry = ?, team_size = ?, primary_business = ?, 
-                        communication_style = ?, main_channels = ?, target_audience = ?, 
+                    SET company_name = ?, industry = ?, team_size = ?, primary_business = ?,
+                        communication_style = ?, main_channels = ?, target_audience = ?,
                         generated_profile = ?, survey_data = ?
                     WHERE company_id = ?
                 """, (
@@ -97,8 +129,8 @@ class DatabaseStorage:
                 ))
             else:
                 cursor.execute("""
-                    INSERT INTO company_profiles (company_id, company_name, industry, team_size, primary_business, 
-                                           communication_style, main_channels, target_audience, 
+                    INSERT INTO company_profiles (company_id, company_name, industry, team_size, primary_business,
+                                           communication_style, main_channels, target_audience,
                                            generated_profile, survey_data)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
@@ -122,24 +154,16 @@ class DatabaseStorage:
             conn.close()
 
     def get_all_feedback(self, user_id: str) -> List[Dict[str, Any]]:
-
-            conn = get_db_connection()
-
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT user_rating, selected_version FROM conversion_history WHERE user_id = ? AND user_rating IS NOT NULL", (user_id,))
-
-            feedback = cursor.fetchall()
-
-            conn.close()
-
-            return [dict(row) for row in feedback]
-
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_rating, selected_version FROM conversion_history WHERE user_id = ? AND user_rating IS NOT NULL", (user_id,))
+        feedback = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in feedback]
 
     def update_conversion_feedback(self, feedback_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         conn = get_db_connection()
         cursor = conn.cursor()
-
         try:
             cursor.execute("""
                 UPDATE conversion_history
@@ -151,16 +175,15 @@ class DatabaseStorage:
                 feedback_data.get('feedback_text'),
                 feedback_data.get('conversionId')
             ))
-
             conn.commit()
             cursor.execute("SELECT * FROM conversion_history WHERE id = ?", (feedback_data.get('conversionId'),))
             updated_conversion = cursor.fetchone()
-            return dict(updated_conversion)
-
+            if updated_conversion:
+                return dict(updated_conversion)
+            return None
         except Exception as e:
             logger.error(f"Error updating conversion feedback: {e}")
             return None
-
         finally:
             conn.close()
 
@@ -171,5 +194,3 @@ class DatabaseStorage:
         history = cursor.fetchall()
         conn.close()
         return [dict(row) for row in history]
-
-    
