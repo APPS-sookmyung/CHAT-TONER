@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Copy, Check } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/Atoms/Button";
 import { Textarea } from "@/components/Atoms/Textarea";
 import { Card } from "@/components/Molecules/Card";
@@ -29,6 +32,15 @@ export const TransformStyleCard = ({
   onTransformClick,
   isTransformDisabled,
 }: TransformStyleCardProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!outputValue || outputValue === "Transformed text will appear here") return;
+    await navigator.clipboard.writeText(outputValue);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center gap-8 lg:flex-row lg:gap-[58px]">
       <Card variant="primary" size="large">
@@ -56,13 +68,29 @@ export const TransformStyleCard = ({
           onChange={onSelectedStyleChange}
         />
         <Card variant="primary" size="medium">
-          <div className="flex justify-center">
-            <Textarea
-              value={outputValue}
-              placeholder="Transformed text will appear here"
-              readOnly
-              rows={8}
-            />
+          <div className="relative">
+            {outputValue && outputValue !== "Transformed text will appear here" ? (
+              <div className="w-[554px] h-[346px] overflow-y-auto p-9 bg-white rounded-[30px] border border-primary text-base text-text-primary prose prose-sm max-w-none">
+                <ReactMarkdown>{outputValue}</ReactMarkdown>
+              </div>
+            ) : (
+              <div className="w-[554px] h-[346px] p-9 bg-white rounded-[30px] border border-primary text-base text-text-secondary flex items-center justify-center">
+                Transformed text will appear here
+              </div>
+            )}
+            {outputValue && outputValue !== "Transformed text will appear here" && (
+              <button
+                onClick={handleCopy}
+                className="absolute top-4 right-4 p-1.5 rounded-md bg-white/80 hover:bg-gray-100 transition-colors border border-gray-200 z-10"
+                title="Copy to clipboard"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4 text-gray-500" />
+                )}
+              </button>
+            )}
           </div>
         </Card>
       </div>

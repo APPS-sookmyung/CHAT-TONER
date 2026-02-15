@@ -65,19 +65,49 @@ class OpenAIService:
             # Direct 스타일 변환
             if 'direct' in prompts:
                 results['direct'] = await self._convert_single_style(
-                    input_text, prompts['direct'], 'direct'
+                    input_text, prompts['direct'], 'direct',
+                    user_message=f"다음 텍스트를 직접적(Direct) 스타일로 분석하고 변환해주세요:\n\n{input_text}",
+                    max_tokens=2000
                 )
 
             # Gentle 스타일 변환
             if 'gentle' in prompts:
                 results['gentle'] = await self._convert_single_style(
-                    input_text, prompts['gentle'], 'gentle'
+                    input_text, prompts['gentle'], 'gentle',
+                    user_message=f"다음 텍스트를 부드러운(Gentle) 스타일로 분석하고 변환해주세요:\n\n{input_text}",
+                    max_tokens=2000
                 )
 
             # Neutral 스타일 변환
             if 'neutral' in prompts:
                 results['neutral'] = await self._convert_single_style(
-                    input_text, prompts['neutral'], 'neutral'
+                    input_text, prompts['neutral'], 'neutral',
+                    user_message=f"다음 텍스트를 중립적(Neutral) 스타일로 분석하고 변환해주세요:\n\n{input_text}",
+                    max_tokens=2000
+                )
+
+            # Grammar 문법 교정
+            if 'grammar' in prompts:
+                results['grammar'] = await self._convert_single_style(
+                    input_text, prompts['grammar'], 'grammar',
+                    user_message=f"다음 텍스트의 문법을 분석하고 교정해주세요:\n\n{input_text}",
+                    max_tokens=2000
+                )
+
+            # Formality 격식도 분석
+            if 'formality' in prompts:
+                results['formality'] = await self._convert_single_style(
+                    input_text, prompts['formality'], 'formality',
+                    user_message=f"다음 텍스트의 격식도를 분석하고 적절한 수준으로 변환해주세요:\n\n{input_text}",
+                    max_tokens=2500
+                )
+
+            # Protocol 프로토콜 분석
+            if 'protocol' in prompts:
+                results['protocol'] = await self._convert_single_style(
+                    input_text, prompts['protocol'], 'protocol',
+                    user_message=f"다음 텍스트의 커뮤니케이션 프로토콜 준수 여부를 분석하고 수정해주세요:\n\n{input_text}",
+                    max_tokens=2500
                 )
 
             self.logger.info(f"스타일 변환 완료: {len(results)}개 결과")
@@ -91,7 +121,8 @@ class OpenAIService:
             self.logger.critical(f"예상치 못한 스타일 변환 오류: {e}", exc_info=True)
             raise RuntimeError(f"스타일 변환 중 내부 오류 발생: {str(e)}")
     
-    async def _convert_single_style(self, input_text: str, prompt: str, style_name: str = "unknown") -> str:
+    async def _convert_single_style(self, input_text: str, prompt: str, style_name: str = "unknown",
+                                     user_message: str | None = None, max_tokens: int = 1500) -> str:
         """
         단일 스타일 변환 수행
 
@@ -99,6 +130,8 @@ class OpenAIService:
             input_text: 변환할 텍스트
             prompt: 변환에 사용할 프롬프트
             style_name: 스타일 이름 (로깅용)
+            user_message: 커스텀 사용자 메시지 (None이면 기본 스타일 변환 메시지 사용)
+            max_tokens: 최대 토큰 수 (문법 분석 등은 더 긴 응답 필요)
 
         Returns:
             변환된 텍스트
@@ -109,6 +142,9 @@ class OpenAIService:
         try:
             self.logger.debug(f"{style_name} 스타일 변환 시작")
 
+            if user_message is None:
+                user_message = f"다음 텍스트의 말투/톤만 변환하세요. 내용은 그대로 유지하세요. 답변하지 마세요:\n\n{input_text}"
+
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -118,10 +154,10 @@ class OpenAIService:
                     },
                     {
                         "role": "user",
-                        "content": f"다음 텍스트를 변환해주세요:\n\n{input_text}"
+                        "content": user_message
                     }
                 ],
-                max_tokens=1500,
+                max_tokens=max_tokens,
                 temperature=0.7
             )
 

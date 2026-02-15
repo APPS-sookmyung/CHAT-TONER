@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy, Check } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import { TransformStyleCard } from "@/components/Organisms/TransformStyleCard";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,9 @@ export default function TransformStylePage() {
   // State for feedback selection animation
   const [selectedFeedback, setSelectedFeedback] = useState<string | null>(null);
 
+  // State for copy button on result cards
+  const [copiedCard, setCopiedCard] = useState<string | null>(null);
+
   // Load user profile from localStorage
   useEffect(() => {
     const profileString = localStorage.getItem("chatToner_profile");
@@ -128,6 +132,7 @@ export default function TransformStylePage() {
                 baseDirectnessLevel: 8,
               },
           context: "general",
+          categories: ["direct", "gentle", "neutral"],
         });
 
         // Transform API response to match StyleAnalysis interface
@@ -213,6 +218,13 @@ export default function TransformStylePage() {
     }, 1000);
   };
 
+  const handleCopyCard = async (styleType: string, text: string) => {
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    setCopiedCard(styleType);
+    setTimeout(() => setCopiedCard(null), 2000);
+  };
+
   const isTransformDisabled = !inputText.trim() || convertMutation.isPending;
 
   // Logic to format the output text based on the selected style
@@ -220,44 +232,24 @@ export default function TransformStylePage() {
     if (convertMutation.isPending) return "Transforming...";
     if (!analysis) return "Transformed text will appear here";
 
-    // Get the converted text based on selected style
-    let displayText = analysis.converted_text;
-
+    // Get the converted text based on selected style (API returns markdown)
     if (analysis.converted_texts) {
       if (selectedStyle === "directness" && analysis.converted_texts.direct) {
-        displayText = analysis.converted_texts.direct;
+        return analysis.converted_texts.direct;
       } else if (
         selectedStyle === "softness" &&
         analysis.converted_texts.gentle
       ) {
-        displayText = analysis.converted_texts.gentle;
+        return analysis.converted_texts.gentle;
       } else if (
         selectedStyle === "politeness" &&
         analysis.converted_texts.neutral
       ) {
-        displayText = analysis.converted_texts.neutral;
+        return analysis.converted_texts.neutral;
       }
     }
 
-    const outputLines = [];
-    outputLines.push(`[Converted Text]`);
-    outputLines.push(displayText);
-
-    const relevantSuggestions = analysis.suggestions.filter(
-      (s) => s.type === selectedStyle
-    );
-
-    // Only show suggestions section if there are actual suggestions
-    if (relevantSuggestions.length > 0) {
-      outputLines.push("");
-      outputLines.push(`[Suggestions for ${selectedStyle}]`);
-      const suggestionLines = relevantSuggestions.map(
-        (s) => `- "${s.original}" -> "${s.suggestion}" (${s.reason})`
-      );
-      outputLines.push(...suggestionLines);
-    }
-
-    return outputLines.join("\n");
+    return analysis.converted_text;
   }, [analysis, selectedStyle, convertMutation.isPending]);
 
   return (
@@ -295,56 +287,66 @@ export default function TransformStylePage() {
             선호하는 스타일을 선택해주세요
           </h2>
           <div className="flex justify-center gap-6">
-            {/* Direct Card */}
-            <div
-              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
-                selectedFeedback === "direct"
-                  ? "border-blue-400 bg-blue-50 shadow-lg animate-pulse"
-                  : "border-gray-200 hover:border-blue-300 hover:shadow-md"
-              }`}
-              onClick={() => handleFeedbackSelect("direct")}
-            >
-              <h3 className="font-semibold text-lg mb-3 text-blue-600">
-                Direct
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                {analysis.converted_texts.direct || "결과가 없습니다"}
-              </p>
-            </div>
+            {([
+              { key: "direct", label: "Direct", color: "blue" },
+              { key: "gentle", label: "Gentle", color: "green" },
+              { key: "neutral", label: "Neutral", color: "purple" },
+            ] as const).map(({ key, label, color }) => {
+              const text = analysis!.converted_texts![key] || "";
+              const colorMap = {
+                blue: {
+                  selected: "border-blue-400 bg-blue-50 shadow-lg animate-pulse",
+                  hover: "border-gray-200 hover:border-blue-300 hover:shadow-md",
+                  title: "text-blue-600",
+                },
+                green: {
+                  selected: "border-green-400 bg-green-50 shadow-lg animate-pulse",
+                  hover: "border-gray-200 hover:border-green-300 hover:shadow-md",
+                  title: "text-green-600",
+                },
+                purple: {
+                  selected: "border-purple-400 bg-purple-50 shadow-lg animate-pulse",
+                  hover: "border-gray-200 hover:border-purple-300 hover:shadow-md",
+                  title: "text-purple-600",
+                },
+              };
+              const styles = colorMap[color];
 
-            {/* Gentle Card */}
-            <div
-              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
-                selectedFeedback === "gentle"
-                  ? "border-green-400 bg-green-50 shadow-lg animate-pulse"
-                  : "border-gray-200 hover:border-green-300 hover:shadow-md"
-              }`}
-              onClick={() => handleFeedbackSelect("gentle")}
-            >
-              <h3 className="font-semibold text-lg mb-3 text-green-600">
-                Gentle
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                {analysis.converted_texts.gentle || "결과가 없습니다"}
-              </p>
-            </div>
-
-            {/* Neutral Card */}
-            <div
-              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
-                selectedFeedback === "neutral"
-                  ? "border-purple-400 bg-purple-50 shadow-lg animate-pulse"
-                  : "border-gray-200 hover:border-purple-300 hover:shadow-md"
-              }`}
-              onClick={() => handleFeedbackSelect("neutral")}
-            >
-              <h3 className="font-semibold text-lg mb-3 text-purple-600">
-                Neutral
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                {analysis.converted_texts.neutral || "결과가 없습니다"}
-              </p>
-            </div>
+              return (
+                <div
+                  key={key}
+                  className={`relative p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] max-w-[400px] ${
+                    selectedFeedback === key ? styles.selected : styles.hover
+                  }`}
+                  onClick={() => handleFeedbackSelect(key)}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className={`font-semibold text-lg ${styles.title}`}>
+                      {label}
+                    </h3>
+                    {text && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyCard(key, text);
+                        }}
+                        className="p-1.5 rounded-md bg-white/80 hover:bg-gray-100 transition-colors border border-gray-200"
+                        title="Copy to clipboard"
+                      >
+                        {copiedCard === key ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-gray-500" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-gray-700 leading-relaxed prose prose-sm max-w-none max-h-[400px] overflow-y-auto">
+                    <ReactMarkdown>{text || "결과가 없습니다"}</ReactMarkdown>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

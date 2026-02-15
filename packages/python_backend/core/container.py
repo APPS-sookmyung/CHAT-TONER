@@ -54,11 +54,15 @@ class Container(containers.DeclarativeContainer):
         openai_service=openai_service
     )
     
-    # 메인 변환 서비스
+    # RAG 전문화 서비스들 (싱글톤) - conversion_service보다 먼저 선언
+    rag_embedder_manager = providers.Singleton(RAGEmbedderManager)
+
+    # 메인 변환 서비스 (rag_embedder_manager 직접 주입으로 순환 의존성 회피)
     conversion_service = providers.Singleton(
         ConversionService,
         prompt_engineer=prompt_engineer,
-        openai_service=openai_service
+        openai_service=openai_service,
+        rag_embedder_manager=rag_embedder_manager
     )
 
     # 파인튜닝 서비스 제거됨 (finetune_service 미사용)
@@ -68,9 +72,6 @@ class Container(containers.DeclarativeContainer):
         DocumentService,
         openai_api_key=config.OPENAI_API_KEY
     )
-
-    # RAG 전문화 서비스들 (싱글톤)
-    rag_embedder_manager = providers.Singleton(RAGEmbedderManager)
 
     rag_ingestion_service = providers.Singleton(
         RAGIngestionService,

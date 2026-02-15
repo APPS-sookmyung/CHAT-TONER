@@ -7,7 +7,7 @@ const API_BASE = import.meta.env.PROD
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
-  timeout: 30000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -55,6 +55,7 @@ export const api = {
     text: string;
     user_profile: any;
     context?: string;
+    categories?: string[];
     negative_preferences?: any;
   }) => {
     const response = await apiClient.post('/api/v1/conversion/convert', data);

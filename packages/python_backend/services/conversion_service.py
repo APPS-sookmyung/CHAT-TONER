@@ -22,17 +22,22 @@ logger = logging.getLogger('chattoner.conversion_service')
 class ConversionService:
     """텍스트 변환 메인 서비스 클래스"""
 
-    def __init__(self, prompt_engineer=None, openai_service=None):
+    def __init__(self, prompt_engineer=None, openai_service=None, rag_embedder_manager=None):
         self.prompt_engineer = prompt_engineer or PromptEngineer()
         self.openai_service = openai_service or OpenAIService()
+        self.rag_embedder_manager = rag_embedder_manager
         self.logger = logger
     
+    # RAG가 필요한 카테고리 (기업 가이드라인 참조)
+    QUALITY_CATEGORIES = {"grammar", "formality", "protocol"}
+
     async def convert_text(self,
                           input_text: str,
                           user_profile: Dict[str, Any],
                           context: str = "personal",
                           negative_preferences: Optional[Dict[str, str]] = None,
-                          enterprise_context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                          enterprise_context: Optional[Dict[str, Any]] = None,
+                          categories: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         메인 텍스트 변환 함수
 
@@ -42,6 +47,7 @@ class ConversionService:
             context: 변환 컨텍스트 ("business", "report", "personal")
             negative_preferences: 사용자 네거티브 프롬프트 선호도
             enterprise_context: 기업 컨텍스트 정보 (옵션)
+            categories: 요청할 카테고리 목록 (None이면 전체)
 
         Returns:
             변환 결과와 메타데이터
@@ -66,6 +72,14 @@ class ConversionService:
         try:
             self.logger.info(f"텍스트 변환 시작: context={context}, length={len(input_text)}")
 
+            # 0. RAG 컨텍스트 자동 조회 (모든 카테고리에서 기업 가이드라인 참조 가능)
+            rag_sources = None
+            if enterprise_context is None:
+                rag_result = self._fetch_rag_context(input_text)
+                if rag_result:
+                    enterprise_context = rag_result.get("enterprise_context")
+                    rag_sources = rag_result.get("sources")
+
             # 1. 프롬프트 생성
             try:
                 prompts = self.prompt_engineer.generate_conversion_prompts(
@@ -74,6 +88,11 @@ class ConversionService:
                     enterprise_context=enterprise_context,
                     negative_preferences=negative_preferences
                 )
+
+                # categories 지정 시 요청된 카테고리만 필터링
+                if categories:
+                    prompts = {k: v for k, v in prompts.items() if k in categories}
+
                 self.logger.info(f"프롬프트 생성 완료: {list(prompts.keys())}")
                 self.logger.info(f"프롬프트 개수: {len(prompts)}")
             except Exception as e:
@@ -107,6 +126,7 @@ class ConversionService:
                 "context": context,
                 "user_profile": user_profile,
                 "sentiment_analysis": sentiment_analysis,
+                "rag_sources": rag_sources,
                 "metadata": {
                     "prompts_used": list(prompts.keys()),
                     "conversion_timestamp": self._get_timestamp(),
@@ -238,6 +258,49 @@ class ConversionService:
                 "서버 내부 오류가 발생했습니다",
                 updated_profile=user_profile
             )
+
+    def _fetch_rag_context(self, input_text: str) -> Optional[Dict[str, Any]]:
+        """RAG에서 기업 문서를 검색하여 enterprise_context 구성
+
+        Args:
+            input_text: 검색 쿼리로 사용할 입력 텍스트
+
+        Returns:
+            enterprise_context와 sources를 포함한 dict, 실패 시 None
+        """
+        if not self.rag_embedder_manager:
+            return None
+
+        try:
+            embedder = self.rag_embedder_manager.get_embedder()
+            if not embedder:
+                return None
+
+            results = embedder.search(input_text, top_k=3)
+            if not results:
+                return None
+
+            # 포맷: [문서 1] content...
+            guidelines = []
+            sources = []
+            for idx, (content, score) in enumerate(results, 1):
+                guidelines.append(f"[문서 {idx}] {content}")
+                sources.append({
+                    "doc_index": idx,
+                    "content": content[:200],
+                    "score": round(score, 4)
+                })
+
+            return {
+                "enterprise_context": {
+                    "기업 가이드라인": guidelines
+                },
+                "sources": sources
+            }
+
+        except Exception as e:
+            self.logger.warning(f"RAG 컨텍스트 조회 실패 (무시하고 계속): {e}")
+            return None
 
     def _get_timestamp(self) -> str:
         """현재 타임스탬프 반환"""
