@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/Atoms/Button";
 import { Textarea } from "@/components/Atoms/Textarea";
 import { Card } from "@/components/Molecules/Card";
@@ -29,6 +31,15 @@ export const TransformStyleCard = ({
   onTransformClick,
   isTransformDisabled,
 }: TransformStyleCardProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!outputValue || outputValue === "Transformed text will appear here") return;
+    await navigator.clipboard.writeText(outputValue);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center gap-8 lg:flex-row lg:gap-[58px]">
       <Card variant="primary" size="large">
@@ -56,13 +67,26 @@ export const TransformStyleCard = ({
           onChange={onSelectedStyleChange}
         />
         <Card variant="primary" size="medium">
-          <div className="flex justify-center">
+          <div className="relative">
             <Textarea
               value={outputValue}
               placeholder="Transformed text will appear here"
               readOnly
               rows={8}
             />
+            {outputValue && outputValue !== "Transformed text will appear here" && (
+              <button
+                onClick={handleCopy}
+                className="absolute top-2 right-2 p-1.5 rounded-md bg-white/80 hover:bg-gray-100 transition-colors border border-gray-200"
+                title="Copy to clipboard"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4 text-gray-500" />
+                )}
+              </button>
+            )}
           </div>
         </Card>
       </div>
