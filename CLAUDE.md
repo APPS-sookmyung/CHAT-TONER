@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Claude Code 관련 질문 답변 규칙
+
+claude-code-guide 에이전트는 부정확한 답변을 줄 수 있다. 사용자가 Claude Code 관련 추가 질문을 하면, 공식 문서(https://docs.anthropic.com/en/docs/claude-code)에서 관련 md 파일을 WebFetch로 참조하여 정확한 정보를 기반으로 답변할 것.
+
 ## Project Overview
 
 Chat-Toner is an AI-powered communication assistant that helps users adjust tone and style in their writing. It's built on a microservices architecture with three main components:
