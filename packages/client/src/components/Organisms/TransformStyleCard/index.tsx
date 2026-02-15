@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/Atoms/Button";
 import { Textarea } from "@/components/Atoms/Textarea";
 import { Card } from "@/components/Molecules/Card";
@@ -68,16 +69,19 @@ export const TransformStyleCard = ({
         />
         <Card variant="primary" size="medium">
           <div className="relative">
-            <Textarea
-              value={outputValue}
-              placeholder="Transformed text will appear here"
-              readOnly
-              rows={8}
-            />
+            {outputValue && outputValue !== "Transformed text will appear here" ? (
+              <div className="w-[554px] h-[346px] overflow-y-auto p-9 bg-white rounded-[30px] border border-primary text-base text-text-primary prose prose-sm max-w-none">
+                <ReactMarkdown>{outputValue}</ReactMarkdown>
+              </div>
+            ) : (
+              <div className="w-[554px] h-[346px] p-9 bg-white rounded-[30px] border border-primary text-base text-text-secondary flex items-center justify-center">
+                Transformed text will appear here
+              </div>
+            )}
             {outputValue && outputValue !== "Transformed text will appear here" && (
               <button
                 onClick={handleCopy}
-                className="absolute top-2 right-2 p-1.5 rounded-md bg-white/80 hover:bg-gray-100 transition-colors border border-gray-200"
+                className="absolute top-4 right-4 p-1.5 rounded-md bg-white/80 hover:bg-gray-100 transition-colors border border-gray-200 z-10"
                 title="Copy to clipboard"
               >
                 {copied ? (
