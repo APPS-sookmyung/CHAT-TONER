@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Building2, Users, Mail, Target, Calendar, FileText, Trash2, Upload, Plus } from 'lucide-react';
+import { Building2, Users, Mail, Target, Calendar, FileText, Trash2, Upload, Plus, Home, MessageSquare } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { PATH } from '@/constants/paths';
 
 interface CompanyContext {
   companySize: string;
@@ -148,6 +149,23 @@ const ProfilePage: React.FC = () => {
   if (error || !profile) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="flex justify-end gap-3 mb-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate(PATH.HOME)}
+            className="flex items-center gap-2"
+          >
+            <Home className="h-4 w-4" />
+            홈으로
+          </Button>
+          <Button
+            onClick={() => navigate(PATH.CHOICE)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Use ChatToner
+          </Button>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle className="text-red-600">프로필을 찾을 수 없음</CardTitle>
@@ -173,9 +191,29 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">내 커뮤니케이션 프로필</h1>
-        <p className="text-gray-600">팀 특성에 맞는 맞춤형 커뮤니케이션 가이드</p>
+      {/* 상단 네비게이션 */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">내 커뮤니케이션 프로필</h1>
+          <p className="text-gray-600">팀 특성에 맞는 맞춤형 커뮤니케이션 가이드</p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => navigate(PATH.HOME)}
+            className="flex items-center gap-2"
+          >
+            <Home className="h-4 w-4" />
+            홈으로
+          </Button>
+          <Button
+            onClick={() => navigate(PATH.CHOICE)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Use ChatToner
+          </Button>
+        </div>
       </div>
 
       {/* 회사 정보 요약 */}

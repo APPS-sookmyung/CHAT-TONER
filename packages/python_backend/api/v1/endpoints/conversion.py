@@ -42,7 +42,8 @@ async def convert_text(request: ConversionRequest,
             input_text=request.text,
             user_profile=user_profile_dict,
             context=request.context,
-            negative_preferences=negative_preferences_dict
+            negative_preferences=negative_preferences_dict,
+            categories=request.categories
         )
 
         return ConversionResponse(
@@ -51,6 +52,7 @@ async def convert_text(request: ConversionRequest,
             converted_texts=result.get("converted_texts", {}),
             context=request.context,
             sentiment_analysis=result.get("sentiment_analysis"),
+            rag_sources=result.get("rag_sources"),
             metadata=result.get("metadata", {})
         )
 

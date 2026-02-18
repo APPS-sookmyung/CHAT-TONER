@@ -2,7 +2,23 @@
 Simple Text Embedder (OpenAI API 없이)
 한국어 텍스트 임베딩을 위한 간단한 구현
 TF-IDF와 코사인 유사도를 사용한 문서 검색
+
+⚠️ DEPRECATED: This module is DEPRECATED and should NOT be used in production.
+
+   This was a fallback implementation for when OpenAI API was unavailable.
+   Since the codebase now requires OpenAI API, this module is no longer needed.
+
+   Use GPTTextEmbedder from langchain_pipeline.embedder.gpt_embedder instead.
+
+   This file is kept for reference only and may be removed in future versions.
 """
+
+import warnings
+warnings.warn(
+    "SimpleTextEmbedder is deprecated. Use GPTTextEmbedder instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import os
 import pickle
