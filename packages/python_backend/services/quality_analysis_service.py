@@ -9,6 +9,7 @@ import time
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from .rag_service import RAGService
+from utils.response_helpers import create_error_response
 
 logger = logging.getLogger('chattoner.quality_analysis_service')
 
@@ -166,22 +167,58 @@ class OptimizedEnterpriseQualityService:
         except ValueError as e:
             # 유효성 검사 실패
             logger.error(f"입력 유효성 검사 실패: {e}")
-            return self._create_error_response(
-                text, target_audience, context, str(e), start_time
+            processing_time = time.time() - start_time
+            return create_error_response(
+                str(e),
+                grammar_score=0.0,
+                formality_score=0.0,
+                readability_score=0.0,
+                protocol_score=0.0,
+                compliance_score=0.0,
+                suggestions=[],
+                protocol_suggestions=[],
+                grammar_section={"score": 0.0, "suggestions": []},
+                protocol_section={"score": 0.0, "suggestions": []},
+                company_analysis={
+                    "company_id": "error",
+                    "communication_style": "unknown",
+                    "compliance_level": 0.0
+                },
+                processing_time=processing_time,
+                method_used="system_error",
+                warnings=["분석 불가능: 시스템 오류"]
             )
         
         except Exception as e:
             # 예외 발생
-            logger.error(f"분석 중 예외 발생: {e}")
-            
+            logger.exception(f"분석 중 예외 발생: {e}")
+
             if self.config.fallback_to_rule_based:
                 return await self._service_fallback_analysis(
                     text, target_audience, context, company_id, user_id, start_time,
                     error_msg=str(e)
                 )
             else:
-                return self._create_error_response(
-                    text, target_audience, context, str(e), start_time
+                processing_time = time.time() - start_time
+                return create_error_response(
+                    str(e),
+                    grammar_score=0.0,
+                    formality_score=0.0,
+                    readability_score=0.0,
+                    protocol_score=0.0,
+                    compliance_score=0.0,
+                    suggestions=[],
+                    protocol_suggestions=[],
+                    grammar_section={"score": 0.0, "suggestions": []},
+                    protocol_section={"score": 0.0, "suggestions": []},
+                    company_analysis={
+                        "company_id": "error",
+                        "communication_style": "unknown",
+                        "compliance_level": 0.0
+                    },
+                    processing_time=processing_time,
+                    method_used="system_error",
+                    warnings=["분석 불가능: 시스템 오류"]
                 )
     
     async def _service_fallback_analysis(
@@ -283,39 +320,7 @@ class OptimizedEnterpriseQualityService:
             "method_used": method_used,
             "warnings": [f"Service Fallback 모드: {error_msg}"]
         }
-    
-    def _create_error_response(
-        self, 
-        text: str, 
-        target_audience: str,
-        context: str,
-        error_msg: str, 
-        start_time: float
-    ) -> Dict[str, Any]:
-        """완전 실패 시 에러 응답"""
-        processing_time = time.time() - start_time
-        
-        return {
-            "grammar_score": 0.0,
-            "formality_score": 0.0,
-            "readability_score": 0.0,
-            "protocol_score": 0.0,
-            "compliance_score": 0.0,
-            "suggestions": [],
-            "protocol_suggestions": [],
-            "grammar_section": {"score": 0.0, "suggestions": []},
-            "protocol_section": {"score": 0.0, "suggestions": []},
-            "company_analysis": {
-                "company_id": "error",
-                "communication_style": "unknown",
-                "compliance_level": 0.0
-            },
-            "processing_time": processing_time,
-            "method_used": "system_error",
-            "error": error_msg,
-            "warnings": ["분석 불가능: 시스템 오류"]
-        }
-    
+
     async def _add_enterprise_detailed_analysis(
         self,
         base_result: Dict[str, Any],

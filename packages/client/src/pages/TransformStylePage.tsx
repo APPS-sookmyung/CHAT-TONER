@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy, Check } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import { TransformStyleCard } from "@/components/Organisms/TransformStyleCard";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,9 @@ export default function TransformStylePage() {
   const [analysis, setAnalysis] = useState<StyleAnalysis | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<string | null>(null);
 
+  // State for copy button on result cards
+  const [copiedCard, setCopiedCard] = useState<string | null>(null);
+
   useEffect(() => {
     const profileString = localStorage.getItem("chatToner_profile");
     if (profileString) {
@@ -74,12 +78,35 @@ export default function TransformStylePage() {
       console.log(`Transforming text: ${text}`);
 
       try {
-        const userId = getOrSetUserId();
+        const clampToScale = (value: number) => {
+          const numericValue = Number(value);
+          if (Number.isNaN(numericValue)) return 5;
+          return Math.max(1, Math.min(10, Math.round(numericValue)));
+        };
 
         const result = await api.convertStyle({
           text,
-          userId,
+          user_profile: userProfile
+            ? {
+                baseFormalityLevel: Math.round(
+                  userProfile.baseFormalityLevel / 10
+                ),
+                baseFriendlinessLevel: Math.round(
+                  userProfile.baseFriendlinessLevel / 10
+                ),
+                baseEmotionLevel: Math.round(userProfile.baseEmotionLevel / 10),
+                baseDirectnessLevel: Math.round(
+                  userProfile.baseDirectnessLevel / 10
+                ),
+              }
+            : {
+                baseFormalityLevel: 8,
+                baseFriendlinessLevel: 6,
+                baseEmotionLevel: 5,
+                baseDirectnessLevel: 8,
+              },
           context: "general",
+          categories: ["direct", "gentle", "neutral"],
         });
 
         console.log("API Response:", result);
@@ -147,16 +174,57 @@ export default function TransformStylePage() {
     setTimeout(() => setSelectedFeedback(null), 1000);
   };
 
+  const handleCopyCard = async (styleType: string, text: string) => {
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    setCopiedCard(styleType);
+    setTimeout(() => setCopiedCard(null), 2000);
+  };
+
   const isTransformDisabled = !inputText.trim() || convertMutation.isPending;
 
   const outputValue = useMemo(() => {
     if (convertMutation.isPending) return "Transforming...";
     if (!analysis) return "Transformed text will appear here";
 
-    const displayText =
-      analysis.converted_texts?.[selectedStyle] ?? analysis.converted_text;
+    // Get the converted text based on selected style
+    let displayText = analysis.converted_text;
 
-    return `[Converted Text]\n${displayText}`;
+    if (analysis.converted_texts) {
+      if (selectedStyle === "directness" && analysis.converted_texts.direct) {
+        displayText = analysis.converted_texts.direct;
+      } else if (
+        selectedStyle === "softness" &&
+        analysis.converted_texts.gentle
+      ) {
+        displayText = analysis.converted_texts.gentle;
+      } else if (
+        selectedStyle === "politeness" &&
+        analysis.converted_texts.neutral
+      ) {
+        displayText = analysis.converted_texts.neutral;
+      }
+    }
+
+    const outputLines = [];
+    outputLines.push(`[Converted Text]`);
+    outputLines.push(displayText);
+
+    const relevantSuggestions = analysis.suggestions.filter(
+      (s) => s.type === selectedStyle
+    );
+
+    // Only show suggestions section if there are actual suggestions
+    if (relevantSuggestions.length > 0) {
+      outputLines.push("");
+      outputLines.push(`[Suggestions for ${selectedStyle}]`);
+      const suggestionLines = relevantSuggestions.map(
+        (s) => `- "${s.original}" -> "${s.suggestion}" (${s.reason})`
+      );
+      outputLines.push(...suggestionLines);
+    }
+
+    return outputLines.join("\n");
   }, [analysis, selectedStyle, convertMutation.isPending]);
 
   return (
@@ -195,40 +263,52 @@ export default function TransformStylePage() {
             선호하는 스타일을 선택해주세요
           </h2>
           <div className="flex justify-center gap-6">
+            {/* Direct Card */}
             <div
-              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${selectedFeedback === "direct"
+              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
+                selectedFeedback === "direct"
                   ? "border-blue-400 bg-blue-50 shadow-lg animate-pulse"
                   : "border-gray-200 hover:border-blue-300 hover:shadow-md"
-                }`}
+              }`}
               onClick={() => handleFeedbackSelect("direct")}
             >
-              <h3 className="font-semibold text-lg mb-3 text-blue-600">Direct</h3>
+              <h3 className="font-semibold text-lg mb-3 text-blue-600">
+                Direct
+              </h3>
               <p className="text-gray-700 leading-relaxed">
                 {analysis.converted_texts.direct || "결과가 없습니다"}
               </p>
             </div>
 
+            {/* Gentle Card */}
             <div
-              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${selectedFeedback === "gentle"
+              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
+                selectedFeedback === "gentle"
                   ? "border-green-400 bg-green-50 shadow-lg animate-pulse"
                   : "border-gray-200 hover:border-green-300 hover:shadow-md"
-                }`}
+              }`}
               onClick={() => handleFeedbackSelect("gentle")}
             >
-              <h3 className="font-semibold text-lg mb-3 text-green-600">Gentle</h3>
+              <h3 className="font-semibold text-lg mb-3 text-green-600">
+                Gentle
+              </h3>
               <p className="text-gray-700 leading-relaxed">
                 {analysis.converted_texts.gentle || "결과가 없습니다"}
               </p>
             </div>
 
+            {/* Neutral Card */}
             <div
-              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${selectedFeedback === "neutral"
+              className={`p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 min-w-[300px] ${
+                selectedFeedback === "neutral"
                   ? "border-purple-400 bg-purple-50 shadow-lg animate-pulse"
                   : "border-gray-200 hover:border-purple-300 hover:shadow-md"
-                }`}
+              }`}
               onClick={() => handleFeedbackSelect("neutral")}
             >
-              <h3 className="font-semibold text-lg mb-3 text-purple-600">Neutral</h3>
+              <h3 className="font-semibold text-lg mb-3 text-purple-600">
+                Neutral
+              </h3>
               <p className="text-gray-700 leading-relaxed">
                 {analysis.converted_texts.neutral || "결과가 없습니다"}
               </p>

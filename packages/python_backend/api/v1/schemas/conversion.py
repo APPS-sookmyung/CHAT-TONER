@@ -1,7 +1,7 @@
 """변환 API 요청/응답 스키마"""
 
 from pydantic import BaseModel, Field, AliasChoices
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 
 try:
     from pydantic import ConfigDict
@@ -55,6 +55,14 @@ class NegativePreferences(BaseModel):
 
 class ConversionRequest(BaseModel):
     """텍스트 변환 요청 모델"""
+    text: str = Field(..., min_length=1, max_length=5000, description="변환할 텍스트")
+    user_profile: UserProfile = Field(..., description="사용자 프로필")
+    context: str = Field(default="personal", description="변환 컨텍스트 (personal, business, report 등)")
+    categories: Optional[List[str]] = Field(
+        default=None,
+        description="요청할 변환 카테고리 목록. None이면 전체. 예: ['direct','gentle','neutral'] 또는 ['grammar','formality','protocol']"
+    )
+    negative_preferences: Optional[NegativePreferences] = Field(default=None, description="네거티브 프롬프트 선호도")
     # text: str = Field(..., min_length=1, max_length=5000, description="변환할 텍스트")
     # context: str = Field(default="personal", description="변환 컨텍스트")
     
@@ -108,9 +116,10 @@ class ConversionResponse(BaseModel):
     """텍스트 변환 응답 모델"""
     success: bool
     original_text: Optional[str] = None
-    converted_texts: Optional[Dict[str, str]] = None
+    converted_texts: Optional[Dict[str, str]] = None  # {"direct": "...", "gentle": "...", "neutral": "...", "grammar": "...", "formality": "...", "protocol": "..."}
     context: Optional[str] = None
     sentiment_analysis: Optional[Dict[str, Any]] = None
+    rag_sources: Optional[List[Dict[str, Any]]] = Field(default=None, description="RAG 검색에 사용된 문서 출처 목록")
     metadata: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
 

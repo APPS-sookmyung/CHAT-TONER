@@ -35,6 +35,7 @@ from core.exception_handlers import setup_exception_handlers
 from api.v1.router import api_router
 # from starlette.middleware.sessions import SessionMiddleware
 from api import feedback
+from routes.ai import router as ai_router
 
 FRONT_ORIGINS = [
     "https://client-3yj2y7svbq-du.a.run.app",
@@ -109,6 +110,7 @@ def create_app() -> FastAPI:
         return {"status": "ok", "message": "Welcome to Chat Toner API!"}
     app.include_router(api_router, prefix="/api/v1")
     app.include_router(feedback.router, tags=["Feedback"])
+    app.include_router(ai_router, prefix="/ai", tags=["AI"])
     
     return app
 

@@ -1,6 +1,10 @@
 """
 pytest 설정 파일 - 공통 픽스처와 설정
 RAG 테스트를 위한 FastAPI, PostgreSQL, pgvector 설정
+
+⚠️ WARNING: This file contains MOCK implementations for TESTING ONLY.
+   Production code MUST use real OpenAI API and proper dependency injection.
+   Mock services defined here are ONLY for unit/integration tests.
 """
 
 import pytest

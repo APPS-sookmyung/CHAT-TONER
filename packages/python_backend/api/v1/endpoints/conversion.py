@@ -108,8 +108,9 @@ async def convert_text(
         result = await conversion_service.convert_text(
             input_text=request.text,
             user_profile=user_profile_dict,
-            context=effective_context,
-            negative_preferences=negative_preferences_dict
+            context=request.context,
+            negative_preferences=negative_preferences_dict,
+            categories=request.categories
         )
 
         return ConversionResponse(
@@ -118,6 +119,7 @@ async def convert_text(
             converted_texts=result.get("converted_texts", {}),
             context=request.context,
             sentiment_analysis=result.get("sentiment_analysis"),
+            rag_sources=result.get("rag_sources"),
             metadata=result.get("metadata", {})
         )
 

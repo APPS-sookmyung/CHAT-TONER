@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.PROD
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
-  timeout: 30000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -56,6 +56,7 @@ export const api = {
     text: string;
     userId: string;
     context?: string;
+    categories?: string[];
     negative_preferences?: any;
     user_profile?: any;
   }) => {
@@ -159,27 +160,3 @@ export const api = {
     return response.data;
   }
 };
-
-// Legacy fetch-based functions for backward compatibility
-export async function apiGet<T>(path: string, init: RequestInit = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "GET",
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init.headers || {}) },
-    ...init,
-  });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return (await res.json()) as T;
-}
-
-export async function apiPost<T>(path: string, data: any, init: RequestInit = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init.headers || {}) },
-    body: JSON.stringify(data),
-    ...init,
-  });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return (await res.json()) as T;
-}
