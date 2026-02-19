@@ -14,7 +14,7 @@ from services.embedding_service import EmbeddingService
 from services.vector_store_pg import VectorStorePG
 
 
-router = APIRouter(prefix="/suggest", tags=["suggest"])
+router = APIRouter(tags=["suggest"])
 
 
 @router.post("/rewrite", response_model=SuggestRewriteResponse)
