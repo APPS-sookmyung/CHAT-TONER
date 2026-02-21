@@ -6,7 +6,7 @@ Main API Router
 from fastapi import APIRouter
 
 # 개별 엔드포인트 라우터들 import
-from .endpoints import conversion, health, profile, feedback, rag, documents, quality, company_profile
+from .endpoints import conversion, health, profile, feedback, rag, documents, quality, company_profile, quality_v2
 
 
 # from .endpoints import quality, company  # Temporarily disabled due to langgraph dependency
@@ -28,7 +28,8 @@ api_router.include_router(health.router, tags=["health"])
 # API v1 엔드포인트들 (중복된 "/api" 프리픽스 제거)
 api_router.include_router(conversion.router, prefix="/conversion", tags=["conversion"])
 api_router.include_router(profile.router, prefix="/profile", tags=["profile"])
-api_router.include_router(quality.router, prefix="/quality", tags=["quality"])  # enabled with LLM fallbacks
+api_router.include_router(quality.router, prefix="/quality", tags=["quality-legacy"])  # 레거시 (아카이브 예정)
+api_router.include_router(quality_v2.router, prefix="/quality/v2", tags=["quality"])  # 신규 버전
 api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
 api_router.include_router(rag.router, prefix="/rag", tags=["rag"])
 

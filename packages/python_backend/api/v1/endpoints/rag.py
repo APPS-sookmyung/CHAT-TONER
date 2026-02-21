@@ -4,6 +4,7 @@ RAG (Retrieval-Augmented Generation) Endpoints
 """
 
 import logging
+from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any, Annotated
