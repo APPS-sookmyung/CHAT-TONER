@@ -18,7 +18,10 @@ export const API = {
     suggestExpressions: `${BACKEND_URL}/rag/suggest-expressions`,
   },
   quality: {
-    analyze: `${BACKEND_URL}/quality/company/analyze`,
+    // v2 API
+    analyze: `${BACKEND_URL}/quality/v2/analyze`,
+    generateFinalText: `${BACKEND_URL}/quality/v2/generate-final-text`,
+    ragStatus: `${BACKEND_URL}/quality/v2/rag-status`,
   },
   profile: (id: string) => `${BACKEND_URL}/profile/${id}`,
 } as const;

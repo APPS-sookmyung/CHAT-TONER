@@ -1,92 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ThumbsUp, Copy, Slack } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
-import { api } from "@/lib/api";
+import { api, QualityAnalysisResponse } from "@/lib/api";
 import { PATH } from "@/constants/paths";
-
-// Define the CompanyQualityAnalysisResponse locally to avoid importing from a .d.ts that is not a module.
-type Suggestion = {
-  id: string;
-  category: string;
-  original: string;
-  suggestion: string;
-  reason?: string;
-  severity?: string;
-};
-
-type Section = {
-  score: number;
-  suggestions?: Suggestion[];
-};
-
-type CompanyQualityAnalysisResponse = {
-  grammarScore?: number;
-  formalityScore?: number;
-  readabilityScore?: number;
-  protocolScore?: number;
-  complianceScore?: number;
-  grammarSection?: Section;
-  protocolSection?: Section;
-  companyAnalysis?: {
-    companyId: string;
-    communicationStyle?: string;
-    complianceLevel?: number;
-    methodUsed?: string;
-    processingTime?: number;
-    ragSourcesCount?: number;
-  };
-};
-
-// This mock function can be moved to a shared lib file later.
-const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
-  // This is a simplified mock response. A more detailed one can be created.
-  return {
-    grammarScore: Math.random() * 10 + 85,
-    formalityScore: Math.random() * 10 + 88,
-    readabilityScore: Math.random() * 10 + 82,
-    protocolScore: Math.random() * 10 + 87,
-    complianceScore: Math.random() * 10 + 86,
-    grammarSection: {
-      score: 85,
-      suggestions: [
-        {
-          id: "g1",
-          category: "Grammar",
-          original: "this part of text",
-          suggestion: "this corrected part",
-          reason: "A grammatical error was found.",
-          severity: "low",
-        },
-      ],
-    },
-    protocolSection: {
-      score: 87,
-      suggestions: [
-        {
-          id: "p1",
-          category: "Protocol",
-          original: "As per our last conversation",
-          suggestion: "As discussed",
-          reason: "To be more concise.",
-          severity: "medium",
-        },
-      ],
-    },
-    companyAnalysis: {
-      companyId: "test-company",
-      communicationStyle: "Brief and clear",
-      complianceLevel: 86,
-      methodUsed: "RAG + Fine-tuning (mock)",
-      processingTime: 0.5,
-      ragSourcesCount: 1,
-    },
-  };
-};
 
 export default function AnalyzeQualityPage() {
   const navigate = useNavigate();
@@ -98,54 +19,37 @@ export default function AnalyzeQualityPage() {
   const [quality, setQuality] = useState("grammar"); // Default to 'grammar'
   const [inputText, setInputText] = useState("");
 
-  // State for the analysis result from the API
-  const [analysisResult, setAnalysisResult] =
-    useState<CompanyQualityAnalysisResponse | null>(null);
+  // State for the analysis result from the API (v2)
+  const [analysisResult, setAnalysisResult] = useState<QualityAnalysisResponse | null>(null);
   const [finalText, setFinalText] = useState<string>("");
   const [finalLiked, setFinalLiked] = useState<boolean>(false);
 
-  // Fetch dropdown options
-  const { data: dropdownOptions } = useQuery({
-    queryKey: ['dropdownOptions'],
-    queryFn: api.getDropdownOptions,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Mutation logic adapted from quality-validator
+  // Mutation for v2 API
   const analyzeMutation = useMutation({
-    mutationFn: async (
-      text: string
-    ): Promise<CompanyQualityAnalysisResponse> => {
-      // Use actual API call
+    mutationFn: async (text: string): Promise<QualityAnalysisResponse> => {
       console.log(`Analyzing text: ${text} for ${target} in ${situation}`);
-      
-      try {
-        const result = await api.analyzeQuality({
-          text,
-          company_id: "test-company", // You might want to get this from context or props
-          user_id: "test-user", // You might want to get this from context or props
-          target_audience: target!,
-          context: situation!,
-          detailed: true
-        });
-        
-        return result;
-      } catch (error) {
-        console.error("API call failed, falling back to mock data:", error);
-        // Fallback to mock data if API fails
-        return generateMockAnalysis(text);
-      }
+
+      const result = await api.analyzeQuality({
+        text,
+        target: target!,
+        context: situation!,
+        company_id: "test-company",
+      });
+
+      return result;
     },
     onSuccess: (data) => {
       setAnalysisResult(data);
+      setFinalText(""); // 새 분석 시 최종 글 초기화
+      setFinalLiked(false);
       toast({
-        title: "Analysis Complete",
-        description: "Text quality analysis has been completed.",
+        title: "분석 완료",
+        description: `분석 방법: ${data.method_used}, RAG 소스: ${data.rag_sources_count}개`,
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Analysis Failed",
+        title: "분석 실패",
         description: error.message,
         variant: "destructive",
       });
@@ -157,75 +61,38 @@ export default function AnalyzeQualityPage() {
     analyzeMutation.mutate(inputText);
   };
 
-  // Generate final text via LLM by aggregating all suggestions
-  const generateFinalMutation = useMutation({
-    mutationFn: async () => {
-      if (!analysisResult) return;
-      const g = analysisResult.grammarSection?.suggestions || [];
-      const p = analysisResult.protocolSection?.suggestions || [];
-      const selectedGrammarIds = g.map((s) => s.id).filter(Boolean);
-      const selectedProtocolIds = p.map((s) => s.id).filter(Boolean);
-      return api.generateFinalText({
-        original_text: inputText,
-        grammar_suggestions: g as any[],
-        protocol_suggestions: p as any[],
-        selected_grammar_ids: selectedGrammarIds,
-        selected_protocol_ids: selectedProtocolIds,
-        user_id: "test-user",
-        company_id: "test-company",
-      });
-    },
-    onSuccess: (data: any) => {
-      if (data?.finalText) {
-        setFinalText(data.finalText);
-        setFinalLiked(false);
-        toast({ title: "최종 글 생성 완료", description: "전체 제안을 반영해 생성했습니다." });
-      } else {
-        toast({ title: "생성 결과 없음", description: "응답에 최종 글이 없습니다.", variant: "destructive" });
-      }
-    },
-    onError: (error: any) => {
-      toast({ title: "최종 글 생성 실패", description: error.message, variant: "destructive" });
-    },
-  });
+  // 최종 글 보기 핸들러 (이미 분석 결과에 있는 final_text 사용)
+  const handleShowFinalText = () => {
+    if (analysisResult?.data?.final_text) {
+      setFinalText(analysisResult.data.final_text);
+      setFinalLiked(false);
+      toast({ title: "최종 글 표시" });
+    }
+  };
 
   const isAnalyzeDisabled =
     !inputText.trim() || !target || !situation || analyzeMutation.isPending;
 
-  // Logic to format the output text based on the selected quality
+  // v2 Response에 맞게 출력 포맷팅
   const outputValue = useMemo(() => {
     if (analyzeMutation.isPending) {
-      return "Analyzing...";
+      return "분석 중...";
     }
-    if (!analysisResult) {
-      return "Analyzed text will appear here";
+    if (!analysisResult || !analysisResult.data) {
+      return "분석 결과가 여기에 표시됩니다";
     }
+
+    const data = analysisResult.data;
 
     switch (quality) {
       case "grammar":
-        return `Score: ${analysisResult.grammarScore?.toFixed(1)}
-
-Suggestions:
-${
-  analysisResult.grammarSection?.suggestions
-    ?.map((s) => `- "${s.original}" -> "${s.suggestion}" (${s.reason})`)
-    ?.join("\n") || "No suggestions."
-}`;
+        return data.grammar.markdown_explanation || `점수: ${data.grammar.score}\n\n${data.grammar.justification}`;
       case "formality":
-        return `Score: ${analysisResult.formalityScore?.toFixed(1)}
-
-Analysis: The text's formality is appropriate.`; // Placeholder
+        return data.formality.markdown_explanation || `점수: ${data.formality.score}\n\n${data.formality.justification}`;
       case "protocol":
-        return `Score: ${analysisResult.protocolScore?.toFixed(1)}
-
-Suggestions:
-${
-  analysisResult.protocolSection?.suggestions
-    ?.map((s) => `- "${s.original}" -> "${s.suggestion}" (${s.reason})`)
-    ?.join("\n") || "No suggestions."
-}`;
+        return data.protocol.markdown_explanation || `점수: ${data.protocol.score}\n\n${data.protocol.justification}`;
       default:
-        return "Select a quality metric to see results.";
+        return "분석 항목을 선택해주세요.";
     }
   }, [analysisResult, quality, analyzeMutation.isPending]);
 
@@ -238,13 +105,29 @@ ${
           className="flex items-center gap-2 text-lg"
         >
           <ArrowLeft className="h-5 w-5" />
-          Back to Features
+          뒤로 가기
         </Button>
       </div>
-      <h1 className="font-bold text-black text-7xl">Analyze Quality Page</h1>
+      <h1 className="font-bold text-black text-7xl">품질 분석</h1>
       <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
-        Analyze document quality instantly
+        문서 품질을 즉시 분석합니다
       </p>
+
+      {/* RAG 상태 표시 */}
+      {analysisResult && (
+        <div className="mb-4 flex gap-2 text-sm text-gray-500">
+          <span className={`px-2 py-1 rounded ${analysisResult.method_used === 'with_rag' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+            {analysisResult.method_used === 'with_rag' ? '✓ RAG 적용' : '⚠ RAG 미적용'}
+          </span>
+          <span className="px-2 py-1 rounded bg-blue-100 text-blue-700">
+            신뢰도: {analysisResult.confidence_level}
+          </span>
+          <span className="px-2 py-1 rounded bg-gray-100">
+            처리 시간: {analysisResult.processing_time?.toFixed(2)}초
+          </span>
+        </div>
+      )}
+
       <div className="flex justify-center">
         <AnalyzeQualityCard
           targetValue={target}
@@ -261,16 +144,16 @@ ${
         />
       </div>
 
-      {/* Small glowing generate button under the analysis output */}
+      {/* 최종 글 섹션 */}
       {analysisResult && (
         <div className="mt-6 flex flex-col items-center gap-4">
           <Button
             size="sm"
             className="rounded-full ring-1 ring-primary shadow-[0_0_12px_rgba(59,130,246,0.65)] hover:shadow-[0_0_16px_rgba(59,130,246,0.85)]"
-            disabled={generateFinalMutation.isPending}
-            onClick={() => generateFinalMutation.mutate()}
+            disabled={!analysisResult?.data?.final_text}
+            onClick={handleShowFinalText}
           >
-            Generate Final Text
+            {finalText ? "최종 글 다시보기" : "최종 글 보기"}
           </Button>
 
           {finalText && (
@@ -283,11 +166,11 @@ ${
                     variant="outline"
                     onClick={() => {
                       navigator.clipboard.writeText(finalText);
-                      toast({ title: "Copied to clipboard!" });
+                      toast({ title: "클립보드에 복사되었습니다!" });
                     }}
                   >
                     <Copy className="h-4 w-4 mr-2" />
-                    Copy
+                    복사
                   </Button>
                   <a href="https://slack.com" target="_blank" rel="noopener noreferrer">
                     <Button size="sm" variant="outline">
@@ -307,10 +190,10 @@ ${
                     disabled={finalLiked}
                     onClick={() => {
                       setFinalLiked(true);
-                      toast({ title: "피드백 반영", description: "엄지 피드백이 반영되었습니다." });
+                      toast({ title: "피드백 반영", description: "좋아요가 반영되었습니다." });
                     }}
                   >
-                    <ThumbsUp className="h-4 w-4" /> {finalLiked ? "좋아요 반영됨" : "좋아요"}
+                    <ThumbsUp className="h-4 w-4" /> {finalLiked ? "반영됨" : "좋아요"}
                   </Button>
                 </div>
               </div>
@@ -322,6 +205,14 @@ ${
               >
                 <ReactMarkdown>{finalText}</ReactMarkdown>
               </div>
+
+              {/* 요약 */}
+              {analysisResult.data?.summary && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-2">요약</h3>
+                  <p className="text-gray-600">{analysisResult.data.summary}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
