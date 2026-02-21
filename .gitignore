@@ -57,6 +57,7 @@ bash.exe.stackdump
 chat_toner.db
 database_migration.sql
 safe_migration.sql
+local.db
 
 # Cloud tools and setup scripts
 cloud-sql-proxy.exe
