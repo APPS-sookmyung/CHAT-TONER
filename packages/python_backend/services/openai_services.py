@@ -5,7 +5,7 @@ OpenAI API 서비스
 
 import os
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from openai import OpenAI, OpenAIError, APIError, APIConnectionError, RateLimitError
 import json
 
@@ -181,7 +181,7 @@ class OpenAIService:
             self.logger.critical(f"{style_name} 스타일 변환 중 예상치 못한 오류: {e}", exc_info=True)
             raise RuntimeError(f"텍스트 변환 중 내부 오류 발생: {str(e)}")
 
-    async def generate_text(self, prompt: str, *, system: str | None = None, temperature: float = 0.5, max_tokens: int = 800) -> str:
+    async def generate_text(self, prompt: str, *, system: Optional[str] = None, temperature: float = 0.5, max_tokens: int = 800) -> str:
         """일반 텍스트 생성 유틸리티 (프로필 생성 등)
 
         Args:
@@ -318,7 +318,8 @@ class OpenAIService:
             return json.loads(result)
             
         except Exception as e:
-            self.logger.exception(f"피드백 분석 오류: {e}")
+            print(f"피드백 분석 오류: {e}")
+            logger.exception("OpenAI error raw: %r", e)
             return {
                 "formalityDelta": 0.0,
                 "friendlinessDelta": 0.0,

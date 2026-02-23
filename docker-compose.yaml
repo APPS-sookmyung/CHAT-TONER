@@ -1,0 +1,33 @@
+services:
+  frontend:
+    image: nginx:latest
+    container_name: frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./packages/client/index.html:/usr/share/nginx/html
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+  backend:
+    image: backend:latest
+    build:
+      context: ./packages/python_backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_FILE=${DATABASE_FILE}
+      - DATABASE_URL=sqlite://${DATABASE_FILE}
+    volumes:
+      - ./packages/python_backend/database:/app/data
+    ports:
+      - "5000:5000"
+    depends_on:
+      - frontend
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

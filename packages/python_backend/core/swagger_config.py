@@ -5,15 +5,83 @@ FastAPI Swagger 및 OpenAPI 설정
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
-from typing import Dict, Any
+from fastapi.routing import APIRoute
+from typing import Dict, Any, Set, Type
 
+
+try:
+    # pydantic v2
+    from pydantic import BaseModel
+except Exception:  # pragma: no cover
+    BaseModel = object  # type: ignore
 
 def configure_swagger(app: FastAPI) -> None:
     """Swagger 및 OpenAPI 설정"""
 
+    TARGET_MODELS = {"DocumentIngestResponse", "OnboardingSurveyResponse"}
+
+    def _fix_pydantic_examples_on_models() -> None:
+        """
+        get_openapi() 내부에서 OpenAPI(**output) 검증을 하기 전에,
+        Pydantic v2 모델의 model_config['json_schema_extra']['examples']가 dict면
+        list로 바꿔서 validation error를 막는다.
+        """
+        models: Set[Type[BaseModel]] = set()
+        for route in app.routes:
+            if not isinstance(route, APIRoute):
+                continue
+
+            # response_model
+            rm = getattr(route, "response_model", None)
+            if isinstance(rm, type) and issubclass(rm, BaseModel):
+                models.add(rm)
+
+            # request body model (있는 경우)
+            body_field = getattr(route, "body_field", None)
+            if body_field is not None:
+                t = getattr(body_field, "type_", None)
+                if isinstance(t, type) and issubclass(t, BaseModel):
+                    models.add(t)
+
+            # route 내부 response_field / response_fields에도 모델이 들어갈 수 있음
+            response_field = getattr(route, "response_field", None)
+            if response_field is not None:
+                t = getattr(response_field, "type_", None)
+                if isinstance(t, type) and issubclass(t, BaseModel):
+                    models.add(t)
+
+            response_fields = getattr(route, "response_fields", None)
+            if isinstance(response_fields, dict):
+                for f in response_fields.values():
+                    t = getattr(f, "type_", None)
+                    if isinstance(t, type) and issubclass(t, BaseModel):
+                        models.add(t)
+        for model in models:
+            if getattr(model, "__name__", "") not in TARGET_MODELS:
+                continue
+
+            cfg = dict(getattr(model, "model_config", {}) or {})
+            extra = dict(cfg.get("json_schema_extra") or {})
+
+            if "examples" in extra and isinstance(extra["examples"], dict):
+                ex = extra["examples"]
+
+                # Case B: ExampleObject 단일 형태 {"summary": "...", "value": {...}} -> [dict]
+                if any(k in ex for k in ("value", "summary", "description")):
+                    extra["examples"] = [ex]
+                else:
+                    # Case A: {"success": {...}, "fail": {...}} -> values를 list로
+                    extra["examples"] = list(ex.values())
+
+                cfg["json_schema_extra"] = extra
+                # 모델에 다시 반영
+                setattr(model, "model_config", cfg)
+
     def custom_openapi() -> Dict[str, Any]:
         if app.openapi_schema:
             return app.openapi_schema
+
+        _fix_pydantic_examples_on_models()  
 
         schema = get_openapi(
             title="ChatToner API",

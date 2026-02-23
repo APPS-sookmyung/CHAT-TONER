@@ -12,7 +12,7 @@ python_backend/.env
 dist/
 
 .env
-*.env
+*.env.*
 
 # Local AI agent config (do not commit)
 

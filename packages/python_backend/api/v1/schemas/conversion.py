@@ -3,6 +3,10 @@
 from pydantic import BaseModel, Field, AliasChoices
 from typing import Dict, Any, List, Optional
 
+try:
+    from pydantic import ConfigDict
+except ImportError:
+    ConfigDict = None
 
 class UserProfile(BaseModel):
     """사용자 스타일 프로필 (명시적 스키마)"""
@@ -59,24 +63,54 @@ class ConversionRequest(BaseModel):
         description="요청할 변환 카테고리 목록. None이면 전체. 예: ['direct','gentle','neutral'] 또는 ['grammar','formality','protocol']"
     )
     negative_preferences: Optional[NegativePreferences] = Field(default=None, description="네거티브 프롬프트 선호도")
+    # text: str = Field(..., min_length=1, max_length=5000, description="변환할 텍스트")
+    # context: str = Field(default="personal", description="변환 컨텍스트")
+    
+    # userId: str = Field(..., description="사용자 ID (프로필 조회용)", validation_alias=AliasChoices("userId", "user_id"))
+    # tenantId: Optional[str] = Field(default=None, description="테넌트 ID", validation_alias=AliasChoices("tenantId", "tenant_id"))
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "text": "회의 자료 검토 부탁드립니다",
-                "user_profile": {
-                    "baseFormalityLevel": 3,
-                    "baseFriendlinessLevel": 4,
-                    "baseEmotionLevel": 2,
-                    "baseDirectnessLevel": 3
-                },
-                "context": "business",
-                "negative_preferences": {
-                    "avoidFloweryLanguage": "strict",
-                    "avoidSlang": True
+    # user_profile: Optional[UserProfile] = Field(
+    #     default=None,
+    #     description="사용자 프로필(선택). 미전송 시 서버에서 userId로 조회"
+    # )
+    # negative_preferences: Optional[NegativePreferences] = Field(default=None, description="네거티브 프롬프트 선호도")
+
+    text: str
+    userId: Optional[str] = None
+    user_profile: Optional[UserProfile] = None
+    context: str = "personal"
+    negative_preferences: Optional[NegativePreferences] = None
+
+    if ConfigDict:
+        model_config = ConfigDict(
+            json_schema_extra={
+                "example": {
+                    "text": "회의 자료 검토 부탁드립니다",
+                    "context": "business",
+                    "userId": "2b8cdb7c-5f16-490e-9051-aca4df821f63",
+                    "tenantId": "default-tenant",
+                    "negative_preferences": {
+                        "rhetoricLevel": "low",
+                        "bulletPreference": "prefer"
+                    }
                 }
             }
-        }
+        )
+    else:
+        class Config:
+            json_schema_extra = {
+                "example": {
+                    "text": "회의 자료 검토 부탁드립니다",
+                    "context": "business",
+                    "userId": "2b8cdb7c-5f16-490e-9051-aca4df821f63",
+                    "tenantId": "default-tenant",
+                    "negative_preferences": {
+                        "rhetoricLevel": "low",
+                        "bulletPreference": "prefer"
+                    }
+                }
+            }
+
 
 class ConversionResponse(BaseModel):
     """텍스트 변환 응답 모델"""

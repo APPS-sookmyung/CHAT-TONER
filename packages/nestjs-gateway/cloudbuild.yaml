@@ -59,7 +59,7 @@ steps:
       - '--max-instances'
       - '5'
       - '--set-env-vars'
-      - 'NODE_ENV=production,PORT=3000,BACKEND_API_URL=https://chattoner-backend-XXXXXXXXX-an.a.run.app'
+      - 'NODE_ENV=production,PORT=3000,BACKEND_API_URL=http://52.79.96.121:8080'
     id: 'deploy-gateway-cloudrun'
 
 # Images to be stored in Container Registry

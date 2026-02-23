@@ -204,14 +204,19 @@ export default function NewTextConverter({
       const url = isFinetune ? API.finetune.convert : API.conversion;
 
       const requestBody = {
+        // text: inputText.trim(),
+        // user_profile: userProfile || {
+        //   baseFormalityLevel: 3,
+        //   baseFriendlinessLevel: 3,
+        //   baseEmotionLevel: 3,
+        //   baseDirectnessLevel: 3,
+        // },
+        // context: context,
+        // negative_preferences: negativePreferences,
+        // ...(isFinetune && { force_convert: false }),
         text: inputText.trim(),
-        user_profile: userProfile || {
-          baseFormalityLevel: 3,
-          baseFriendlinessLevel: 3,
-          baseEmotionLevel: 3,
-          baseDirectnessLevel: 3,
-        },
         context: context,
+        userId: userId,
         negative_preferences: negativePreferences,
         ...(isFinetune && { force_convert: false }),
       };
@@ -653,11 +658,10 @@ export default function NewTextConverter({
 
           {/* Version Cards */}
           <div
-            className={`grid gap-4 ${
-              context === "report"
-                ? "grid-cols-1 max-w-2xl mx-auto"
-                : "md:grid-cols-3"
-            }`}
+            className={`grid gap-4 ${context === "report"
+              ? "grid-cols-1 max-w-2xl mx-auto"
+              : "md:grid-cols-3"
+              }`}
           >
             {context === "report" ? (
               /* Single Optimized Version for Report Mode */
@@ -687,19 +691,17 @@ export default function NewTextConverter({
                     <Button
                       size="sm"
                       onClick={() => handleVersionSelect("neutral")}
-                      className={`flex-1 ${
-                        selectedVersion === "neutral"
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : ""
-                      }`}
+                      className={`flex-1 ${selectedVersion === "neutral"
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : ""
+                        }`}
                       variant={
                         selectedVersion === "neutral" ? "default" : "default"
                       }
                     >
                       <ThumbsUp
-                        className={`w-4 h-4 mr-1 ${
-                          selectedVersion === "neutral" ? "fill-current" : ""
-                        }`}
+                        className={`w-4 h-4 mr-1 ${selectedVersion === "neutral" ? "fill-current" : ""
+                          }`}
                       />
                       {selectedVersion === "neutral" ? "Selected" : "Select"}
                     </Button>
@@ -740,19 +742,17 @@ export default function NewTextConverter({
                       <Button
                         size="sm"
                         onClick={() => handleVersionSelect("direct")}
-                        className={`flex-1 ${
-                          selectedVersion === "direct"
-                            ? "bg-blue-600 hover:bg-blue-700"
-                            : ""
-                        }`}
+                        className={`flex-1 ${selectedVersion === "direct"
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : ""
+                          }`}
                         variant={
                           selectedVersion === "direct" ? "default" : "default"
                         }
                       >
                         <ThumbsUp
-                          className={`w-4 h-4 mr-1 ${
-                            selectedVersion === "direct" ? "fill-current" : ""
-                          }`}
+                          className={`w-4 h-4 mr-1 ${selectedVersion === "direct" ? "fill-current" : ""
+                            }`}
                         />
                         {selectedVersion === "direct" ? "Selected" : "Select"}
                       </Button>
@@ -796,19 +796,17 @@ export default function NewTextConverter({
                       <Button
                         size="sm"
                         onClick={() => handleVersionSelect("gentle")}
-                        className={`flex-1 ${
-                          selectedVersion === "gentle"
-                            ? "bg-green-600 hover:bg-green-700"
-                            : ""
-                        }`}
+                        className={`flex-1 ${selectedVersion === "gentle"
+                          ? "bg-green-600 hover:bg-green-700"
+                          : ""
+                          }`}
                         variant={
                           selectedVersion === "gentle" ? "default" : "default"
                         }
                       >
                         <ThumbsUp
-                          className={`w-4 h-4 mr-1 ${
-                            selectedVersion === "gentle" ? "fill-current" : ""
-                          }`}
+                          className={`w-4 h-4 mr-1 ${selectedVersion === "gentle" ? "fill-current" : ""
+                            }`}
                         />
                         {selectedVersion === "gentle" ? "Selected" : "Select"}
                       </Button>
@@ -852,19 +850,17 @@ export default function NewTextConverter({
                       <Button
                         size="sm"
                         onClick={() => handleVersionSelect("neutral")}
-                        className={`flex-1 ${
-                          selectedVersion === "neutral"
-                            ? "bg-purple-600 hover:bg-purple-700"
-                            : ""
-                        }`}
+                        className={`flex-1 ${selectedVersion === "neutral"
+                          ? "bg-purple-600 hover:bg-purple-700"
+                          : ""
+                          }`}
                         variant={
                           selectedVersion === "neutral" ? "default" : "default"
                         }
                       >
                         <ThumbsUp
-                          className={`w-4 h-4 mr-1 ${
-                            selectedVersion === "neutral" ? "fill-current" : ""
-                          }`}
+                          className={`w-4 h-4 mr-1 ${selectedVersion === "neutral" ? "fill-current" : ""
+                            }`}
                         />
                         {selectedVersion === "neutral" ? "Selected" : "Select"}
                       </Button>
