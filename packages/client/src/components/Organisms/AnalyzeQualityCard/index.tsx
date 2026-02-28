@@ -4,6 +4,7 @@ import { Card } from "@/components/Molecules/Card";
 import { Dropdown } from "@/components/Molecules/Dropdown";
 import { SegmentedControl } from "@/components/Molecules/SegmentedControl";
 import { situationOptions, targetOptions } from "@/constants/dropdownOptions";
+import ReactMarkdown from "react-markdown";
 
 const qualityOptions = [
   { label: "Grammar", value: "grammar" },
@@ -82,13 +83,14 @@ export const AnalyzeQualityCard = ({
           onChange={onQualityChange}
         />
         <Card variant="primary" size="medium">
-          <div className="flex items-center justify-center h-full">
-            <Textarea
-              value={outputValue}
-              placeholder="Analyzed text will appear here"
-              readOnly
-              rows={8}
-            />
+          <div className="h-full overflow-auto">
+            {outputValue ? (
+              <div className="prose prose-sm max-w-none">
+                <ReactMarkdown>{outputValue}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-gray-400">Analyzed text will appear here</p>
+            )}
           </div>
         </Card>
       </div>
