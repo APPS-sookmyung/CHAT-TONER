@@ -16,10 +16,10 @@ const buttonVariants = {
 } as const;
 
 const buttonSizes = {
-  sm: "h-14 px-8 py-3.5 text-xl font-medium",
-  md: "h-32 p-5 text-[1.75rem] leading-10 font-medium",
-  lg: "h-20 px-9 py-5.5 text-4xl font-bold",
-  xl: "h-20 px-36 py-3 text-[2.50rem] font-bold",
+  sm: "h-9 px-4 text-xs font-medium",
+  md: "h-12 px-6 py-2 text-base font-medium",
+  lg: "h-14 px-8 py-3 text-lg font-bold",
+  xl: "h-16 px-12 py-4 text-xl font-bold",
 } as const;
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

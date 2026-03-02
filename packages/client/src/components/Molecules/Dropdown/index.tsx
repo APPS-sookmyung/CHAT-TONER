@@ -12,8 +12,9 @@ const dropdownTriggerVariants = cva(
         target: "p-4 bg-white border border-secondary",
       },
       size: {
-        default: "w-[299px] h-[63px]",
-        compact: "w-[164px] h-[63px]",
+        default: "w-full max-w-[400px] h-[63px]",
+        compact: "w-full max-w-[240px] h-[63px]",
+        full: "w-full h-[63px]",
       },
     },
     defaultVariants: {

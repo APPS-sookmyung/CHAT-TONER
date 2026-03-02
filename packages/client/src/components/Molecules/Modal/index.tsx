@@ -27,7 +27,7 @@ export const Modal = ({ isOpen, onClose, children }: ModalProps) => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-[30px] w-[880px] h-[484px] px-20 py-22 overflow-auto shadow-xl"
+        className="bg-white rounded-[20px] w-full max-w-[600px] px-10 py-10 overflow-auto shadow-xl"
       >
         {children}
       </div>
