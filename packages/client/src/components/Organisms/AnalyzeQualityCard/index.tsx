@@ -4,6 +4,7 @@ import { Card } from "@/components/Molecules/Card";
 import { Dropdown } from "@/components/Molecules/Dropdown";
 import { SegmentedControl } from "@/components/Molecules/SegmentedControl";
 import { situationOptions, targetOptions } from "@/constants/dropdownOptions";
+import ReactMarkdown from "react-markdown";
 
 const qualityOptions = [
   { label: "Grammar", value: "grammar" },
@@ -89,14 +90,16 @@ export const AnalyzeQualityCard = ({
           className="w-full"
         />
         <Card variant="primary" size="large" className="flex-1 flex flex-col">
-          <div className="flex flex-col justify-between h-full gap-4">
-            <Textarea
-              value={outputValue}
-              placeholder="Analyzed text will appear here"
-              readOnly
-              rows={8}
-              className="flex-1"
-            />
+          <div className="flex flex-col justify-between h-full gap-4 flex-1">
+            {outputValue && outputValue !== "Analyzed text will appear here" ? (
+              <div className="w-full min-h-[300px] flex-1 overflow-y-auto p-6 bg-white rounded-[20px] border border-primary text-sm text-text-primary prose prose-sm max-w-none text-left">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{outputValue}</ReactMarkdown>
+              </div>
+            ) : (
+              <div className="w-full min-h-[300px] flex-1 p-6 bg-white rounded-[20px] border border-primary text-sm text-text-secondary flex items-center justify-center">
+                Analyzed text will appear here
+              </div>
+            )}
           </div>
         </Card>
       </div>
