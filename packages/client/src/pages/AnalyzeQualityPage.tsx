@@ -76,9 +76,11 @@ export default function AnalyzeQualityPage() {
     !inputText.trim() || !target || !situation || analyzeMutation.isPending;
 
   // v2 Response에 맞게 출력 포맷팅
+  const thinkingMessage = useThinkingMessage(analyzeMutation.isPending);
+
   const outputValue = useMemo(() => {
     if (analyzeMutation.isPending) {
-      return "분석 중...";
+      return thinkingMessage;
     }
     if (!analysisResult || !analysisResult.data) {
       return "분석 결과가 여기에 표시됩니다";
