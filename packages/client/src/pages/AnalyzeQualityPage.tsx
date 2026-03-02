@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ThumbsUp, Copy, Slack } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useThinkingMessage } from "@/hooks/useThinkingMessage";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
@@ -95,7 +96,7 @@ export default function AnalyzeQualityPage() {
       default:
         return "분석 항목을 선택해주세요.";
     }
-  }, [analysisResult, quality, analyzeMutation.isPending]);
+  }, [analysisResult, quality, analyzeMutation.isPending, thinkingMessage]);
 
   return (
     <div className="w-full">
