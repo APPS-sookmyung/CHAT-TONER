@@ -1,8 +1,8 @@
 // src/lib/api.ts
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-const API_BASE = import.meta.env.PROD 
-  ? (import.meta.env.VITE_API_URL || '') 
+const API_BASE = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_URL || '')
   : '';
 
 const apiClient: AxiosInstance = axios.create({
@@ -35,18 +35,65 @@ apiClient.interceptors.response.use(
   }
 );
 
+// ========== v2 Quality Analysis Types ==========
+export interface QualityIssue {
+  severity: string;
+  location: string;
+  description: string;
+  suggestion: string;
+}
+
+export interface QualitySectionResult {
+  score: number;
+  justification: string;
+  issues: QualityIssue[];
+  markdown_explanation: string;
+}
+
+export interface QualityData {
+  grammar: QualitySectionResult;
+  formality: QualitySectionResult;
+  protocol: QualitySectionResult;
+  final_text: string;
+  final_text_warning?: string;
+  summary: string;
+}
+
+export interface QualityAnalysisResponse {
+  success: boolean;
+  data: QualityData;
+  method_used: 'with_rag' | 'without_rag';
+  rag_sources_count: number;
+  confidence_level: 'high' | 'medium';
+  processing_time: number;
+  error?: string;
+}
+
+export interface RagStatusResponse {
+  available: boolean;
+  default_index_loaded: boolean;
+  default_index_vectors: number;
+  company_indexes: string[];
+  pdf_dir: string;
+  faiss_index_dir: string;
+}
+
 // API functions
 export const api = {
-  // Quality Analysis
+  // Quality Analysis (v2)
   analyzeQuality: async (data: {
     text: string;
-    company_id: string;
-    user_id: string;
-    target_audience: string;
+    target: string;
     context: string;
-    detailed?: boolean;
-  }) => {
-    const response = await apiClient.post('/api/v1/quality/company/analyze', data);
+    company_id?: string;
+  }): Promise<QualityAnalysisResponse> => {
+    const response = await apiClient.post('/api/v1/quality/v2/analyze', data);
+    return response.data;
+  },
+
+  // RAG Status Check (v2)
+  getRagStatus: async (): Promise<RagStatusResponse> => {
+    const response = await apiClient.get('/api/v1/quality/v2/rag-status');
     return response.data;
   },
 
@@ -111,17 +158,16 @@ export const api = {
     return response.data;
   },
 
-  // Generate Final Text (LLM-based integration)
+  // Generate Final Text (v2)
   generateFinalText: async (data: {
     original_text: string;
-    grammar_suggestions: any[];
-    protocol_suggestions: any[];
-    selected_grammar_ids: string[];
-    selected_protocol_ids: string[];
-    user_id: string;
-    company_id: string;
-  }) => {
-    const response = await apiClient.post('/api/v1/quality/company/generate-final', data);
+    target: string;
+    context: string;
+    grammar_feedback?: string;
+    formality_feedback?: string;
+    protocol_feedback?: string;
+  }): Promise<{ final_text: string; processing_time: number }> => {
+    const response = await apiClient.post('/api/v1/quality/v2/generate-final-text', data);
     return response.data;
   },
 

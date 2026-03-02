@@ -1,92 +1,17 @@
-import { useState, useMemo, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useRef } from "react";
+import { flushSync } from "react-dom";
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ThumbsUp, Copy, Slack } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useThinkingMessage } from "@/hooks/useThinkingMessage";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/Atoms/Button";
+import { Button as UiButton } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
-import { api } from "@/lib/api";
+import remarkGfm from "remark-gfm";
+import { api, QualityAnalysisResponse } from "@/lib/api";
 import { PATH } from "@/constants/paths";
-
-// Define the CompanyQualityAnalysisResponse locally to avoid importing from a .d.ts that is not a module.
-type Suggestion = {
-  id: string;
-  category: string;
-  original: string;
-  suggestion: string;
-  reason?: string;
-  severity?: string;
-};
-
-type Section = {
-  score: number;
-  suggestions?: Suggestion[];
-};
-
-type CompanyQualityAnalysisResponse = {
-  grammarScore?: number;
-  formalityScore?: number;
-  readabilityScore?: number;
-  protocolScore?: number;
-  complianceScore?: number;
-  grammarSection?: Section;
-  protocolSection?: Section;
-  companyAnalysis?: {
-    companyId: string;
-    communicationStyle?: string;
-    complianceLevel?: number;
-    methodUsed?: string;
-    processingTime?: number;
-    ragSourcesCount?: number;
-  };
-};
-
-// This mock function can be moved to a shared lib file later.
-const generateMockAnalysis = (text: string): CompanyQualityAnalysisResponse => {
-  // This is a simplified mock response. A more detailed one can be created.
-  return {
-    grammarScore: Math.random() * 10 + 85,
-    formalityScore: Math.random() * 10 + 88,
-    readabilityScore: Math.random() * 10 + 82,
-    protocolScore: Math.random() * 10 + 87,
-    complianceScore: Math.random() * 10 + 86,
-    grammarSection: {
-      score: 85,
-      suggestions: [
-        {
-          id: "g1",
-          category: "Grammar",
-          original: "this part of text",
-          suggestion: "this corrected part",
-          reason: "A grammatical error was found.",
-          severity: "low",
-        },
-      ],
-    },
-    protocolSection: {
-      score: 87,
-      suggestions: [
-        {
-          id: "p1",
-          category: "Protocol",
-          original: "As per our last conversation",
-          suggestion: "As discussed",
-          reason: "To be more concise.",
-          severity: "medium",
-        },
-      ],
-    },
-    companyAnalysis: {
-      companyId: "test-company",
-      communicationStyle: "Brief and clear",
-      complianceLevel: 86,
-      methodUsed: "RAG + Fine-tuning (mock)",
-      processingTime: 0.5,
-      ragSourcesCount: 1,
-    },
-  };
-};
 
 export default function AnalyzeQualityPage() {
   const navigate = useNavigate();
@@ -98,54 +23,36 @@ export default function AnalyzeQualityPage() {
   const [quality, setQuality] = useState("grammar"); // Default to 'grammar'
   const [inputText, setInputText] = useState("");
 
-  // State for the analysis result from the API
-  const [analysisResult, setAnalysisResult] =
-    useState<CompanyQualityAnalysisResponse | null>(null);
+  // State for the analysis result from the API (v2)
+  const [analysisResult, setAnalysisResult] = useState<QualityAnalysisResponse | null>(null);
   const [finalText, setFinalText] = useState<string>("");
   const [finalLiked, setFinalLiked] = useState<boolean>(false);
+  const resultRef = useRef<HTMLDivElement>(null);
 
-  // Fetch dropdown options
-  const { data: dropdownOptions } = useQuery({
-    queryKey: ['dropdownOptions'],
-    queryFn: api.getDropdownOptions,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Mutation logic adapted from quality-validator
+  // Mutation for v2 API
   const analyzeMutation = useMutation({
-    mutationFn: async (
-      text: string
-    ): Promise<CompanyQualityAnalysisResponse> => {
-      // Use actual API call
-      console.log(`Analyzing text: ${text} for ${target} in ${situation}`);
-      
-      try {
-        const result = await api.analyzeQuality({
-          text,
-          company_id: "test-company", // You might want to get this from context or props
-          user_id: "test-user", // You might want to get this from context or props
-          target_audience: target!,
-          context: situation!,
-          detailed: true
-        });
-        
-        return result;
-      } catch (error) {
-        console.error("API call failed, falling back to mock data:", error);
-        // Fallback to mock data if API fails
-        return generateMockAnalysis(text);
-      }
+    mutationFn: async (text: string): Promise<QualityAnalysisResponse> => {
+      const result = await api.analyzeQuality({
+        text,
+        target: target!,
+        context: situation!,
+        company_id: "test-company",
+      });
+
+      return result;
     },
     onSuccess: (data) => {
       setAnalysisResult(data);
+      setFinalText(""); // 새 분석 시 최종 글 초기화
+      setFinalLiked(false);
       toast({
-        title: "Analysis Complete",
-        description: "Text quality analysis has been completed.",
+        title: "분석 완료",
+        description: `분석 방법: ${data.method_used}, RAG 소스: ${data.rag_sources_count}개`,
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Analysis Failed",
+        title: "분석 실패",
         description: error.message,
         variant: "destructive",
       });
@@ -157,95 +64,80 @@ export default function AnalyzeQualityPage() {
     analyzeMutation.mutate(inputText);
   };
 
-  // Generate final text via LLM by aggregating all suggestions
-  const generateFinalMutation = useMutation({
-    mutationFn: async () => {
-      if (!analysisResult) return;
-      const g = analysisResult.grammarSection?.suggestions || [];
-      const p = analysisResult.protocolSection?.suggestions || [];
-      const selectedGrammarIds = g.map((s) => s.id).filter(Boolean);
-      const selectedProtocolIds = p.map((s) => s.id).filter(Boolean);
-      return api.generateFinalText({
-        original_text: inputText,
-        grammar_suggestions: g as any[],
-        protocol_suggestions: p as any[],
-        selected_grammar_ids: selectedGrammarIds,
-        selected_protocol_ids: selectedProtocolIds,
-        user_id: "test-user",
-        company_id: "test-company",
-      });
-    },
-    onSuccess: (data: any) => {
-      if (data?.finalText) {
-        setFinalText(data.finalText);
+  // 최종 글 보기 핸들러 (이미 분석 결과에 있는 final_text 사용)
+  const handleShowFinalText = () => {
+    if (analysisResult?.data?.final_text) {
+      // flushSync로 DOM 업데이트를 동기적으로 완료한 뒤 스크롤
+      flushSync(() => {
+        setFinalText(analysisResult.data.final_text);
         setFinalLiked(false);
-        toast({ title: "최종 글 생성 완료", description: "전체 제안을 반영해 생성했습니다." });
-      } else {
-        toast({ title: "생성 결과 없음", description: "응답에 최종 글이 없습니다.", variant: "destructive" });
-      }
-    },
-    onError: (error: any) => {
-      toast({ title: "최종 글 생성 실패", description: error.message, variant: "destructive" });
-    },
-  });
+      });
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   const isAnalyzeDisabled =
     !inputText.trim() || !target || !situation || analyzeMutation.isPending;
 
-  // Logic to format the output text based on the selected quality
+  // v2 Response에 맞게 출력 포맷팅
+  const thinkingMessage = useThinkingMessage(analyzeMutation.isPending);
+
   const outputValue = useMemo(() => {
     if (analyzeMutation.isPending) {
-      return "Analyzing...";
+      return thinkingMessage;
     }
-    if (!analysisResult) {
-      return "Analyzed text will appear here";
+    if (!analysisResult || !analysisResult.data) {
+      return "분석 결과가 여기에 표시됩니다";
     }
+
+    const data = analysisResult.data;
 
     switch (quality) {
       case "grammar":
-        return `Score: ${analysisResult.grammarScore?.toFixed(1)}
-
-Suggestions:
-${
-  analysisResult.grammarSection?.suggestions
-    ?.map((s) => `- "${s.original}" -> "${s.suggestion}" (${s.reason})`)
-    ?.join("\n") || "No suggestions."
-}`;
+        return data.grammar.markdown_explanation || `점수: ${data.grammar.score}\n\n${data.grammar.justification}`;
       case "formality":
-        return `Score: ${analysisResult.formalityScore?.toFixed(1)}
-
-Analysis: The text's formality is appropriate.`; // Placeholder
+        return data.formality.markdown_explanation || `점수: ${data.formality.score}\n\n${data.formality.justification}`;
       case "protocol":
-        return `Score: ${analysisResult.protocolScore?.toFixed(1)}
-
-Suggestions:
-${
-  analysisResult.protocolSection?.suggestions
-    ?.map((s) => `- "${s.original}" -> "${s.suggestion}" (${s.reason})`)
-    ?.join("\n") || "No suggestions."
-}`;
+        return data.protocol.markdown_explanation || `점수: ${data.protocol.score}\n\n${data.protocol.justification}`;
       default:
-        return "Select a quality metric to see results.";
+        return "분석 항목을 선택해주세요.";
     }
-  }, [analysisResult, quality, analyzeMutation.isPending]);
+  }, [analysisResult, quality, analyzeMutation.isPending, thinkingMessage]);
 
   return (
-    <div>
-      <div className="mb-8">
-        <Button
+    <div className="w-full">
+      <div className="mb-4">
+        <UiButton
           variant="ghost"
           onClick={() => navigate(PATH.CHOICE)}
           className="flex items-center gap-2 text-lg"
         >
           <ArrowLeft className="h-5 w-5" />
-          Back to Features
-        </Button>
+          뒤로 가기
+        </UiButton>
       </div>
-      <h1 className="font-bold text-black text-7xl">Analyze Quality Page</h1>
-      <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
-        Analyze document quality instantly
+
+      <h1 className="font-bold text-black text-3xl">품질 분석</h1>
+      <p className="mt-1 mb-4 text-lg font-medium text-gray-700">
+        문서 품질을 즉시 분석합니다
       </p>
-      <div className="flex justify-center">
+
+      {/* RAG 상태 표시 */}
+      {analysisResult && (
+        <div className="mb-4 flex gap-2 text-sm text-gray-500">
+          <span className={`px-2 py-1 rounded ${analysisResult.method_used === 'with_rag' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+            {analysisResult.method_used === 'with_rag' ? '✓ RAG 적용' : '⚠ RAG 미적용'}
+          </span>
+          <span className="px-2 py-1 rounded bg-blue-100 text-blue-700">
+            신뢰도: {analysisResult.confidence_level}
+          </span>
+          <span className="px-2 py-1 rounded bg-gray-100">
+            처리 시간: {analysisResult.processing_time?.toFixed(2)}초
+          </span>
+        </div>
+      )}
+
+      <div className="flex justify-center w-full px-4">
         <AnalyzeQualityCard
           targetValue={target}
           onTargetChange={setTarget}
@@ -261,69 +153,83 @@ ${
         />
       </div>
 
-      {/* Small glowing generate button under the analysis output */}
-      {analysisResult && (
-        <div className="mt-6 flex flex-col items-center gap-4">
+      {/* 분석 완료 후 최종 글 보기 — 화면 하단 고정 플로팅 버튼 */}
+      {analysisResult && !finalText && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
           <Button
-            size="sm"
-            className="rounded-full ring-1 ring-primary shadow-[0_0_12px_rgba(59,130,246,0.65)] hover:shadow-[0_0_16px_rgba(59,130,246,0.85)]"
-            disabled={generateFinalMutation.isPending}
-            onClick={() => generateFinalMutation.mutate()}
+            size="xl"
+            className="px-16 shadow-xl"
+            disabled={!analysisResult?.data?.final_text}
+            onClick={handleShowFinalText}
           >
-            Generate Final Text
+            최종 글 보기
           </Button>
+        </div>
+      )}
 
-          {finalText && (
-            <div className="w-full max-w-4xl">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">최종 글</h2>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(finalText);
-                      toast({ title: "Copied to clipboard!" });
-                    }}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </Button>
-                  <a href="https://slack.com" target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" variant="outline">
-                      <Slack className="h-4 w-4" />
-                    </Button>
-                  </a>
-                  <Button
-                    size="sm"
-                    variant={finalLiked ? "default" : "secondary"}
-                    className={[
-                      "gap-2 rounded-full",
-                      finalLiked
-                        ? "ring-2 ring-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.55)]"
-                        : "ring-1 ring-primary/40 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]",
-                    ].join(" ")}
-                    aria-pressed={finalLiked}
-                    disabled={finalLiked}
-                    onClick={() => {
-                      setFinalLiked(true);
-                      toast({ title: "피드백 반영", description: "엄지 피드백이 반영되었습니다." });
-                    }}
-                  >
-                    <ThumbsUp className="h-4 w-4" /> {finalLiked ? "좋아요 반영됨" : "좋아요"}
-                  </Button>
+      {/* 최종 글 결과 카드 */}
+      {finalText && (
+        <div ref={resultRef} className="mt-8 w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-surface rounded-2xl p-8 flex flex-col gap-6">
+                {/* 헤더 */}
+                <div className="flex items-center justify-between pb-1">
+                  <h2 className="text-lg font-bold text-gray-800">최종 결과물</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-gray-50 text-gray-700 text-sm font-bold border border-gray-200 transition-all active:scale-95"
+                      onClick={() => {
+                        navigator.clipboard.writeText(finalText);
+                        toast({ title: "클립보드에 복사되었습니다!" });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                      복사
+                    </button>
+                    <a
+                      href="https://slack.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 transition-all active:scale-95 no-underline"
+                    >
+                      <svg viewBox="0 0 122.8 122.8" className="h-4 w-4">
+                        <path d="M21 70.7c0 5.8-4.7 10.6-10.5 10.6S0 76.5 0 70.7s4.7-10.6 10.5-10.6h10.5v10.6zm5.3 0c0-5.8 4.7-10.6 10.5-10.6s10.5 4.7 10.5 10.6v26.3c0 5.8-4.7 10.6-10.5 10.6s-10.5-4.7-10.5-10.6V70.7z" fill="#e01e5a"/><path d="M52.1 21c-5.8 0-10.6-4.7-10.6-10.5S46.2 0 52.1 0s10.6 4.7 10.6 10.5V21h-10.6zm0 5.3c5.8 0 10.6 4.7 10.6 10.5s-4.7 10.6-10.6 10.6H25.8c-5.8 0-10.6-4.7-10.6-10.6s4.7-10.5 10.6-10.5h26.3z" fill="#36c5f0"/><path d="M101.8 52.1c0-5.8 4.7-10.6 10.5-10.6s10.5 4.7 10.5 10.6-4.7 10.6-10.5 10.6h-10.5V52.1zm-5.3 0c0 5.8-4.7 10.6-10.5 10.6s-10.5-4.7-10.5-10.6V25.8c0-5.8 4.7-10.6 10.5-10.6s10.5 4.7 10.5 10.6v26.3z" fill="#2eb67d"/><path d="M70.7 101.8c5.8 0 10.6 4.7 10.6 10.5s-4.7 10.5-10.6 10.5-10.6-4.7-10.6-10.5V101.8h10.6zm0-5.3c-5.8 0-10.6-4.7-10.6-10.5s4.7-10.6 10.6-10.6h26.3c5.8 0 10.6 4.7 10.6 10.6s-4.7 10.5-10.6 10.5H70.7z" fill="#ecb22e"/>
+                      </svg>
+                    </a>
+                    <button
+                      className={[
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold border border-gray-200 transition-all active:scale-95",
+                        finalLiked
+                          ? "bg-primary text-white border-none"
+                          : "bg-white hover:bg-gray-50 text-gray-700",
+                      ].join(" ")}
+                      disabled={finalLiked}
+                      onClick={() => {
+                        setFinalLiked(true);
+                        toast({ title: "피드백 반영", description: "좋아요가 반영되었습니다." });
+                      }}
+                    >
+                      <ThumbsUp className={`h-4 w-4 ${finalLiked ? "fill-white" : ""}`} />
+                      {finalLiked ? "반영됨" : "좋아요"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div
-                className={[
-                  "prose max-w-none border rounded-lg p-5 bg-white transition-shadow",
-                  finalLiked ? "shadow-[0_0_18px_rgba(16,185,129,0.35)]" : "",
-                ].join(" ")}
-              >
-                <ReactMarkdown>{finalText}</ReactMarkdown>
-              </div>
-            </div>
-          )}
+
+                {/* 본문 — 흰색 textarea 스타일 */}
+                <div className="w-full min-h-[300px] bg-white rounded-2xl p-8 text-lg text-gray-800 prose prose-lg max-w-none border border-gray-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overflow-y-auto">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalText}</ReactMarkdown>
+                </div>
+
+                {/* 요약 */}
+                {analysisResult?.data?.summary && (
+                  <div className="p-6 bg-white/50 rounded-2xl border border-gray-100/50">
+                    <h3 className="font-bold text-sm text-gray-700 mb-2 flex items-center gap-2">
+                      <div className="w-1.5 h-3.5 bg-primary/40 rounded-full" />
+                      요약
+                    </h3>
+                    <p className="text-sm text-gray-600 leading-relaxed font-medium">{analysisResult?.data?.summary}</p>
+                  </div>
+                )}
+          </div>
         </div>
       )}
     </div>

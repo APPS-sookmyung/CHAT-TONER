@@ -21,17 +21,17 @@ const cardVariants = cva("rounded-[30px]", {
     {
       variant: "primary",
       size: "small",
-      className: "w-full max-w-xl h-[334px]",
+      className: "w-full max-w-md h-auto min-h-[200px]",
     },
     {
       variant: "primary",
       size: "medium",
-      className: "w-full max-w-2xl h-[489px]",
+      className: "w-full max-w-4xl h-auto min-h-[320px]",
     },
     {
       variant: "primary",
       size: "large",
-      className: "w-full max-w-xl h-[615px]",
+      className: "w-full max-w-4xl h-auto min-h-[350px]",
     },
 
     // secondary variant

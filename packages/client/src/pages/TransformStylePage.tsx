@@ -3,12 +3,14 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useToast } from "@/hooks/use-toast";
 import { TransformStyleCard } from "@/components/Organisms/TransformStyleCard";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { PATH } from "@/constants/paths";
 import type { UserProfile } from "@shared/schema";
+import { useThinkingMessage } from "@/hooks/useThinkingMessage";
 
 // Define the analysis result type, adapted from StyleConverter
 interface StyleAnalysis {
@@ -228,8 +230,10 @@ export default function TransformStylePage() {
   const isTransformDisabled = !inputText.trim() || convertMutation.isPending;
 
   // Logic to format the output text based on the selected style
+  const thinkingMessage = useThinkingMessage(convertMutation.isPending);
+
   const outputValue = useMemo(() => {
-    if (convertMutation.isPending) return "Transforming...";
+    if (convertMutation.isPending) return thinkingMessage;
     if (!analysis) return "Transformed text will appear here";
 
     // Get the converted text based on selected style (API returns markdown)
@@ -250,11 +254,11 @@ export default function TransformStylePage() {
     }
 
     return analysis.converted_text;
-  }, [analysis, selectedStyle, convertMutation.isPending]);
+  }, [analysis, selectedStyle, convertMutation.isPending, thinkingMessage]);
 
   return (
-    <div>
-      <div className="mb-8">
+    <div className="w-full">
+      <div className="mb-4">
         <Button
           variant="ghost"
           onClick={() => navigate(PATH.CHOICE)}
@@ -264,11 +268,11 @@ export default function TransformStylePage() {
           Back to Features
         </Button>
       </div>
-      <h1 className="font-bold text-black text-7xl">Transform Style</h1>
-      <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
+      <h1 className="font-bold text-black text-3xl">Transform Style</h1>
+      <p className="mt-1 mb-4 text-lg font-medium text-gray-700">
         Convert text to your team's unique style profile.
       </p>
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full px-4">
         <TransformStyleCard
           inputValue={inputText}
           onInputChange={setInputText}
@@ -342,7 +346,7 @@ export default function TransformStylePage() {
                     )}
                   </div>
                   <div className="text-gray-700 leading-relaxed prose prose-sm max-w-none max-h-[400px] overflow-y-auto">
-                    <ReactMarkdown>{text || "결과가 없습니다"}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{text || "결과가 없습니다"}</ReactMarkdown>
                   </div>
                 </div>
               );
