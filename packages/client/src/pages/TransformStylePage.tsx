@@ -268,7 +268,16 @@ export default function TransformStylePage() {
       <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
         Convert text to your team's unique style profile.
       </p>
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center justify-center gap-4">
+        {analysis && (
+          <div className="flex items-center gap-2 self-start ml-[10%]">
+            <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-bold text-green-700 ring-1 ring-inset ring-green-600/20">
+              ● Negative Prompt Applied
+            </span>
+            <span className="text-[10px] text-gray-400">Filtering: Emojis, Slang, Casual Tone</span>
+          </div>
+        )}
+        
         <TransformStyleCard
           inputValue={inputText}
           onInputChange={setInputText}
@@ -320,6 +329,13 @@ export default function TransformStylePage() {
                   }`}
                   onClick={() => handleFeedbackSelect(key)}
                 >
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-700 ring-1 ring-inset ring-green-600/20">
+                      ● Negative Prompt Applied
+                    </span>
+                    <span className="text-[9px] text-gray-400">Filtering: Emojis, Slang</span>
+                  </div>
+
                   <div className="flex items-center justify-between mb-3">
                     <h3 className={`font-semibold text-lg ${styles.title}`}>
                       {label}

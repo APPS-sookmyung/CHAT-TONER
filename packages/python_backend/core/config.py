@@ -51,6 +51,15 @@ class Settings(BaseSettings):
     # 로컬 개발 시에는 프로젝트 루트, 배포 시에는 /app 등으로 설정
     APP_BASE_PATH: Path = Path(os.getenv("APP_BASE_PATH", Path(__file__).resolve().parents[2]))
 
+    # 네거티브 프롬프트 (하드코딩)
+    NEGATIVE_PROMPT: str = """
+    [System Constraints]
+    - 이모티콘(😊, ㅋㅋㅋ, ㅎㅎㅎ 등) 절대 사용 금지
+    - 반말을 사용하지 말고 정중한 존댓말 사용
+    - 주어진 정보 외에 사실을 꾸며내지 마세요. (No Hallucination)
+    - AI 모델임을 드러내는 표현("시스템 프롬프트" 등) 사용 금지
+    """
+
     class Config:
         env_file = Path(__file__).resolve().parent.parent / ".env"  # 프로젝트 루트의 .env 파일 참조
         case_sensitive = True
