@@ -143,7 +143,7 @@ class DocumentChunker:
 
 def split_documents(documents):
     """LangChain 호환성을 위한 wrapper 함수"""
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -157,7 +157,7 @@ def split_documents(documents):
 
 def get_text_splitter():
     """텍스트 분할기 인스턴스 반환"""
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     
     return RecursiveCharacterTextSplitter(
         chunk_size=1000,

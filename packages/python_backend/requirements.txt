@@ -10,9 +10,11 @@ sqlalchemy>=2.0.42
 psycopg2-binary>=2.9.9
 alembic>=1.13.1
 pypdf>=4.2.0
-langchain>=0.1.0
-langchain-community>=0.0.10
-langchain-text-splitters>=0.0.1
+langchain-openai
+langchain==0.1.16
+langchain-community==0.0.32
+langchain-text-splitters==0.0.1
+langsmith==0.1.20
 langgraph>=0.0.30
 faiss-cpu>=1.7.4
 
@@ -23,3 +25,4 @@ pytest-mock>=3.11.0
 httpx>=0.24.0
 pytest-cov>=4.1.0
 pytest-env>=0.8.2
+itsdangerous>=2.1
