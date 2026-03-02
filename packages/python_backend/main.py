@@ -72,10 +72,13 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=FRONT_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+    allow_origins=[
+        "https://chattoner.online",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,   # 쿠키/인증 쓰면 True
+    allow_methods=["*"],
+    allow_headers=["*"],
     )
 
     if settings.DEBUG:

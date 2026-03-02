@@ -1,0 +1,30 @@
+services:
+  python-backend:
+    image: chat-toner-python-backend:latest
+    container_name: python-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /srv/rag/temp_uploads:/app/temp_uploads
+      - /srv/rag/faiss_indexes:/app/faiss_indexes
+
+  nestjs-gateway:
+    image: chat-toner-nestjs-gateway:latest
+    container_name: nestjs-gateway
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BACKEND_API_URL: http://python-backend:8080
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - python-backend
+
+networks:
+  default:
+    name: chattoner-network
