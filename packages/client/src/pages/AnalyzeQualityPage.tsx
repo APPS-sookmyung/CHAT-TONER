@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { api } from "@/lib/api";
 import { PATH } from "@/constants/paths";
 
@@ -230,8 +231,8 @@ ${
   }, [analysisResult, quality, analyzeMutation.isPending]);
 
   return (
-    <div>
-      <div className="mb-8">
+    <div className="w-full">
+      <div className="mb-4">
         <Button
           variant="ghost"
           onClick={() => navigate(PATH.CHOICE)}
@@ -241,11 +242,11 @@ ${
           Back to Features
         </Button>
       </div>
-      <h1 className="font-bold text-black text-7xl">Analyze Quality Page</h1>
-      <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
+      <h1 className="font-bold text-black text-3xl">Analyze Quality Page</h1>
+      <p className="mt-1 mb-4 text-lg font-medium text-gray-700">
         Analyze document quality instantly
       </p>
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full px-4">
         <AnalyzeQualityCard
           targetValue={target}
           onTargetChange={setTarget}
@@ -320,7 +321,7 @@ ${
                   finalLiked ? "shadow-[0_0_18px_rgba(16,185,129,0.35)]" : "",
                 ].join(" ")}
               >
-                <ReactMarkdown>{finalText}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalText}</ReactMarkdown>
               </div>
             </div>
           )}

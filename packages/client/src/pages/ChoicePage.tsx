@@ -57,15 +57,15 @@ export default function ChoicePage() {
   ];
 
   return (
-    <div className="flex items-center justify-center flex-grow">
-      <div className="flex flex-row items-center gap-20">
+    <div className="flex items-center justify-center flex-grow w-full max-w-6xl px-4">
+      <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-20">
         <div className="pt-4">
-          <h1 className="items-center font-bold leading-tight text-black text-7xl">
+          <h1 className="items-center font-bold leading-tight text-black text-4xl md:text-5xl lg:text-6xl">
             Use Chat Toner <br />
             for your <span className="text-primary">workflow</span>
           </h1>
         </div>
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
           <Link
             to={PATH.TRANSFORM_STYLE}
             className="block transition-transform duration-200 ease-in-out hover:scale-105"

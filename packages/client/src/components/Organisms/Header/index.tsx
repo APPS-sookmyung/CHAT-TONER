@@ -29,7 +29,7 @@ export const Header = () => {
     setIsModalOpen(false);
   };
   return (
-    <div className="flex justify-between px-[50px] py-[30px]">
+    <div className="flex justify-between px-[50px] py-4">
       <button
         className="justify-start text-3xl font-medium text-black cursor-pointer"
         onClick={handleHomeClick}

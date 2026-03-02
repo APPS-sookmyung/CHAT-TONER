@@ -22,7 +22,7 @@ export const ChipGroup = ({
       className={cn("flex flex-col justify-center", className)}
     >
       <div>
-        <h2 className="mb-10 text-5xl font-bold">{title}</h2>
+        <h2 className="mb-4 text-xl font-bold">{title}</h2>
         <div className="flex flex-wrap gap-2.25">
           {chips.map((chip) => (
             <Chip key={chip.label} colorScheme={chip.colorScheme}>
