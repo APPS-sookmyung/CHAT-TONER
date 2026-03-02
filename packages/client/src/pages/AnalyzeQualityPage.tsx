@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { api, QualityAnalysisResponse } from "@/lib/api";
 import { PATH } from "@/constants/paths";
 
@@ -97,8 +98,8 @@ export default function AnalyzeQualityPage() {
   }, [analysisResult, quality, analyzeMutation.isPending]);
 
   return (
-    <div>
-      <div className="mb-8">
+    <div className="w-full">
+      <div className="mb-4">
         <Button
           variant="ghost"
           onClick={() => navigate(PATH.CHOICE)}
@@ -108,8 +109,9 @@ export default function AnalyzeQualityPage() {
           뒤로 가기
         </Button>
       </div>
-      <h1 className="font-bold text-black text-7xl">품질 분석</h1>
-      <p className="mt-4 mb-12 text-5xl font-medium text-gray-700">
+
+      <h1 className="font-bold text-black text-3xl">품질 분석</h1>
+      <p className="mt-1 mb-4 text-lg font-medium text-gray-700">
         문서 품질을 즉시 분석합니다
       </p>
 
@@ -128,7 +130,7 @@ export default function AnalyzeQualityPage() {
         </div>
       )}
 
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full px-4">
         <AnalyzeQualityCard
           targetValue={target}
           onTargetChange={setTarget}
@@ -203,7 +205,7 @@ export default function AnalyzeQualityPage() {
                   finalLiked ? "shadow-[0_0_18px_rgba(16,185,129,0.35)]" : "",
                 ].join(" ")}
               >
-                <ReactMarkdown>{finalText}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalText}</ReactMarkdown>
               </div>
 
               {/* 요약 */}

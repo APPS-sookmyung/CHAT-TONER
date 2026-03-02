@@ -65,3 +65,12 @@
 .sb-show-main {
   background-color: #ffffff;
 }
+
+/* Global styles */
+html, body {
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}

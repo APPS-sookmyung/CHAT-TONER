@@ -13,7 +13,7 @@ export const Chip = ({
   ...props
 }: ChipProps) => {
   const baseStyles =
-    "px-[19px] py-[6px] text-2xl font-medium rounded-[30px] inline-block";
+    "px-3 py-1 text-sm font-medium rounded-full inline-block";
 
   const colorSchemeStyles = {
     yellow: "bg-feature-secondary text-tertiary",

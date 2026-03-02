@@ -27,9 +27,9 @@ const LandingPage = () => {
 
   return (
     // 4. <main> 태그로 시맨틱 의미 부여, flex로 전체를 중앙 정렬
-    <main className="flex flex-col items-center justify-center min-h-screen px-4">
+    <main className="flex flex-col items-center justify-center min-h-full px-4 py-8">
       {/* 5. <h1> 태그와 <p> 태그는 text-center를 명시 */}
-      <h1 className="mb-12 font-medium leading-[95px] text-center text-black text-8xl">
+      <h1 className="mb-6 font-bold leading-tight text-center text-black text-4xl md:text-6xl lg:text-8xl">
         An AI-powered tool to <br />
         <span className="text-primary">unify communication</span>
         <br />
@@ -37,10 +37,10 @@ const LandingPage = () => {
       </h1>
 
       {/* 6. gap-12 (48px)는 mb-12로, 122px는 mb-[122px]로 적용 */}
-      <div className="mb-[122px] flex flex-col gap-1.5 text-center text-3xl text-text-secondary">
+      <div className="mb-10 flex flex-col gap-2 text-center text-lg md:text-2xl lg:text-3xl text-text-secondary">
         {/* 7. 데이터를 map으로 렌더링하여 JSX를 깔끔하게 유지 */}
         {FEATURES.map((feature) => (
-          <p key={feature.highlight}>
+          <p key={feature.highlight} className="leading-relaxed">
             {feature.text}
             <span className="text-primary">{feature.highlight}</span>
           </p>
