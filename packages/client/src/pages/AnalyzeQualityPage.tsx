@@ -1,11 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ThumbsUp, Copy, Slack } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useThinkingMessage } from "@/hooks/useThinkingMessage";
 import { AnalyzeQualityCard } from "@/components/Organisms/AnalyzeQualityCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/Atoms/Button";
+import { Button as UiButton } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api, QualityAnalysisResponse } from "@/lib/api";
@@ -25,12 +27,11 @@ export default function AnalyzeQualityPage() {
   const [analysisResult, setAnalysisResult] = useState<QualityAnalysisResponse | null>(null);
   const [finalText, setFinalText] = useState<string>("");
   const [finalLiked, setFinalLiked] = useState<boolean>(false);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   // Mutation for v2 API
   const analyzeMutation = useMutation({
     mutationFn: async (text: string): Promise<QualityAnalysisResponse> => {
-      console.log(`Analyzing text: ${text} for ${target} in ${situation}`);
-
       const result = await api.analyzeQuality({
         text,
         target: target!,
@@ -66,9 +67,12 @@ export default function AnalyzeQualityPage() {
   // 최종 글 보기 핸들러 (이미 분석 결과에 있는 final_text 사용)
   const handleShowFinalText = () => {
     if (analysisResult?.data?.final_text) {
-      setFinalText(analysisResult.data.final_text);
-      setFinalLiked(false);
-      toast({ title: "최종 글 표시" });
+      // flushSync로 DOM 업데이트를 동기적으로 완료한 뒤 스크롤
+      flushSync(() => {
+        setFinalText(analysisResult.data.final_text);
+        setFinalLiked(false);
+      });
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -103,14 +107,14 @@ export default function AnalyzeQualityPage() {
   return (
     <div className="w-full">
       <div className="mb-4">
-        <Button
+        <UiButton
           variant="ghost"
           onClick={() => navigate(PATH.CHOICE)}
           className="flex items-center gap-2 text-lg"
         >
           <ArrowLeft className="h-5 w-5" />
           뒤로 가기
-        </Button>
+        </UiButton>
       </div>
 
       <h1 className="font-bold text-black text-3xl">품질 분석</h1>
@@ -149,77 +153,83 @@ export default function AnalyzeQualityPage() {
         />
       </div>
 
-      {/* 최종 글 섹션 */}
-      {analysisResult && (
-        <div className="mt-6 flex flex-col items-center gap-4">
+      {/* 분석 완료 후 최종 글 보기 — 화면 하단 고정 플로팅 버튼 */}
+      {analysisResult && !finalText && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
           <Button
-            size="sm"
-            className="rounded-full ring-1 ring-primary shadow-[0_0_12px_rgba(59,130,246,0.65)] hover:shadow-[0_0_16px_rgba(59,130,246,0.85)]"
+            size="xl"
+            className="px-16 shadow-xl"
             disabled={!analysisResult?.data?.final_text}
             onClick={handleShowFinalText}
           >
-            {finalText ? "최종 글 다시보기" : "최종 글 보기"}
+            최종 글 보기
           </Button>
+        </div>
+      )}
 
-          {finalText && (
-            <div className="w-full max-w-4xl">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">최종 글</h2>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(finalText);
-                      toast({ title: "클립보드에 복사되었습니다!" });
-                    }}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    복사
-                  </Button>
-                  <a href="https://slack.com" target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" variant="outline">
-                      <Slack className="h-4 w-4" />
-                    </Button>
-                  </a>
-                  <Button
-                    size="sm"
-                    variant={finalLiked ? "default" : "secondary"}
-                    className={[
-                      "gap-2 rounded-full",
-                      finalLiked
-                        ? "ring-2 ring-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.55)]"
-                        : "ring-1 ring-primary/40 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]",
-                    ].join(" ")}
-                    aria-pressed={finalLiked}
-                    disabled={finalLiked}
-                    onClick={() => {
-                      setFinalLiked(true);
-                      toast({ title: "피드백 반영", description: "좋아요가 반영되었습니다." });
-                    }}
-                  >
-                    <ThumbsUp className="h-4 w-4" /> {finalLiked ? "반영됨" : "좋아요"}
-                  </Button>
+      {/* 최종 글 결과 카드 */}
+      {finalText && (
+        <div ref={resultRef} className="mt-8 w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-surface rounded-2xl p-8 flex flex-col gap-6">
+                {/* 헤더 */}
+                <div className="flex items-center justify-between pb-1">
+                  <h2 className="text-lg font-bold text-gray-800">최종 결과물</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-gray-50 text-gray-700 text-sm font-bold border border-gray-200 transition-all active:scale-95"
+                      onClick={() => {
+                        navigator.clipboard.writeText(finalText);
+                        toast({ title: "클립보드에 복사되었습니다!" });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                      복사
+                    </button>
+                    <a
+                      href="https://slack.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 transition-all active:scale-95 no-underline"
+                    >
+                      <svg viewBox="0 0 122.8 122.8" className="h-4 w-4">
+                        <path d="M21 70.7c0 5.8-4.7 10.6-10.5 10.6S0 76.5 0 70.7s4.7-10.6 10.5-10.6h10.5v10.6zm5.3 0c0-5.8 4.7-10.6 10.5-10.6s10.5 4.7 10.5 10.6v26.3c0 5.8-4.7 10.6-10.5 10.6s-10.5-4.7-10.5-10.6V70.7z" fill="#e01e5a"/><path d="M52.1 21c-5.8 0-10.6-4.7-10.6-10.5S46.2 0 52.1 0s10.6 4.7 10.6 10.5V21h-10.6zm0 5.3c5.8 0 10.6 4.7 10.6 10.5s-4.7 10.6-10.6 10.6H25.8c-5.8 0-10.6-4.7-10.6-10.6s4.7-10.5 10.6-10.5h26.3z" fill="#36c5f0"/><path d="M101.8 52.1c0-5.8 4.7-10.6 10.5-10.6s10.5 4.7 10.5 10.6-4.7 10.6-10.5 10.6h-10.5V52.1zm-5.3 0c0 5.8-4.7 10.6-10.5 10.6s-10.5-4.7-10.5-10.6V25.8c0-5.8 4.7-10.6 10.5-10.6s10.5 4.7 10.5 10.6v26.3z" fill="#2eb67d"/><path d="M70.7 101.8c5.8 0 10.6 4.7 10.6 10.5s-4.7 10.5-10.6 10.5-10.6-4.7-10.6-10.5V101.8h10.6zm0-5.3c-5.8 0-10.6-4.7-10.6-10.5s4.7-10.6 10.6-10.6h26.3c5.8 0 10.6 4.7 10.6 10.6s-4.7 10.5-10.6 10.5H70.7z" fill="#ecb22e"/>
+                      </svg>
+                    </a>
+                    <button
+                      className={[
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold border border-gray-200 transition-all active:scale-95",
+                        finalLiked
+                          ? "bg-primary text-white border-none"
+                          : "bg-white hover:bg-gray-50 text-gray-700",
+                      ].join(" ")}
+                      disabled={finalLiked}
+                      onClick={() => {
+                        setFinalLiked(true);
+                        toast({ title: "피드백 반영", description: "좋아요가 반영되었습니다." });
+                      }}
+                    >
+                      <ThumbsUp className={`h-4 w-4 ${finalLiked ? "fill-white" : ""}`} />
+                      {finalLiked ? "반영됨" : "좋아요"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div
-                className={[
-                  "prose max-w-none border rounded-lg p-5 bg-white transition-shadow",
-                  finalLiked ? "shadow-[0_0_18px_rgba(16,185,129,0.35)]" : "",
-                ].join(" ")}
-              >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalText}</ReactMarkdown>
-              </div>
 
-              {/* 요약 */}
-              {analysisResult.data?.summary && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-medium text-gray-700 mb-2">요약</h3>
-                  <p className="text-gray-600">{analysisResult.data.summary}</p>
+                {/* 본문 — 흰색 textarea 스타일 */}
+                <div className="w-full min-h-[300px] bg-white rounded-2xl p-8 text-lg text-gray-800 prose prose-lg max-w-none border border-gray-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overflow-y-auto">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalText}</ReactMarkdown>
                 </div>
-              )}
-            </div>
-          )}
+
+                {/* 요약 */}
+                {analysisResult?.data?.summary && (
+                  <div className="p-6 bg-white/50 rounded-2xl border border-gray-100/50">
+                    <h3 className="font-bold text-sm text-gray-700 mb-2 flex items-center gap-2">
+                      <div className="w-1.5 h-3.5 bg-primary/40 rounded-full" />
+                      요약
+                    </h3>
+                    <p className="text-sm text-gray-600 leading-relaxed font-medium">{analysisResult?.data?.summary}</p>
+                  </div>
+                )}
+          </div>
         </div>
       )}
     </div>
