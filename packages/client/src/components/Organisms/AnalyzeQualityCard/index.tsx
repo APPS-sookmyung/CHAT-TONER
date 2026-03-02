@@ -5,6 +5,7 @@ import { Dropdown } from "@/components/Molecules/Dropdown";
 import { SegmentedControl } from "@/components/Molecules/SegmentedControl";
 import { situationOptions, targetOptions } from "@/constants/dropdownOptions";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const qualityOptions = [
   { label: "Grammar", value: "grammar" },
@@ -92,7 +93,7 @@ export const AnalyzeQualityCard = ({
         <Card variant="primary" size="large" className="flex-1 flex flex-col">
           <div className="flex flex-col justify-between h-full gap-4 flex-1">
             {outputValue && outputValue !== "Analyzed text will appear here" ? (
-              <div className="w-full min-h-[300px] flex-1 overflow-y-auto p-6 bg-white rounded-[20px] border border-primary text-sm text-text-primary prose prose-sm max-w-none text-left">
+              <div className="w-full min-h-[300px] flex-1 overflow-y-auto p-6 bg-white rounded-[20px] border border-gray-200 text-sm text-text-primary prose prose-sm max-w-none text-left [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{outputValue}</ReactMarkdown>
               </div>
             ) : (

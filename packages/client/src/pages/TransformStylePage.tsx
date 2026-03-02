@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { PATH } from "@/constants/paths";
 import type { UserProfile } from "@shared/schema";
+import { useThinkingMessage } from "@/hooks/useThinkingMessage";
 
 // Define the analysis result type, adapted from StyleConverter
 interface StyleAnalysis {
@@ -229,8 +230,10 @@ export default function TransformStylePage() {
   const isTransformDisabled = !inputText.trim() || convertMutation.isPending;
 
   // Logic to format the output text based on the selected style
+  const thinkingMessage = useThinkingMessage(convertMutation.isPending);
+
   const outputValue = useMemo(() => {
-    if (convertMutation.isPending) return "Transforming...";
+    if (convertMutation.isPending) return thinkingMessage;
     if (!analysis) return "Transformed text will appear here";
 
     // Get the converted text based on selected style (API returns markdown)
@@ -251,7 +254,7 @@ export default function TransformStylePage() {
     }
 
     return analysis.converted_text;
-  }, [analysis, selectedStyle, convertMutation.isPending]);
+  }, [analysis, selectedStyle, convertMutation.isPending, thinkingMessage]);
 
   return (
     <div className="w-full">
