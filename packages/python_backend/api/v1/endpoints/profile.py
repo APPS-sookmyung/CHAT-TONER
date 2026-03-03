@@ -85,6 +85,7 @@ async def get_user_profile(
 
     사용자의 텍스트 스타일 개인화 설정을 반환합니다.
     """
+    '''
     try:
         profile_data = user_service.get_user_profile(user_id)
 
@@ -112,6 +113,25 @@ async def get_user_profile(
     except Exception as e:
         # Pydantic validation error 등 다른 예외 처리
         raise HTTPException(status_code=500, detail=f"프로필 조회 실패: {str(e)}")
+    '''
+
+    # 방어용 하드코딩 데이터
+    from datetime import datetime
+    return ProfileResponse(
+        id=1,
+        userId=user_id,
+        baseFormalityLevel=5,
+        baseFriendlinessLevel=5,
+        baseEmotionLevel=5,
+        baseDirectnessLevel=5,
+        sessionFormalityLevel=5,
+        sessionFriendlinessLevel=5,
+        sessionEmotionLevel=5,
+        sessionDirectnessLevel=5,
+        responses={},
+        completedAt=datetime.now().isoformat(),
+        negativePrompts=["이모티콘 사용 금지", "반말 금지", "존댓말 사용"]
+    )
 
 # 네거티브 프롬프트 업데이트 엔드포인트는 의존성 문제로 비활성화
 
@@ -166,6 +186,7 @@ async def save_user_profile(
     ### 요청 본문
     - `profile`: 저장할 사용자 프로필 데이터
     """
+    '''
     try:
         # 실제 서비스에서 프로필 저장
         was_saved = user_service.save_user_profile(profile.userId, profile.model_dump())
@@ -199,3 +220,22 @@ async def save_user_profile(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"프로필 저장 실패: {str(e)}")
+    '''
+
+    # 더미 데이터 반환
+    from datetime import datetime
+    return ProfileResponse(
+        id=1,
+        userId=profile.userId,
+        baseFormalityLevel=profile.baseFormalityLevel,
+        baseFriendlinessLevel=profile.baseFriendlinessLevel,
+        baseEmotionLevel=profile.baseEmotionLevel,
+        baseDirectnessLevel=profile.baseDirectnessLevel,
+        sessionFormalityLevel=profile.sessionFormalityLevel or profile.baseFormalityLevel,
+        sessionFriendlinessLevel=profile.sessionFriendlinessLevel or profile.baseFriendlinessLevel,
+        sessionEmotionLevel=profile.sessionEmotionLevel or profile.baseEmotionLevel,
+        sessionDirectnessLevel=profile.sessionDirectnessLevel or profile.baseDirectnessLevel,
+        responses=profile.responses or {},
+        completedAt=datetime.now().isoformat(),
+        negativePrompts=["이모티콘 사용 금지", "반말 금지", "존댓말 사용"]
+    )

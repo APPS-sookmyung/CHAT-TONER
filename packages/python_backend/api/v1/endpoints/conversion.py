@@ -3,7 +3,7 @@
 - 라우터 분리 + DI 구성 
 - 의존성 주입 -> Depends + Provide 사용
 
-신경 써야 하는점: 
+신경 써야 하는 점: 
 1. 피드백 route 에 요청/응답 모델 정의
 2. exception 처리 개선 
 3. 공통 응답 메세지는 모델로 정의 
@@ -18,6 +18,7 @@ from services.conversion_service import ConversionService
 from ..schemas.conversion import ConversionRequest, ConversionResponse
 from ..dependencies import get_conversion_service
 import logging 
+from core.config import settings
 
 logger=logging.getLogger('chattoner')
 
@@ -37,6 +38,9 @@ async def convert_text(request: ConversionRequest,
         # Use the actual ConversionService with camelCase preservation
         user_profile_dict = request.user_profile.model_dump(by_alias=True, exclude_none=True)
         negative_preferences_dict = request.negative_preferences.model_dump(by_alias=True, exclude_none=True) if request.negative_preferences else None
+        
+        safe_context = request.context if request.context else ""
+        request.context = f"{safe_context}\n\n{settings.NEGATIVE_PROMPT}"
 
         result = await conversion_service.convert_text(
             input_text=request.text,
@@ -74,6 +78,8 @@ async def convert_text(request: ConversionRequest,
             상황: {request.context}
 
             원본 텍스트: {request.text}
+
+            {settings.NEGATIVE_PROMPT}
 
             변환된 텍스트만 반환하세요:
             """

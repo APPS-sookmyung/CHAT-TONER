@@ -161,6 +161,7 @@ async def submit_survey(key: str, req: SubmitRequest):
         }
 
         fallback_profile = f"""
+        
 ## {fallback_context['companySize']} 커뮤니케이션 가이드
 
 ### 핵심 원칙
