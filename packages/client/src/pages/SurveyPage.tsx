@@ -116,6 +116,23 @@ export default function SurveyPage() {
     return <div>Question not found for this step.</div>;
   }
 
+  // Show loading overlay while submitting survey to API
+  if (profileMutation.isPending) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-lg font-medium text-gray-700">
+            프로필을 생성하는 중입니다...
+          </p>
+          <p className="text-sm text-gray-500">
+            AI가 맞춤형 커뮤니케이션 가이드를 만들고 있어요. 잠시만 기다려 주세요.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-center py-8">
       <SurveyStep
