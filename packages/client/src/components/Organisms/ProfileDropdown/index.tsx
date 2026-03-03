@@ -5,64 +5,81 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { PATH } from "@/constants/paths";
-import type { UserProfile } from "@shared/schema";
 
-interface CompanyProfile {
+// Shape of the company profile stored in localStorage after survey submission
+interface StoredCompanyProfile {
+  id?: number;
+  userId?: string;
+  companyProfile?: string;
+  companyContext?: {
+    companySize?: string;
+    teamSize?: string;
+    primaryFunction?: string;
+    communicationStyle?: string;
+    primaryChannel?: string;
+  };
+  surveyResponses?: Record<string, any>;
+  createdAt?: string;
+  profileType?: string;
+  // Legacy fields (old survey format)
   company_name?: string;
   communication_style?: string;
-  ready_for_analysis?: boolean;
-  guidelines_count?: number;
-  negative_prompts?: string[];
 }
 
-// Default profile if no userProfile is provided
-const MOCK_COMPANY_PROFILE_DEFAULT: CompanyProfile = {
+// Default profile if no profile is set
+const DEFAULT_PROFILE = {
   company_name: "Guest Company",
-  communication_style: "Default Style",
+  communication_style: "Not set",
   ready_for_analysis: false,
+  negative_prompts: [] as string[],
   guidelines_count: 0,
-  negative_prompts: [],
 };
 
 interface ProfileDropdownProps {
   open: boolean;
   onClose: () => void;
-  userProfile: UserProfile | null;
+  userProfile: any | null; // Accept any shape - we'll read from localStorage directly
 }
 
 export default function ProfileDropdown({
   open,
   onClose,
-  userProfile,
+  userProfile: _userProfile, // kept for API compat but we read localStorage directly
 }: ProfileDropdownProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<CompanyProfile>(() => {
-    if (userProfile) {
-      return {
-        company_name: userProfile.company_name || "N/A",
-        communication_style: userProfile.communication_style || "N/A",
-        ready_for_analysis: !!userProfile.completedAt,
-        negative_prompts: [], // Initialize empty, will be managed internally
-        guidelines_count: 0, // Initialize 0, will be managed internally
-      };
-    }
-    return MOCK_COMPANY_PROFILE_DEFAULT;
-  });
+
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [newPrompt, setNewPrompt] = useState("");
   const [isComposing, setIsComposing] = useState(false);
 
-  // Update internal profile state when userProfile prop changes
+  // Re-read and parse the company profile from localStorage whenever the dropdown opens
   useEffect(() => {
-    if (userProfile) {
-      setProfile((prevProfile) => ({
-        ...prevProfile,
-        company_name: userProfile.company_name || "N/A",
-        communication_style: userProfile.communication_style || "N/A",
-        ready_for_analysis: !!userProfile.completedAt,
-      }));
+    const raw = localStorage.getItem("chatToner_profile");
+    if (raw) {
+      try {
+        const stored: StoredCompanyProfile = JSON.parse(raw);
+        // Support both new (companyContext) and old (flat) profile shapes
+        const communicationStyle =
+          stored.companyContext?.communicationStyle ||
+          stored.communication_style ||
+          "N/A";
+        const companyName =
+          stored.companyContext?.companySize
+            ? `${stored.companyContext.companySize} 팀`
+            : stored.company_name || "N/A";
+
+        setProfile((prev) => ({
+          ...prev,
+          company_name: companyName,
+          communication_style: communicationStyle,
+          ready_for_analysis: !!stored.companyProfile || !!stored.profileType,
+        }));
+      } catch {
+        // ignore parse errors, keep default
+      }
     }
-  }, [userProfile]); // Depend on userProfile prop
+  }, [open]); // Re-run when dropdown is opened to always show latest data
 
   const handleAddPrompt = () => {
     if (newPrompt && !profile.negative_prompts?.includes(newPrompt)) {

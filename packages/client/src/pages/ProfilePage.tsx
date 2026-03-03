@@ -151,18 +151,17 @@ const ProfilePage: React.FC = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex justify-end gap-3 mb-4">
           <Button
-            variant="outline"
             onClick={() => navigate(PATH.HOME)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-primary hover:bg-primary-80 text-white"
           >
             <Home className="h-4 w-4" />
             홈으로
           </Button>
           <Button
             onClick={() => navigate(PATH.CHOICE)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex items-center gap-2 bg-neutral-200 hover:bg-neutral-300 text-primary"
           >
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4 text-primary" />
             Use ChatToner
           </Button>
         </div>
@@ -179,7 +178,7 @@ const ProfilePage: React.FC = () => {
             </p>
             <a
               href="/survey/1"
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
             >
               설문 시작하기
             </a>
@@ -199,16 +198,15 @@ const ProfilePage: React.FC = () => {
         </div>
         <div className="flex gap-3">
           <Button
-            variant="outline"
             onClick={() => navigate(PATH.HOME)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/80 text-white"
           >
             <Home className="h-4 w-4" />
             홈으로
           </Button>
           <Button
             onClick={() => navigate(PATH.CHOICE)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/80 text-white"
           >
             <MessageSquare className="h-4 w-4" />
             Use ChatToner

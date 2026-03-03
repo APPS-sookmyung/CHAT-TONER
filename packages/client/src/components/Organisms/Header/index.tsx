@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Profile from "@/assets/icons/profile.svg?react";
 import ProfileDropdown from "@/components/Organisms/ProfileDropdown";
 import type { UserProfile } from "@shared/schema";
@@ -7,15 +7,18 @@ import { PATH } from "@/constants/paths";
 
 export const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null); // Add userProfile state
 
+  // Re-read profile from localStorage every time the route changes
+  // so that profile is always fresh after survey completion
   useEffect(() => {
     const profileString = localStorage.getItem("chatToner_profile");
     if (profileString) {
       setUserProfile(JSON.parse(profileString));
     }
-  }, []);
+  }, [location.pathname]);
 
   const handleHomeClick = () => {
     navigate(PATH.HOME);
