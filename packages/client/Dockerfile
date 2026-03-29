@@ -4,6 +4,10 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
+COPY packages/client/package*.json ./packages/client/
+
+RUN ls -al && node -v && npm -v && echo "----" && ls -al packages/client || true
+RUN test -f package-lock.json && echo "lock exists" || (echo "NO LOCK" && exit 1)
 RUN npm ci
 
 # Copy source files
@@ -17,15 +21,17 @@ ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 RUN if [ -n "$VITE_API_URL" ]; then echo "VITE_API_URL=$VITE_API_URL" > .env.production; fi
 
-# Build (generate dist/)
-RUN npm run build
+RUN npm run -w packages/client build
+
+# # Build (generate dist/)
+# RUN npm run build
 
 # ---------- Runtime (Nginx) ----------
 FROM nginx:1.27-alpine
 WORKDIR /usr/share/nginx/html
 
 # SPA routing/health check configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY packages/client/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy only static assets
 COPY --from=builder /app/dist/ ./

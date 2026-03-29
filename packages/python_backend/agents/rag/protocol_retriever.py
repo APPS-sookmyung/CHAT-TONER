@@ -101,7 +101,7 @@ class ProtocolRetriever:
         """PDF에서 FAISS 인덱스 생성 및 저장"""
         from langchain_community.vectorstores import FAISS
         from langchain_community.document_loaders import PyPDFLoader
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
 
         try:
             if not PDF_DIR.exists():

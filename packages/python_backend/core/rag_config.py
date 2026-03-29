@@ -18,37 +18,35 @@ class RAGConfig:
     """RAG 관련 경로/모델/청킹 설정을 제공"""
 
     def __init__(self):
-        # 로컬 개발 환경에서는 현재 작업 디렉토리 기준으로 상대 경로 사용
-        import os
-        from pathlib import Path
-
-        # 현재 작업 디렉토리 기준으로 설정
         current_dir = Path.cwd()
 
-        # 로컬 개발 환경 vs 컨테이너 환경 구분
-        if str(current_dir).endswith('python_backend'):
-            # python_backend 디렉토리에서 실행되는 경우
-            base_path = current_dir / "langchain_pipeline/data"
-        else:
-            # 프로젝트 루트에서 실행되는 경우
-            base_path = current_dir / "python_backend/langchain_pipeline/data"
+        # ✅ 배포/컨테이너: ENV 우선 (CWD 의존 제거)
+        env_docs = os.getenv("RAG_DOCUMENTS_PATH")
+        env_index = os.getenv("RAG_FAISS_INDEX_PATH")
 
-        self.faiss_index_path: Path = base_path / "faiss_index"
-        self.documents_path: Path = base_path / "documents"
+        if env_docs and env_index:
+            self.documents_path: Path = Path(env_docs)
+            self.faiss_index_path: Path = Path(env_index)
+        else:
+            # 로컬 개발 호환 로직(기존 유지)
+            if str(current_dir).endswith("python_backend"):
+                base_path = current_dir / "langchain_pipeline/data"
+            else:
+                base_path = current_dir / "python_backend/langchain_pipeline/data"
+
+            self.faiss_index_path = base_path / "faiss_index"
+            self.documents_path = base_path / "documents"
 
         print(f"RAG Config: Current dir: {current_dir}")
         print(f"RAG Config: Documents path: {self.documents_path}")
         print(f"RAG Config: Index path: {self.faiss_index_path}")
 
-    # 임베딩/청킹 설정
     _embedding_model: str = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
     _chunk_size: int = int(os.getenv("RAG_CHUNK_SIZE", "1000"))
     _chunk_overlap: int = int(os.getenv("RAG_CHUNK_OVERLAP", "200"))
 
     def validate(self) -> None:
-        """기본 경로 및 키 점검(치명적 오류는 발생시키지 않음)"""
         try:
-            # 경로 존재 확인(없으면 이후 ingest 시 생성)
             if not self.documents_path.exists():
                 logger.info(f"문서 경로가 아직 없습니다: {self.documents_path}")
             if not self.faiss_index_path.exists():
@@ -71,7 +69,6 @@ class RAGConfig:
 
     @lru_cache(maxsize=1)
     def get_openai_api_key(self) -> Optional[str]:
-        """OpenAI API 키를 환경에서 조회(없으면 None)"""
         from core.config import get_settings
         settings = get_settings()
         api_key = getattr(settings, "OPENAI_API_KEY", "") or None
@@ -85,4 +82,3 @@ def get_rag_config() -> RAGConfig:
     cfg = RAGConfig()
     cfg.validate()
     return cfg
-
